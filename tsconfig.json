@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "strict": true,
+        "moduleResolution": "node",
+        "target": "ES2021",
+        "paths": {
+            "cypress-interceptor": ["packages/cypress-interceptor/src"]
+        },
+        "skipLibCheck": true
+    }
+}

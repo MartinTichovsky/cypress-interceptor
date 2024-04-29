@@ -1,0 +1,25 @@
+{
+  "name": "cypress-interceptor",
+  "version": "1.0.0",
+  "description": "",
+  "devDependencies": {
+    "cypress": "13.7.1"
+  },
+  "author": "Martin Tichovsky",
+  "files": ["lib"],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MartinTichovsky/cypress-interceptor"
+  },
+  "scripts": {
+    "build": "rimraf tsconfig.build.tsbuildinfo lib && tsc --project tsconfig.build.json",
+    "build:watch": "npm run build -- --watch",
+    "tsc": "tsc --noEmit"
+  },
+  "types": "lib/interceptor.d.ts",
+  "peerDependencies": {
+    "cypress": ">=13.0.0"
+  }
+}

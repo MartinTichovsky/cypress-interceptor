@@ -1,0 +1,16 @@
+{
+  "git.confirmSync": false,
+  "explorer.confirmDelete": false,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "explorer.confirmDragAndDrop": false,
+  "explorer.compactFolders": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "eslint.workingDirectories": [{ "pattern": "./packages/*/" }],
+  "search.exclude": {
+    "**/.git": true,
+    "**/node_modules": true
+  },
+  "typescript.tsdk": "node_modules\\typescript\\lib"
+}

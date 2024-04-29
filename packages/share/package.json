@@ -1,0 +1,8 @@
+{
+  "name": "cypress-interceptor-share",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit"
+  }
+}

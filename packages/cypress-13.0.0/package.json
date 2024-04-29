@@ -1,0 +1,13 @@
+{
+  "name": "cypress-interceptor-tests-13.0.0",
+  "version": "1.0.0",
+  "scripts": {
+    "cy:open": "cypress open --e2e",
+    "cy:run": "cypress run",
+    "tsc": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "cypress": "13.0.0"
+  },
+  "private": true
+}

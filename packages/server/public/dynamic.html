@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset=utf-8>
+    <meta name=viewport content="initial-scale=1, minimum-scale=1, width=device-width">
+</head>
+
+<body>
+    <h1>Example page dynamic</h1>
+
+    <script>
+        /**
+            Example of how to generate the query and test this page:
+         
+            location.href = "http://localhost:3000/public/dynamic.html?requests=" + encodeURI(JSON.stringify([
+                { duration: 3000, path: "style1.css", type: "stylesheet" },
+                { duration: 3000, path: "style2.css", status: 301, type: "stylesheet" },
+                { path: "image1.png", type: "image" },
+                { duration: 5000, path: "script.js", type: "script" },
+                { body: { a: 5, b: "info" }, delay: 5000, duration: 10000, headers: { "custom-header": "header-value" }, method: "POST", path: "/testing-endpoint", type: "fetch" },
+                { path: "/testing-endpoint/status", status: 404, type: "fetch" }
+            ]))
+        */
+
+        const requestQueue = [];
+
+        const fireRequest = () => {
+            if (!requestQueue.length) {
+                return;
+            }
+
+            processRequest(requestQueue.shift());
+        }
+
+        const getSrc = (path, params) => {
+            const searchParams = new URLSearchParams(objectToURLSearch(params));
+            const searchString = searchParams.toString()
+
+            return path.match(/^http(s)?/) ? path : `${location.origin}${path.startsWith("/") ? "" : "/"}${path}${searchString ? "?" : ""}${searchString}`;
+        }
+
+        const onLoad = (element, requests) => {
+            if (!requests?.length) {
+                return;
+            }
+
+            element.onload = () => {
+                processRequests(requests);
+            }
+        }
+
+        const objectToURLSearch = (object) => {
+            const result = {};
+
+            for (const key in object) {
+                if (object[key] === undefined) {
+                    continue;
+                }
+
+                result[key] = object[key].toString();
+            }
+
+            return result;
+        }
+
+        const processEntry = (entry) => {
+            const type = entry.type;
+            const path = entry.path;
+
+            if (!type || !path) {
+                console.warn("Type or path is missing");
+                return
+            }
+
+            const params = {
+                ...(typeof entry.query === 'object' ? entry.query : undefined),
+                duration: entry.duration,
+                enableCache: entry.enableCache,
+                path,
+                responseBody: entry.responseBody ?
+                    type === "fetch" ?
+                        JSON.stringify(entry.responseBody) : entry.responseBody
+                    : undefined,
+                status: entry.status
+            }
+
+            const body = entry.body;
+            const headers = entry.headers;
+            const method = entry.method;
+            const requests = entry.requests;
+
+            if (type === "stylesheet") {
+                const link = document.createElement("link");
+                link.setAttribute("href", getSrc(path, params));
+                link.setAttribute("rel", "stylesheet");
+                link.setAttribute("type", "text/css");
+
+                onLoad(link, requests);
+                wrapInSection(path, link);
+            }
+            else if (type === "script") {
+                const script = document.createElement("script");
+                script.setAttribute("src", getSrc(path, params));
+
+                onLoad(script, requests);
+                wrapInSection(path, script);
+            }
+            else if (type === "image") {
+                const img = document.createElement("img");
+                img.setAttribute("src", getSrc(path, params));
+
+                onLoad(img, requests);
+                wrapInSection(path, img);
+            }
+            else if (type === "fetch") {
+                const startTime = performance.now();
+
+                fetch(getSrc(path, params), {
+                    body: body && method === "POST" ? JSON.stringify(body) : undefined,
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(headers ? headers : {}),
+                    },
+                    method: method ?? "GET"
+                }).then(async (response) => {
+                    const duration = performance.now() - startTime;
+        
+                    try {
+                        const div = document.createElement("div");
+
+                        const divResponse = document.createElement("div")
+                        divResponse.setAttribute("data-response-type", "body");
+                        divResponse.innerHTML = JSON.stringify(await response.json());
+
+                        div.appendChild(divResponse);
+
+                        const divStatusCode = document.createElement("div")
+                        divStatusCode.setAttribute("data-response-type", "status-code");
+                        divStatusCode.innerHTML = response.status;
+
+                        div.appendChild(divStatusCode);
+
+                        const divHeaders = document.createElement("div")
+                        divHeaders.setAttribute("data-response-type", "headers");
+                        divHeaders.innerHTML = JSON.stringify([...response.headers.entries()]);
+
+                        div.appendChild(divHeaders);
+
+                        const divDuration = document.createElement("div")
+                        divDuration.setAttribute("data-response-type", "duration");
+                        divDuration.innerHTML = duration;
+
+                        div.appendChild(divDuration);
+
+                        wrapInSection(`${path}_loaded`, div);
+                    }
+                    catch {
+                        //
+                    }
+
+                    try {
+                        processRequests(requests);
+                    }
+                    catch {
+                        //
+                    }
+                })
+            }
+        }
+
+        const processRequest = (entry) => {
+            const delay = entry.delay;
+
+            if (delay) {
+                setTimeout(() => processEntry(entry), delay);
+            }
+            else {
+                processEntry(entry)
+            }
+        }
+
+        const processRequests = (requests) => {
+            if (!requests?.length) {
+                return;
+            }
+
+            for (let entry of requests) {
+                if (entry.fireOnClick) {
+                    requestQueue.push(entry);
+                    continue;
+                }
+
+                processRequest(entry)
+            }
+        }
+
+        const wrapInSection = (path, element) => {
+            const section = document.createElement("section");
+            section.setAttribute("id", path);
+
+            section.appendChild(element);
+
+            document.body.append(section);
+        }
+
+        (() => {
+            const searchParams = new URLSearchParams(location.search);
+            const requestsJSON = searchParams.get("requests")
+
+            if (!requestsJSON) {
+                return;
+            }
+
+            try {
+                const requests = JSON.parse(requestsJSON);
+
+                if (!Array.isArray(requests)) {
+                    return;
+                }
+
+                processRequests(requests);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        })()
+    </script>
+    <div>
+        <button id="fire_request" onclick="fireRequest()">Fire a request</button>
+    </div>
+</body>
+
+</html>
