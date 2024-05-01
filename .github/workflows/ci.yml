@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths-ignore:
-      - package.json
+      - '**/package.json'
+      - '**/package-lock.json'
       - README.md
     tags-ignore:
       - v*
@@ -19,19 +20,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18.x
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
-              node_modules
-              **/node_modules
+            /home/runner/.cache/Cypress
+            node_modules
+            **/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
           restore-keys: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
@@ -41,8 +43,8 @@ jobs:
       - name: TypeScript check
         run: npm run tsc
 
-      # - name: Test
-      #   run: npm run server & npm run test
+      - name: Test
+        run: npm run server & npm run test
 
   bump-version:
     if: github.ref == 'refs/heads/main'
@@ -50,14 +52,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.TOKEN }}
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
+            /home/runner/.cache/Cypress
             node_modules
             **/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
@@ -65,6 +68,9 @@ jobs:
 
       - name: Install
         run: npm install
+
+      - name: Build
+        run: npm run build
 
       - name: Set creator
         run: |
@@ -74,17 +80,18 @@ jobs:
       - name: Increment version
         env:
           VERSION_TYPE: ${{ (startsWith(github.event.head_commit.message, 'BREAKING CHANGE:') || contains(toJSON(github.event.head_commit.message), '\n\nBREAKING CHANGE:')) && 'major' || (startsWith(github.event.head_commit.message, 'fix:') || contains(toJSON(github.event.head_commit.message), '\n\nfix:')) && 'patch' || 'minor' }}
-        run: |
-          npm version $VERSION_TYPE -m "v%s" -w cypress-interceptor
-          VERSION=$(node -p "require('./packages/interceptor/package.json').version")
+        run: npm version $VERSION_TYPE -w cypress-interceptor
 
       - name: Push changes
         run: |
-          git push --follow-tags
+          VERSION=$(node -p "require('./packages/interceptor/package.json').version")
+          git commit -am "v${VERSION}"
+          git tag v${VERSION}
           git push --tags
+          git push
 
-      - name: Build
-        run: npm run build
+      - name: Copy README
+        run: cp README.md packages/interceptor
 
       - name: Publish package
         run: |
