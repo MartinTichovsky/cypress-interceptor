@@ -6,84 +6,114 @@ declare global {
     namespace Cypress {
         interface Chainable {
             /**
+             * Get an instance of Interceptor
              *
-             * @param routeMatcher
-             * @returns
-             */
-            howManyTimesHasBeenRequestCalled: (routeMatcher?: IRouteMatcher) => Chainable<number>;
-            /**
-             *
-             * @returns
+             * @returns An instance of Interceptor
              */
             interceptor: () => Chainable<Interceptor>;
             /**
+             * Get the last call matching the provided route matcher
              *
-             * @param routeMatcher
-             * @returns
+             * @param routeMatcher A route matcher
+             * @returns The last call information or undefined if none match
              */
             interceptorLastRequest: (
                 routeMatcher?: IRouteMatcher
             ) => Chainable<CallStack | undefined>;
             /**
+             * Set Interceptor options,
+             * must be called before a request/s occur
              *
-             * @param routeMatcher
-             * @returns
+             * @param options Options
+             * @returns Current Interceptor options
+             */
+            interceptorOptions: (options?: InterceptorOptions) => Chainable<InterceptorOptions>;
+            /**
+             * Get a number of requests matching the provided route matcher
+             *
+             * @param routeMatcher A route matcher
+             * @returns A number of requests matching the provided route matcher since the current test started
+             */
+            interceptorRequestCalls: (routeMatcher?: IRouteMatcher) => Chainable<number>;
+            /**
+             * Get statistics for all requests matching the provided route matcher since the beginning
+             * of the current test
+             *
+             * @param routeMatcher A route matcher
+             * @returns All requests matching the provided route matcher with detailed information,
+             *          if none match, returns an empty array
              */
             interceptorStats: (routeMatcher?: IRouteMatcher) => Chainable<CallStack[]>;
             /**
+             * Mock the response of requests matching the provided route matcher. By default it mocks
+             * the first matching request, then the mock is removed. Set `times` in options
+             * to change how many times should be the matching requests mocked.
              *
-             * @param urlMatcher
-             * @param mock
-             * @param options
+             * @param routeMatcher A route matcher
+             * @param mock Response mocks
+             * @param options Mock options
+             * @returns An id of the created mock. It is needed if you want to remove
+             *          the mock manually
              */
-            mockResponse(
-                urlMatcher: IRouteMatcher,
+            mockInterceptorResponse(
+                routeMatcher: IRouteMatcher,
                 mock: IMockResponse,
                 options?: IMockResponseOptions
             ): Chainable<number>;
             /**
+             * Reset the watch of Interceptor. It sets the pointer to the last call. It is
+             * needed to reset the pointer when you want to wait for certain requests.
              *
-             * @returns
+             * Example: on a site there are multiple requests to `api/getUser`, but we want
+             * to wait for the specific one which occur after clicking on a button. We can not
+             * know which one of the `api/getUser` calls we want to wait for. By calling this
+             * method we set the exact point we want to check the next requests from.
              */
             resetInterceptorWatch: () => void;
             /**
+             * Start time measuring (a helper function)
              *
-             * @param options
-             * @returns
-             */
-            setInterceptorOptions: (options: InterceptorOptions) => void;
-            /**
-             * Start time measuring
-             *
-             * @returns Time when the code was executed in ms
+             * @returns performance.now() when the code is executed
              */
             startTiming: () => Chainable<number>;
             /**
-             * Stop time measuring
+             * Stop time measuring (a helper function)
              *
-             * @returns If cy.startTiming has been called, it returns the time difference
-             * since startTiming call to this point in ms, otherwise it returns undefined
+             * @returns If cy.startTiming was been called, returns the time difference
+             *          since startTiming was called (in ms), otherwise it returns undefined
              */
             stopTiming: () => Chainable<number | undefined>;
             /**
+             * Throttle requests matching the provided route matcher by setting a delay. By default it
+             * throttles the first matching request, then the throttle is removed. Set `times`
+             * in options to change how many times should be the matching requests throttled.
              *
-             * @param urlMatcher
-             * @param delay
-             * @param options
+             * @param urlMatcher A route matcher
+             * @param delay A delay in ms
+             * @param options Throttle options (it can include mocking the response)
+             * @returns An id of the created throttle. It is needed if you want to remove
+             *          the throttle manually
              */
-            throttleRequest(
-                urlMatcher: IRouteMatcher,
+            throttleInterceptorRequest(
+                routeMatcher: IRouteMatcher,
                 delay: number,
                 options?: IThrottleRequestOptions
             ): Chainable<number>;
             /**
+             * The method will wait until all requests matching the provided route
+             * matcher finish or the maximum time of waiting is reached (`waitTimeout` in options).
              *
-             * @param routeMatcher
-             * @returns
+             * By default there must be at least one match. Otherwise it waits until
+             * there is a request matching the provided route matcher OR the maximum time of waiting
+             * is reached. This behaviour can be changed by setting `enforceCheck` to false in options.
+             *
+             * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+             * @param errorMessage An error message when the maximum time of waiting is reached
+             * @returns An instance of Interceptor
              */
             waitUntilRequestIsDone: (
-                routeMatcher?: StringMatcher | WaitUntilRequestOptions,
-                errorTitle?: string
+                stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+                errorMessage?: string
             ) => Chainable<Interceptor>;
         }
     }
@@ -95,15 +125,15 @@ type CommonObject<T> = {
 
 export interface CallStack {
     /**
-     * If the request is cross domain, it will be true
+     * Cross domain requests will have this property set to true
      */
     crossDomain: boolean;
     /**
-     * A delay of the request
+     * A throttle delay of the request set by calling `throttleRequest` or `cy.throttleInterceptorRequest`
      */
     delay?: number;
     /**
-     * Total duration of the request in ms
+     * The real total duration of the request in ms (not including delay)
      */
     duration?: number;
     /**
@@ -123,11 +153,11 @@ export interface CallStack {
      */
     response?: IResponse;
     /**
-     * URL of the request
+     * URL of the request without query string
      */
     url: string;
     /**
-     * URL of the request with query string
+     * The full URL of the request with query string
      */
     urlQuery: string;
 }
@@ -145,36 +175,63 @@ export type RequestMethod =
 
 export interface InterceptorOptions {
     /**
-     * By default the web browser is caching the requests. The caching can be disabled by Cypress.env
-     * `INTERCEPTOR_DISABLE_CACHE` or by this option. This option has the highest priority, if it is
-     * set to false, the cache is always enabled
+     * By default the web browser is caching the requests. Caching can be disabled by Cypress.env
+     * `INTERCEPTOR_DISABLE_CACHE` or by this option. This option has the highest priority. If it is
+     * set to false, the cache is always enabled no matter to value of Cypress.env("INTERCEPTOR_DISABLE_CACHE")
      */
     disableCache?: boolean;
     /**
-     * When it is true, calling `getDebugInfo()` will return an array with all requests and their info
+     * When it is true, calling `getDebugInfo()` will return an array with all catched requests
      */
     debug?: boolean;
     /**
-     * Ignore request outside this domain, default: true
+     * Ignore request outside the domain, default: true
      */
     ingoreCrossDomain?: boolean;
     /**
-     * Which resource types should be included, default: ['document', 'fetch', 'script', 'xhr', 'websocket']
+     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr", "websocket"],
+     *
+     * Provide "all" for processing all requests no matter to the resource type
      */
     resourceTypes?: ResourceType | ResourceType[] | "all";
 }
 
 export interface IDebug {
+    /**
+     * An id for the queued item. Important to track down the sequence of the same requests
+     */
     queueId: number;
+    /**
+     * Request method (GET, POST, ...)
+     */
     method: string;
+    /**
+     * Resource type
+     */
     resourceType?: string;
+    /**
+     * Time when this entry is created
+     */
     time: Date;
+    /**
+     * Type of the entry, sort by the sequence:
+     *
+     * start        = the very beggining of the request
+     * skipped      = the request is skipped and will not be processed due to
+     *                not matching the resource types or cross domain option
+     * skipped-done = the skipped request is finished
+     * logged       = the request is logged and will be processed
+     * logged-done  = the logged request is finished
+     */
     type: "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
+    /**
+     * A full URL of the request with query string
+     */
     url: string;
 }
 
 export type IHeaders = { [key: string]: string | string[] };
-export type IHeadersSimple = { [key: string]: string };
+export type IHeadersNormalized = { [key: string]: string };
 
 export interface IMockResponse {
     /**
@@ -182,9 +239,16 @@ export interface IMockResponse {
      */
     body?: unknown;
     /**
-     * The headers of the HTTP message.
+     * Generate a body with the original response body, this option is preferred before option `body`
+     *
+     * @param originalBody The original response body
+     * @returns A response body, it can be anything
      */
-    headers?: IHeadersSimple;
+    generateBody?: (originalBody: unknown) => unknown;
+    /**
+     * If provided, will be added to the original response headers
+     */
+    headers?: IHeadersNormalized;
     /**
      * Response status code
      */
@@ -193,23 +257,23 @@ export interface IMockResponse {
 
 export interface IMockResponseOptions {
     /**
-     * How many times the response should be mocked, by default it is set to 1, set to 0 to
-     * mock the response infinitely
+     * How many times the response should be mocked, by default it is set to 1.
+     * Set to 0 to mock the response infinitely
      */
     times?: number;
 }
 
 export interface IRequest {
     /**
-     * Request body, it can be anything, object or text
+     * The request body, it can be anything
      */
     body: unknown;
     /**
-     * The headers of the request
+     * The request headers
      */
     headers: IHeaders;
     /**
-     * Request HTTP method (GET, POST, ...).
+     * Request method (GET, POST, ...)
      */
     method: string;
     /**
@@ -217,45 +281,54 @@ export interface IRequest {
      */
     query: Record<string, string | number>;
     /**
-     * When the request started
+     * Time when the request started
      */
     timeStart: Date;
 }
 
 export interface IResponse {
     /**
-     * Response body, it can be anything, object or text
+     * The response body, it can be anything (replaced by mock if provided)
      */
     body: unknown;
     /**
-     * The headers of the response.
+     * The origin response body (not including mock)
      */
-    headers: IHeadersSimple;
+    body_origin: unknown;
     /**
-     * The HTTP status code of the response.
+     * Headers of the response (with mock if provided)
+     */
+    headers: IHeadersNormalized;
+    /**
+     * The response status code (replaced by mock if provided)
      */
     statusCode: number;
     /**
-     * The HTTP status message.
+     * The origin response status code (not including mock)
+     */
+    statusCode_origin: number;
+    /**
+     * The HTTP status message
      */
     statusMessage: string;
     /**
-     * When the request ended (it not includes when the request is throttled, it contains real time of the request)
+     * Time when the request ended (it does not include a delay when the request
+     * is throttled, it contains the real time when the request finished in cy.intercept)
      */
     timeEnd: Date;
 }
 
 /**
- * String comparison is case insensitive.
- * Keys of `headers` and `query` are case sensitive to compare
+ * String comparison is case insensitive. Provide RegExp without case sensitive flag if needed.
  */
 export type IRouteMatcher = StringMatcher | IRouteMatcherObject;
 
 export type IRouteMatcherObject = {
     /**
+     * A matcher for request body
      *
-     * @param body
-     * @returns
+     * @param body The request body
+     * @returns True if matches
      */
     bodyMatcher?: (body: unknown) => boolean;
     /**
@@ -263,10 +336,12 @@ export type IRouteMatcherObject = {
      */
     crossDomain?: boolean;
     /**
-     * All keys in headers must be in the headers of the request,
-     * but the request headers can contain extra keys
+     * A matcher for headers
+     *
+     * @param headers The request headers
+     * @returns True if matches
      */
-    headers?: RouteMatcherOptions["headers"];
+    headersMatcher?: (headers: IHeadersNormalized) => boolean;
     /**
      * If true, only HTTPS requests match
      */
@@ -276,65 +351,66 @@ export type IRouteMatcherObject = {
      */
     method?: RequestMethod;
     /**
-     * All keys in the query must be in the URL search params, but
-     * the URL search params can contain extra keys
+     * A matcher for query string
+     *
+     * @param query The URL query string
+     * @returns True if matches
      */
-    query?: RouteMatcherOptions["query"];
-    /**
-     * When true, the URL search params must fully match the query
-     */
-    queryStrictMatch?: boolean;
+    queryMatcher?: (query: Record<string, string | number>) => boolean;
     /**
      * Resource type (document, script, fetch, ....)
      */
-    resourceType?: ResourceType | ResourceType[];
+    resourceType?: ResourceType | ResourceType[] | "all";
     /**
-     * URL matcher, use * or ** to match any word in string (**\/api/call, **\/script.js, ...),
-     * the matcher can be string or RegExp
+     * A URL matcher, use * or ** to match any word in string ("**\/api/call", "**\/script.js", ...)
      */
-    url?: RouteMatcherOptions["url"];
+    url?: StringMatcher;
 };
 
 export interface IThrottleRequestOptions {
     /**
-     * Possibility to mock the response
+     * Mock a response for the provided route matcher. If provided together with
+     * `mockResponse` or `cy.mockInterceptorResponse` it has lesser priority
      */
     mockResponse?: IMockResponse;
     /**
-     * How many times the request should be throttled, by default it is set to 1, set to 0 to
-     * throttle a request/requests infinitely
+     * How many times the request should be throttled, by default it is set to 1.
+     * Set to 0 to throttle the request infinitely
      */
     times?: number;
 }
 
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
-     * If true, the matcher must be logged. That means if you call `waitUntilRequestIsDone(url)`,
-     * the url must be logged by Tnterceptor, otherwise it will wait until the url is logged and finished
-     * or it fails if waiting time runs out
+     * True by default. If true, a request matching the provided route matcher must be logged by Interceptor,
+     * otherwise it waits until the url is logged and finished or it fails if the time of waiting runs out. If
+     * set to false, it checks if there is a request matching the provided route matcher. If yes, it waits until
+     * the request is done. If no, it does not fail and end successfully.
      */
     enforceCheck?: boolean;
     /**
-     * Time to wait in ms. Default set to DEFAULT_INTERVAL
+     * Time to wait in ms. Default set to 500
      *
-     * There is needed to wait if there is an another request after the last one (because of the JS code
-     * and subsequent requests).
+     * There is needed to wait if there is a possible following request after the last one (because of the JS code
+     * and subsequent requests)
      */
-    waitBetweenRequests?: number;
+    waitForNextRequest?: number;
     /**
-     * Time of for how long the Cypress will be waiting for pending requests,
-     * default is environment variable `INTERCEPTOR_REQUEST_TIMEOUT`
+     * Time of how long Cypress will be waiting for the pending requests.
+     * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
      */
     waitTimeout?: number;
 }
 
 const DEFAULT_INTERVAL = 500;
+const DEFAULT_RESOURCE_TYPES: ResourceType[] = ["document", "fetch", "script", "xhr", "websocket"];
+const DEFAULT_TIMEOUT = 10000;
 
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
     debug: false,
     ingoreCrossDomain: true,
-    resourceTypes: ["document", "fetch", "script", "xhr", "websocket"]
+    resourceTypes: DEFAULT_RESOURCE_TYPES
 };
 
 export class Interceptor {
@@ -346,7 +422,7 @@ export class Interceptor {
         id: number;
         mock: IMockResponse;
         options?: IMockResponseOptions;
-        urlMatcher: IRouteMatcher;
+        routeMatcher: IRouteMatcher;
     }[] = [];
     private _mockId = 0;
     private _options: Required<InterceptorOptions> = {
@@ -357,7 +433,7 @@ export class Interceptor {
         delay: number;
         id: number;
         options?: IThrottleRequestOptions;
-        urlMatcher: IRouteMatcher;
+        routeMatcher: IRouteMatcher;
     }[] = [];
     private _throttleId = 0;
 
@@ -412,7 +488,7 @@ export class Interceptor {
                             url: req.url
                         });
                     }
-                    this.disableCache(res.headers);
+                    this.disableCacheInResponse(res.headers);
                     res.send();
                 });
 
@@ -463,21 +539,26 @@ export class Interceptor {
 
                 item.duration = performance.now() - startTime;
 
-                const mock = this.getMock(item);
+                const _mock = this.getMock(item);
                 const throttle = this.getThrottle(item);
 
-                const body = throttle?.mockResponse?.body ?? mock?.body ?? res.body;
+                const mock = _mock ?? throttle.mockResponse;
+
+                const body = mock?.generateBody?.(res.body) ?? mock?.body ?? res.body;
+
                 const headers = {
                     ...this.normalizeHeaders(res.headers),
-                    ...(throttle?.mockResponse?.headers ?? mock?.headers)
+                    ...mock?.headers
                 };
-                const statusCode =
-                    throttle?.mockResponse?.statusCode ?? mock?.statusCode ?? res.statusCode;
+
+                const statusCode = mock?.statusCode ?? res.statusCode;
 
                 item.response = {
                     body,
+                    body_origin: res.body,
                     headers,
                     statusCode,
+                    statusCode_origin: res.statusCode,
                     statusMessage: res.statusMessage,
                     timeEnd: new Date()
                 };
@@ -488,15 +569,15 @@ export class Interceptor {
                     res.setDelay(item.delay);
                 }
 
-                this.disableCache(headers);
+                this.disableCacheInResponse(headers);
                 res.send(statusCode, body, headers);
 
                 /**
-                 * Set the request as finished with a delay, it is crutial for the browser to let the response process,
-                 * it takes aprox. 40ms from here to the consumer's response function
+                 * Set the request as finished with a delay. It is crucial for the browser to let the response process,
+                 * it takes aprox. 40ms from here to the consumer's response function.
                  *
-                 * NOTE: if you throttle the network in Chrome, it will not work because the delay is controlled by Chrome
-                 * after this line. So it means that the request takes usual time, but from here to the consumer's
+                 * NOTE: if you throttle the network in Chrome, it will not work because the delay/throttle is controlled
+                 * by Chrome after this line. So it means that the request takes usual time, but from here to the consumer's
                  * response function it can last several seconds (depends on your throttling settings in the browser)
                  */
                 setTimeout(
@@ -510,17 +591,20 @@ export class Interceptor {
     }
 
     /**
-     *
+     * Return a copy of all logged requests since the Interceptor has been created
+     * (the Interceptor is created in `beforeEach`)
      */
-    get callStack() {
+    public get callStack() {
         return this.deepCopy(this._callStack);
     }
 
     /**
-     *
+     * Returns true if debug is enabled by Interceptor options or Cypress environment
+     * variable `INTERCEPTOR_DEBUG`. The Interceptor `debug` option has the highest
+     * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
      */
     public get debugIsEnabled() {
-        return this._options.debug || this._debugByEnv;
+        return this._options.debug ?? this._debugByEnv;
     }
 
     private deepCopy<T>(value: T) {
@@ -550,7 +634,7 @@ export class Interceptor {
         }
     }
 
-    private disableCache(headers: IHeaders) {
+    private disableCacheInResponse(headers: IHeaders) {
         if (
             (this._disableCacheByEnv && this._options.disableCache !== false) ||
             this._options.disableCache
@@ -572,15 +656,10 @@ export class Interceptor {
             let matches = 0;
             let mustMatch = 0;
 
-            const headers = routeMatcher.headers;
-
-            if (headers) {
+            if (routeMatcher.headersMatcher) {
                 mustMatch++;
 
-                matches += Object.keys(headers).every(
-                    (key) =>
-                        key in item.request.headers && item.request.headers[key] === headers[key]
-                )
+                matches += routeMatcher.headersMatcher(this.normalizeHeaders(item.request.headers))
                     ? 1
                     : 0;
             }
@@ -617,25 +696,13 @@ export class Interceptor {
                 matches += item.request.method === routeMatcher.method ? 1 : 0;
             }
 
-            const query = routeMatcher.query;
-
-            if (query) {
+            if (routeMatcher.queryMatcher !== undefined) {
                 mustMatch++;
 
-                matches += Object.keys(query).every(
-                    (key) => key in item.request.query && item.request.query[key] === query[key]
-                )
-                    ? routeMatcher.queryStrictMatch
-                        ? Object.keys(item.request.query).every(
-                              (key) => key in query && item.request.query[key] === query[key]
-                          )
-                            ? 1
-                            : 0
-                        : 1
-                    : 0;
+                matches += routeMatcher.queryMatcher(item.request.query) ? 1 : 0;
             }
 
-            if (routeMatcher.resourceType) {
+            if (routeMatcher.resourceType && routeMatcher.resourceType !== "all") {
                 mustMatch++;
 
                 matches += (
@@ -658,8 +725,10 @@ export class Interceptor {
     }
 
     /**
+     * Get an array with all logged/skiped calls to track down a possible issue.
+     * All requests not matching the global resource types or cross domain option are skipped
      *
-     * @returns
+     * @returns An array with debug information
      */
     public getDebugInfo() {
         return this.deepCopy(this._debugInfo);
@@ -668,7 +737,7 @@ export class Interceptor {
     private getMock(item: CallStack) {
         const mockItem = [...this._mock]
             .reverse()
-            .find((entry) => this.filterItemsByMatcher(entry.urlMatcher)(item));
+            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
 
         if (mockItem && (mockItem.options?.times === undefined || mockItem.options.times === 1)) {
             this._mock.splice(this._mock.indexOf(mockItem), 1);
@@ -684,9 +753,10 @@ export class Interceptor {
     }
 
     /**
+     * Get the last call matching the provided route matcher
      *
-     * @param routeMatcher
-     * @returns
+     * @param routeMatcher A route matcher
+     * @returns The last call information or undefined if none match
      */
     public getLastRequest(routeMatcher?: IRouteMatcher) {
         const items = this._callStack.filter(this.filterItemsByMatcher(routeMatcher));
@@ -695,9 +765,12 @@ export class Interceptor {
     }
 
     /**
+     * Get statistics for all requests matching the provided route matcher since the beginning
+     * of the current test
      *
-     * @param routeMatcher
-     * @returns
+     * @param routeMatcher A route matcher
+     * @returns All requests matching the provided route matcher with detailed information,
+     *          if none match, returns an empty array
      */
     public getStats(routeMatcher?: IRouteMatcher) {
         return this.deepCopy(this._callStack.filter(this.filterItemsByMatcher(routeMatcher)));
@@ -706,7 +779,7 @@ export class Interceptor {
     private getThrottle(item: CallStack) {
         const throttleItem = [...this._throttle]
             .reverse()
-            .find((entry) => this.filterItemsByMatcher(entry.urlMatcher)(item));
+            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
         const delay = throttleItem?.delay;
         const mockResponse = throttleItem?.options?.mockResponse;
 
@@ -727,16 +800,16 @@ export class Interceptor {
     }
 
     /**
-     * Return a number of how many times has been a request/requests called
+     * Get a number of requests matching the provided route matcher
      *
      * @param routeMatcher A route matcher
-     * @returns number of calls since the test case started
+     * @returns A number of requests matching the provided route matcher since the current test started
      */
-    public howManyTimesHasBeenRequestCalled(routeMatcher?: IRouteMatcher) {
+    public requestCalls(routeMatcher?: IRouteMatcher) {
         return this._callStack.filter(this.filterItemsByMatcher(routeMatcher)).length;
     }
 
-    private isThereRequestPending(routeMatcher?: IRouteMatcher, enforceCheck = false) {
+    private isThereRequestPending(routeMatcher?: IRouteMatcher, enforceCheck = true) {
         const items = this._callStack
             .slice(this._skip)
             .filter(this.filterItemsByMatcher(routeMatcher));
@@ -748,25 +821,29 @@ export class Interceptor {
     }
 
     /**
-     * Mock a request response
+     * Mock the response of requests matching the provided route matcher. By default it mocks
+     * the first matching request, then the mock is removed. Set `times` in options
+     * to change how many times should be the matching requests mocked.
      *
-     * @param urlMatcher URL matcher
-     * @param mock Mocked response
-     * @returns A unique id needed when want to remove the mock manually
+     * @param routeMatcher A route matcher
+     * @param mock Response mocks
+     * @param options Mock options
+     * @returns An id of the created mock. It is needed if you want to remove
+     *          the mock manually
      */
     public mockResponse(
-        urlMatcher: IRouteMatcher,
+        routeMatcher: IRouteMatcher,
         mock: IMockResponse,
         options?: IMockResponseOptions
     ) {
-        const mockEntry = { id: ++this._mockId, mock, options, urlMatcher };
+        const mockEntry = { id: ++this._mockId, mock, options, routeMatcher };
         this._mock.push(mockEntry);
 
         return mockEntry.id;
     }
 
-    private normalizeHeaders(headers: IHeaders): IHeadersSimple {
-        const normalized: IHeadersSimple = {};
+    private normalizeHeaders(headers: IHeaders): IHeadersNormalized {
+        const normalized: IHeadersNormalized = {};
 
         for (const key in headers) {
             const entry = headers[key];
@@ -779,19 +856,31 @@ export class Interceptor {
     /**
      * Remove a mock entry by id
      *
-     * @param id A unique id received from `mockRequest` method
+     * @param id A unique id received from `mockResponse` or `cy.mockInterceptorResponse`
      */
     public removeMock(id: number) {
-        this._mock = this._mock.filter((entry) => entry.id !== id);
+        if (this._mock.find((entry) => entry.id === id)) {
+            this._mock = this._mock.filter((entry) => entry.id !== id);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Remove a throttle entry by id
      *
-     * @param id A unique id received from `throttleRequest` method
+     * @param id A unique id received from `throttleRequest` or `cy.throttleInterceptorRequest`
      */
     public removeThrottle(id: number) {
-        this._throttle = this._throttle.filter((entry) => entry.id !== id);
+        if (this._throttle.find((entry) => entry.id === id)) {
+            this._throttle = this._throttle.filter((entry) => entry.id !== id);
+
+            return true;
+        }
+
+        return false;
     }
 
     private removeUndefinedFromObject<T, K extends keyof T>(object: CommonObject<T>) {
@@ -803,27 +892,32 @@ export class Interceptor {
     }
 
     /**
-     * Must be called before an action triggering a request if we want to wait for it,
+     * Reset the watch of Interceptor. It sets the pointer to the last call. It is
+     * needed to reset the pointer when you want to wait for certain requests.
      *
-     * for example: on a site there are multiple requests to `api/getUser`, but we want to wait
-     * for the specific one which occur after clicking on some button. Therefore we can not know
-     * which one of the `api/getUser` calls we want to wait for. By calling this method we set the
-     * exact point we want to check the next requests from.
+     * Example: on a site there are multiple requests to `api/getUser`, but we want
+     * to wait for the specific one which occur after clicking on a button. We can not
+     * know which one of the `api/getUser` calls we want to wait for. By calling this
+     * method we set the exact point we want to check the next requests from.
      */
     public resetWatch() {
         this._skip = this._callStack.length;
     }
 
     /**
-     * Must be called before a request occur
+     * Set Interceptor options,
+     * must be called befor a request/s occur
      *
-     * @param options Options, if undefined, the default options is set
+     * @param options Options
+     * @returns Current Interceptor options
      */
-    public setOptions(options: InterceptorOptions = defaultOptions) {
+    public setOptions(options: InterceptorOptions = this._options): InterceptorOptions {
         this._options = {
             ...this._options,
             ...this.removeUndefinedFromObject(options)
         };
+
+        return this.deepCopy(this._options);
     }
 
     private testUrlMatch(urlMatcher: StringMatcher, url: string) {
@@ -835,74 +929,92 @@ export class Interceptor {
     }
 
     /**
-     * Throttle a request. By default is the request throttled only once,
-     * the next request is not throttled. More in options
+     * Throttle requests matching the provided route matcher by setting a delay. By default it
+     * throttles the first matching request, then the throttle is removed. Set `times`
+     * in options to change how many times should be the matching requests throttled.
      *
-     * @param urlMatcher URL matcher
+     * @param urlMatcher A route matcher
      * @param delay A delay in ms
-     * @param options Throttle options
-     * @returns A unique id needed when want to remove the throttle manually
+     * @param options Throttle options (it can include mocking the response)
+     * @returns An id of the created throttle. It is needed if you want to remove
+     *          the throttle manually
      */
     public throttleRequest(
-        urlMatcher: IRouteMatcher,
+        routeMatcher: IRouteMatcher,
         delay: number,
         options?: IThrottleRequestOptions
     ) {
-        const throttleEntry = { delay, id: ++this._throttleId, options, urlMatcher };
+        const throttleEntry = { delay, id: ++this._throttleId, options, routeMatcher };
         this._throttle.push(throttleEntry);
 
         return throttleEntry.id;
     }
 
     /**
-     * Wait until a request/requests are finished
+     * The method will wait until all requests matching the provided route
+     * matcher finish or the maximum time of waiting is reached (`waitTimeout` in options).
      *
-     * @param matcherOrOptions A Matcher or wait options
-     * @param errorTitle A title when the wait fails
-     * @returns This interceptor instance
+     * By default there must be at least one match. Otherwise it waits until
+     * there is a request matching the provided route matcher OR the maximum time of waiting
+     * is reached. This behaviour can be changed by setting `enforceCheck` to false in options.
+     *
+     * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+     * @param errorMessage An error message when the maximum time of waiting is reached
+     * @returns An instance of Interceptor
      */
     public waitUntilRequestIsDone(
-        matcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
-        errorTitle?: string
+        stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+        errorMessage?: string
     ) {
         return this.waitUntilRequestIsDone_withWait(
-            matcherOrOptions,
+            stringMatcherOrOptions,
             performance.now(),
-            errorTitle
+            errorMessage
         );
     }
 
     private waitUntilRequestIsDone_withWait(
-        matcherOrOptions: StringMatcher | WaitUntilRequestOptions = {},
+        stringMatcherOrOptions: StringMatcher | WaitUntilRequestOptions = {},
         startTime: number,
-        errorTitle?: string
+        errorMessage?: string
     ): Cypress.Chainable<this> {
         if (
-            typeof matcherOrOptions === "string" ||
-            matcherOrOptions instanceof RegExp ||
-            typeof matcherOrOptions !== "object"
+            typeof stringMatcherOrOptions === "string" ||
+            stringMatcherOrOptions instanceof RegExp ||
+            typeof stringMatcherOrOptions !== "object"
         ) {
-            matcherOrOptions = { url: matcherOrOptions };
+            stringMatcherOrOptions = { url: stringMatcherOrOptions };
         }
 
         const timeout =
-            (matcherOrOptions?.waitTimeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? 0) -
+            (stringMatcherOrOptions?.waitTimeout ??
+                Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ??
+                DEFAULT_TIMEOUT) -
             (performance.now() - startTime);
 
         return waitTill(
-            () => this.isThereRequestPending(matcherOrOptions, matcherOrOptions?.enforceCheck),
+            () =>
+                this.isThereRequestPending(
+                    stringMatcherOrOptions,
+                    stringMatcherOrOptions?.enforceCheck
+                ),
             {
-                errorTitle,
+                errorMessage,
                 interval: DEFAULT_INTERVAL,
                 timeout
             }
         ).then(() => {
-            // check out if there is an another request after the last one with a delay
+            // check out with a delay if there is an another request after the last one
             return cy
-                .wait(matcherOrOptions?.waitBetweenRequests ?? DEFAULT_INTERVAL, { log: false })
+                .wait(stringMatcherOrOptions?.waitForNextRequest ?? DEFAULT_INTERVAL, {
+                    log: false
+                })
                 .then(() =>
-                    this.isThereRequestPending(matcherOrOptions, matcherOrOptions?.enforceCheck)
-                        ? this.waitUntilRequestIsDone_withWait(matcherOrOptions, startTime)
+                    this.isThereRequestPending(
+                        stringMatcherOrOptions,
+                        stringMatcherOrOptions?.enforceCheck
+                    )
+                        ? this.waitUntilRequestIsDone_withWait(stringMatcherOrOptions, startTime)
                         : cy.wrap(this)
                 );
         });
@@ -932,10 +1044,13 @@ export class Interceptor {
     replacer = (_key: string, value: unknown) => (typeof value === "undefined" ? null : value);
 
     /**
-     * interceptor.writeDebugToLog(this.currentTest, "./debug")
+     * Write the debug information to a file (debug must be enabled),
+     * example: in `afterEach`
+     *      => interceptor.writeDebugToLog(this.currentTest, "./out") => example output will be "./out/Description - It.debug.log"
+     *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.log"
      *
-     * @param currentTest
-     * @param outputDir
+     * @param currentTest Current test instance for generating a name of the file, or the name of the file
+     * @param outputDir A path for the output directory
      */
     public writeDebugToLog(currentTest: Mocha.Test | string | undefined, outputDir: string) {
         cy.writeFile(
@@ -947,9 +1062,13 @@ export class Interceptor {
     }
 
     /**
+     * Write the logged requests' information to a file,
+     * example: in `afterEach`
+     *      => interceptor.writeStatsToLog(this.currentTest, "./out") => example output will be "./out/Description - It.stats.log"
+     *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.log"
      *
-     * @param currentTest
-     * @param outputDir
+     * @param currentTest Current test instance for generating a name of the file, or the name of the file
+     * @param outputDir A path for the output directory
      */
     public writeStatsToLog(currentTest: Mocha.Test | string | undefined, outputDir: string) {
         cy.writeFile(

@@ -1,7 +1,7 @@
 type Checker = () => boolean;
 
 interface Options {
-    errorTitle?: string;
+    errorMessage?: string;
     interval: number;
     timeout: number;
 }
@@ -21,8 +21,8 @@ export const waitTill = (checkFunction: Checker, options: Options): Cypress.Chai
 
         if (Date.now() >= endTime) {
             throw new Error(
-                options.errorTitle
-                    ? options.errorTitle
+                options.errorMessage
+                    ? options.errorMessage
                     : "A wait timed out when wating for requests to be done"
             );
         }

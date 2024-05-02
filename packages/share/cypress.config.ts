@@ -8,7 +8,7 @@ export const config: Cypress.ConfigOptions = {
         env: {
             INTERCEPTOR_DEBUG: true,
             INTERCEPTOR_DISABLE_CACHE: true,
-            INTERCEPTOR_REQUEST_TIMEOUT: 10000 // 200000
+            INTERCEPTOR_REQUEST_TIMEOUT: 200000
         },
         experimentalRunAllSpecs: true,
         setupNodeEvents(on) {

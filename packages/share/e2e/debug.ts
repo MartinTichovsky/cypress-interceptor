@@ -33,7 +33,7 @@ describe("Debug", () => {
     ];
 
     it("Debug - default resource types", () => {
-        cy.setInterceptorOptions({ debug: true });
+        cy.interceptorOptions({ debug: true });
 
         cy.visit(getDynamicUrl(config));
 
@@ -52,7 +52,7 @@ describe("Debug", () => {
     });
 
     it("Debug - all resource types", () => {
-        cy.setInterceptorOptions({ debug: true, ingoreCrossDomain: false, resourceTypes: "all" });
+        cy.interceptorOptions({ debug: true, ingoreCrossDomain: false, resourceTypes: "all" });
 
         cy.visit(getDynamicUrl(config));
 

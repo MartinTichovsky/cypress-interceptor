@@ -66,7 +66,7 @@ describe("Testing that the Interceptor logs requests correctly", () => {
     });
 
     it("With custom options", () => {
-        cy.setInterceptorOptions({ resourceTypes: "all" });
+        cy.interceptorOptions({ resourceTypes: "all" });
 
         cy.visit(generateUrl("public/"));
 
@@ -121,7 +121,7 @@ describe("Testing that the Interceptor logs requests correctly", () => {
     });
 
     it("Cross Domain Requests", () => {
-        cy.setInterceptorOptions({ ingoreCrossDomain: false, resourceTypes: "all" });
+        cy.interceptorOptions({ ingoreCrossDomain: false, resourceTypes: "all" });
 
         cy.visit(generateUrl("public/"));
 
@@ -143,7 +143,7 @@ describe("Testing that the Interceptor logs requests correctly", () => {
     });
 
     it("HTML page with async load", () => {
-        cy.setInterceptorOptions({ ingoreCrossDomain: false, resourceTypes: "all" });
+        cy.interceptorOptions({ ingoreCrossDomain: false, resourceTypes: "all" });
 
         cy.visit(generateUrl("public/async.html"));
 
@@ -194,7 +194,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "fetch";
         const delay = 1500;
 
-        cy.setInterceptorOptions({ resourceTypes: "fetch" });
+        cy.interceptorOptions({ resourceTypes: "fetch" });
 
         cy.visit(
             getDynamicUrl([
@@ -231,7 +231,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "image.png";
         const delay = 1500;
 
-        cy.setInterceptorOptions({ resourceTypes: "image" });
+        cy.interceptorOptions({ resourceTypes: "image" });
 
         cy.visit(getDynamicUrl([{ delay, path: testPath, type: "image" }]));
 
@@ -263,7 +263,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "script.js";
         const delay = 1500;
 
-        cy.setInterceptorOptions({ resourceTypes: "script" });
+        cy.interceptorOptions({ resourceTypes: "script" });
 
         cy.visit(getDynamicUrl([{ delay, path: testPath, type: "script" }]));
 
@@ -295,7 +295,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "style.css";
         const delay = 1500;
 
-        cy.setInterceptorOptions({ resourceTypes: "stylesheet" });
+        cy.interceptorOptions({ resourceTypes: "stylesheet" });
 
         cy.visit(getDynamicUrl([{ delay, path: testPath, type: "stylesheet" }]));
 
@@ -327,7 +327,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "fetch";
         const duration = 5000;
 
-        cy.setInterceptorOptions({ resourceTypes: "fetch" });
+        cy.interceptorOptions({ resourceTypes: "fetch" });
 
         cy.visit(
             getDynamicUrl([
@@ -373,7 +373,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "image.png";
         const duration = 3000;
 
-        cy.setInterceptorOptions({ resourceTypes: "image" });
+        cy.interceptorOptions({ resourceTypes: "image" });
 
         cy.visit(getDynamicUrl([{ delay: 100, duration, path: testPath, type: "image" }]));
 
@@ -410,7 +410,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "script.js";
         const duration = 4000;
 
-        cy.setInterceptorOptions({ resourceTypes: "script" });
+        cy.interceptorOptions({ resourceTypes: "script" });
 
         cy.visit(getDynamicUrl([{ delay: 100, duration, path: testPath, type: "script" }]));
 
@@ -447,7 +447,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "style.css";
         const duration = 2000;
 
-        cy.setInterceptorOptions({ resourceTypes: "stylesheet" });
+        cy.interceptorOptions({ resourceTypes: "stylesheet" });
 
         cy.visit(getDynamicUrl([{ delay: 100, duration, path: testPath, type: "stylesheet" }]));
 
@@ -484,7 +484,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "image.png";
         const duration = 3000;
 
-        cy.setInterceptorOptions({ resourceTypes: "image" });
+        cy.interceptorOptions({ resourceTypes: "image" });
 
         cy.startTiming();
 
@@ -507,7 +507,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "script.js";
         const duration = 5000;
 
-        cy.setInterceptorOptions({ resourceTypes: "script" });
+        cy.interceptorOptions({ resourceTypes: "script" });
 
         cy.startTiming();
 
@@ -530,7 +530,7 @@ describe("Testing that the server works correctly", () => {
         const testPath = "style.css";
         const duration = 3000;
 
-        cy.setInterceptorOptions({ resourceTypes: "stylesheet" });
+        cy.interceptorOptions({ resourceTypes: "stylesheet" });
 
         cy.startTiming();
 
@@ -564,7 +564,7 @@ describe("Testing that the server works correctly", () => {
             arr: ["string", 0, 9]
         };
 
-        cy.setInterceptorOptions({ resourceTypes: "fetch" });
+        cy.interceptorOptions({ resourceTypes: "fetch" });
 
         cy.visit(
             getDynamicUrl([
@@ -601,7 +601,7 @@ describe("Testing that the server works correctly", () => {
             arr: [false, 999, "abc"]
         };
 
-        cy.setInterceptorOptions({ resourceTypes: "fetch" });
+        cy.interceptorOptions({ resourceTypes: "fetch" });
 
         cy.visit(
             getDynamicUrl([
@@ -636,7 +636,7 @@ describe("Testing that the server works correctly", () => {
         const javaScriptPath = "script.js";
         const javaScriptStatus = 204;
 
-        cy.setInterceptorOptions({ resourceTypes: "all" });
+        cy.interceptorOptions({ resourceTypes: "all" });
 
         cy.visit(
             getDynamicUrl([
@@ -759,7 +759,7 @@ describe("Testing that the server works correctly", () => {
         const duration4 = 1400;
         const duration5 = 1200;
 
-        cy.setInterceptorOptions({ resourceTypes: ["fetch", "image", "script", "stylesheet"] });
+        cy.interceptorOptions({ resourceTypes: ["fetch", "image", "script", "stylesheet"] });
 
         cy.visit(
             getDynamicUrl([
