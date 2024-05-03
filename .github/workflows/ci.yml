@@ -47,7 +47,7 @@ jobs:
         run: npm run server & npm run test
 
       - name: Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@main
         with:
           base-path: packages/cypress-latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
