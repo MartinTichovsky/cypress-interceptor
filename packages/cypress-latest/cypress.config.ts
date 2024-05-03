@@ -1,4 +1,4 @@
 import { defineConfig } from "cypress";
-import { config } from "cypress-interceptor-share/cypress.config";
+import { createConfig } from "cypress-interceptor-share/cypress.config";
 
-export default defineConfig(config);
+export default defineConfig(createConfig(true));

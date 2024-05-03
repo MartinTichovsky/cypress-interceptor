@@ -1,6 +1,7 @@
 import * as webpackPreprocessor from "@cypress/webpack-preprocessor";
+import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
 
-export const config: Cypress.ConfigOptions = {
+export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     chromeWebSecurity: false,
     defaultCommandTimeout: 10000,
     e2e: {
@@ -11,12 +12,17 @@ export const config: Cypress.ConfigOptions = {
             INTERCEPTOR_REQUEST_TIMEOUT: 200000
         },
         experimentalRunAllSpecs: true,
-        setupNodeEvents(on) {
+        setupNodeEvents(on, config) {
+            if (codeCoverage) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                require("@cypress/code-coverage/task")(on, config);
+            }
+
             on(
                 "file:preprocessor",
                 webpackPreprocessor({
                     watchOptions: {},
-                    webpackOptions: require("cypress-interceptor-share/webpack.config")
+                    webpackOptions: createWebpackConfig(codeCoverage)
                 })
             );
 
@@ -26,10 +32,12 @@ export const config: Cypress.ConfigOptions = {
                     return null;
                 }
             });
+
+            return config;
         },
         specPattern: ["cypress/e2e/**/*.cy.ts"]
     },
     experimentalInteractiveRunEvents: true,
     fixturesFolder: false,
     video: false
-};
+});

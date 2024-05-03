@@ -40,6 +40,8 @@ describe("Debug", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.true;
+
             const debugInfo = interceptor.getDebugInfo();
 
             expect(debugInfo.length > 0).to.be.true;
@@ -59,14 +61,55 @@ describe("Debug", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.true;
+
             const debugInfo = interceptor.getDebugInfo();
 
             expect(debugInfo.length > 0).to.be.true;
             expect(!!debugInfo.find((entry) => entry.type === "logged")).to.be.true;
             expect(!!debugInfo.find((entry) => entry.type === "logged-done")).to.be.true;
-            expect(!!debugInfo.find((entry) => entry.type === "skipped")).to.be.false;
-            expect(!!debugInfo.find((entry) => entry.type === "skipped-done")).to.be.false;
+            expect(!!debugInfo.find((entry) => entry.resourceType && entry.type === "skipped")).to
+                .be.false;
+            expect(!!debugInfo.find((entry) => entry.resourceType && entry.type === "skipped-done"))
+                .to.be.false;
             expect(!!debugInfo.find((entry) => entry.type === "start")).to.be.true;
+        });
+    });
+
+    it("Debug - from Cypress env", () => {
+        cy.interceptorOptions({ debug: undefined });
+
+        cy.visit(getDynamicUrl(config));
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.true;
+
+            const debugInfo = interceptor.getDebugInfo();
+
+            expect(debugInfo.length > 0).to.be.true;
+            expect(!!debugInfo.find((entry) => entry.type === "logged")).to.be.true;
+            expect(!!debugInfo.find((entry) => entry.type === "logged-done")).to.be.true;
+            expect(!!debugInfo.find((entry) => entry.type === "skipped")).to.be.true;
+            expect(!!debugInfo.find((entry) => entry.type === "skipped-done")).to.be.true;
+            expect(!!debugInfo.find((entry) => entry.type === "start")).to.be.true;
+        });
+    });
+
+    it("Debug - false", () => {
+        cy.interceptorOptions({ debug: false });
+
+        cy.visit(getDynamicUrl(config));
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.false;
+
+            const debugInfo = interceptor.getDebugInfo();
+
+            expect(debugInfo.length > 0).to.be.false;
         });
     });
 });

@@ -563,7 +563,7 @@ export class Interceptor {
                     timeEnd: new Date()
                 };
 
-                item.delay = throttle?.delay;
+                item.delay = throttle.delay;
 
                 if (item.delay) {
                     res.setDelay(item.delay);
@@ -743,7 +743,8 @@ export class Interceptor {
             this._mock.splice(this._mock.indexOf(mockItem), 1);
         } else if (
             mockItem &&
-            mockItem.options?.times !== undefined &&
+            mockItem.options &&
+            mockItem.options.times !== undefined &&
             mockItem.options.times > 1
         ) {
             mockItem.options.times--;
@@ -790,7 +791,8 @@ export class Interceptor {
             this._throttle.splice(this._throttle.indexOf(throttleItem), 1);
         } else if (
             throttleItem &&
-            throttleItem.options?.times !== undefined &&
+            throttleItem.options &&
+            throttleItem.options.times !== undefined &&
             throttleItem.options.times > 1
         ) {
             throttleItem.options.times--;
@@ -884,11 +886,13 @@ export class Interceptor {
     }
 
     private removeUndefinedFromObject<T, K extends keyof T>(object: CommonObject<T>) {
-        Object.keys(object).forEach(
-            (key) => object[key as K] === undefined && delete object[key as K]
+        const result = { ...object };
+
+        Object.keys(result).forEach(
+            (key) => result[key as K] === undefined && delete result[key as K]
         );
 
-        return object;
+        return result;
     }
 
     /**
@@ -914,7 +918,9 @@ export class Interceptor {
     public setOptions(options: InterceptorOptions = this._options): InterceptorOptions {
         this._options = {
             ...this._options,
-            ...this.removeUndefinedFromObject(options)
+            ...this.removeUndefinedFromObject(options),
+            // only one option allowed to be undefined
+            debug: options.debug!
         };
 
         return this.deepCopy(this._options);
@@ -987,7 +993,7 @@ export class Interceptor {
         }
 
         const timeout =
-            (stringMatcherOrOptions?.waitTimeout ??
+            (stringMatcherOrOptions.waitTimeout ??
                 Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ??
                 DEFAULT_TIMEOUT) -
             (performance.now() - startTime);
@@ -996,7 +1002,7 @@ export class Interceptor {
             () =>
                 this.isThereRequestPending(
                     stringMatcherOrOptions,
-                    stringMatcherOrOptions?.enforceCheck
+                    stringMatcherOrOptions.enforceCheck
                 ),
             {
                 errorMessage,
@@ -1006,13 +1012,13 @@ export class Interceptor {
         ).then(() => {
             // check out with a delay if there is an another request after the last one
             return cy
-                .wait(stringMatcherOrOptions?.waitForNextRequest ?? DEFAULT_INTERVAL, {
+                .wait(stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_INTERVAL, {
                     log: false
                 })
                 .then(() =>
                     this.isThereRequestPending(
                         stringMatcherOrOptions,
-                        stringMatcherOrOptions?.enforceCheck
+                        stringMatcherOrOptions.enforceCheck
                     )
                         ? this.waitUntilRequestIsDone_withWait(stringMatcherOrOptions, startTime)
                         : cy.wrap(this)
@@ -1022,23 +1028,19 @@ export class Interceptor {
 
     // DEBUG TOOLS
 
-    getFileNameFromCurrentTest = (currentTest: Mocha.Test | undefined) => {
+    getFileNameFromCurrentTest = (currentTest: typeof Cypress.currentTest | undefined) => {
         return currentTest
-            ? this.getParentNameFromCurrentTest(currentTest?.parent, currentTest.title)
+            ? currentTest.titlePath.length
+                ? currentTest.titlePath.join(" - ")
+                : currentTest.title
             : "unknown";
     };
 
-    getParentNameFromCurrentTest = (parent: Mocha.Suite | undefined, title: string): string => {
-        title = `${parent?.title ? `${parent.title} - ` : ""}${title}`;
-
-        if (parent?.parent) {
-            return this.getParentNameFromCurrentTest(parent.parent, title);
-        }
-
-        return title;
-    };
-
-    getFilePath = (currentTest: Mocha.Test | string | undefined, outputDir: string, type: string) =>
+    getFilePath = (
+        currentTest: typeof Cypress.currentTest | string | undefined,
+        outputDir: string,
+        type: string
+    ) =>
         `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${typeof currentTest === "string" ? currentTest : this.getFileNameFromCurrentTest(currentTest)}.${type}.log`;
 
     replacer = (_key: string, value: unknown) => (typeof value === "undefined" ? null : value);
@@ -1046,34 +1048,38 @@ export class Interceptor {
     /**
      * Write the debug information to a file (debug must be enabled),
      * example: in `afterEach`
-     *      => interceptor.writeDebugToLog(this.currentTest, "./out") => example output will be "./out/Description - It.debug.log"
+     *      => interceptor.writeDebugToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.debug.log"
      *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.log"
      *
      * @param currentTest Current test instance for generating a name of the file, or the name of the file
      * @param outputDir A path for the output directory
      */
-    public writeDebugToLog(currentTest: Mocha.Test | string | undefined, outputDir: string) {
+    public writeDebugToLog(
+        currentTest: typeof Cypress.currentTest | string | undefined,
+        outputDir: string
+    ) {
         cy.writeFile(
             this.getFilePath(currentTest, outputDir, "debug"),
-            this.getDebugInfo()
-                .map((entry) => JSON.stringify(entry, this.replacer))
-                .join("\n")
+            JSON.stringify(this.getDebugInfo())
         );
     }
 
     /**
      * Write the logged requests' information to a file,
      * example: in `afterEach`
-     *      => interceptor.writeStatsToLog(this.currentTest, "./out") => example output will be "./out/Description - It.stats.log"
+     *      => interceptor.writeStatsToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.stats.log"
      *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.log"
      *
      * @param currentTest Current test instance for generating a name of the file, or the name of the file
      * @param outputDir A path for the output directory
      */
-    public writeStatsToLog(currentTest: Mocha.Test | string | undefined, outputDir: string) {
+    public writeStatsToLog(
+        currentTest: typeof Cypress.currentTest | string | undefined,
+        outputDir: string
+    ) {
         cy.writeFile(
             this.getFilePath(currentTest, outputDir, "stats"),
-            this._callStack.map((entry) => JSON.stringify(entry, this.replacer)).join("\n")
+            JSON.stringify(this.callStack)
         );
     }
 }

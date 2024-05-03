@@ -40,7 +40,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch2}`);
 
             cy.stopTiming().should("be.gt", delay + duration + tripleDuration);
 
@@ -76,7 +76,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch1}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch1}`);
 
             cy.stopTiming().should("be.gt", duration);
 
@@ -89,7 +89,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch2}`);
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -152,7 +152,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch2}`);
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -201,7 +201,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch2}`);
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -270,7 +270,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch1}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch1}`);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(5);
@@ -290,7 +290,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone(`**/${testPath_Fetch2}`);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(6);
@@ -515,8 +515,6 @@ describe("Wait For Requests", () => {
         it("Max wait", () => {
             const duration = 9999;
 
-            cy.startTiming();
-
             cy.visit(
                 getDynamicUrl([
                     {
@@ -537,11 +535,21 @@ describe("Wait For Requests", () => {
         });
 
         it("Enforce check", () => {
-            cy.startTiming();
-
             cy.visit(getDynamicUrl([]));
 
             cy.waitUntilRequestIsDone({ resourceType: "script", waitTimeout: 5000 }, errMessage);
+
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
+            });
+        });
+
+        it("Default timeout", () => {
+            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
+
+            cy.visit(getDynamicUrl([]));
+
+            cy.waitUntilRequestIsDone({ resourceType: "script" }, errMessage);
 
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
