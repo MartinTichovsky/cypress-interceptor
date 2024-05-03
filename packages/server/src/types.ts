@@ -59,4 +59,15 @@ export type DynamicRequest = {
           method: "GET" | "POST";
           type: "fetch";
       }
+    | {
+          /**
+           * Body sent by websocket
+           */
+          body?: string;
+          /**
+           * The response
+           */
+          responseBody?: string;
+          type: "websocket";
+      }
 );

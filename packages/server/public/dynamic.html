@@ -167,6 +167,25 @@
                     }
                 })
             }
+            else if (type === "websocket") {
+                const webSocket = new WebSocket(`ws://localhost:3000/${path}`);
+
+                webSocket.onmessage = (response) => {
+                    const div = document.createElement("div");
+
+                    const divResponse = document.createElement("div")
+                    divResponse.setAttribute("data-response-type", "body");
+                    divResponse.innerHTML = response.data;
+
+                    div.appendChild(divResponse);
+
+                    wrapInSection(`${path}_loaded`, div);
+                }
+
+                webSocket.onopen = () => {
+                    webSocket.send(JSON.stringify(entry.body));
+                }
+            }
         }
 
         const processRequest = (entry) => {

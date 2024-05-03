@@ -1,10 +1,11 @@
 import * as cors from "cors";
 import * as express from "express";
+import * as expressWs from "express-ws";
 import * as path from "path";
 
 import { getExampleResponse } from "./exampleResponse";
 
-const app = express();
+const app = expressWs(express()).app;
 const port = 3000;
 
 const wait = async (timeout: number) => new Promise((executor) => setTimeout(executor, timeout));
@@ -46,6 +47,20 @@ const getNumberFomString = (num: string | undefined, defaultNumber = 0) => {
 };
 
 const XHRContentType = "application/json";
+
+app.ws("/*", (ws) => {
+    ws.on("message", (msg: string) => {
+        try {
+            // const data = JSON.parse(msg);
+            ws.send(msg);
+            // if (data.responseBody) {
+            //     ws.send(data.responseBody);
+            // }
+        } catch {
+            //
+        }
+    });
+});
 
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
     wait(getNumberFomString(req.query.duration))
