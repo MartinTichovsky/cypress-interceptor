@@ -1476,9 +1476,10 @@ describe("Mock Respose", () => {
 
                         cy.visit(getDynamicUrl(config));
 
-                        cy.waitUntilRequestIsDone().then((interceptor) =>
-                            interceptor.removeMock(mock1Id)
-                        );
+                        cy.waitUntilRequestIsDone().then((interceptor) => {
+                            expect(interceptor.removeMock(mock1Id)).to.be.true;
+                            expect(interceptor.removeMock(mock1Id)).to.be.false;
+                        });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
                             expect(stats?.response?.body).to.deep.eq(mockResponseBody);
@@ -1526,9 +1527,10 @@ describe("Mock Respose", () => {
 
                         cy.visit(getDynamicUrl(config));
 
-                        cy.waitUntilRequestIsDone().then((interceptor) =>
-                            interceptor.removeMock(mock2Id)
-                        );
+                        cy.waitUntilRequestIsDone().then((interceptor) => {
+                            expect(interceptor.removeMock(mock2Id)).to.be.true;
+                            expect(interceptor.removeMock(mock2Id)).to.be.false;
+                        });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
                             expect(stats?.response?.body).to.deep.eq(responseBody1);
@@ -1575,9 +1577,10 @@ describe("Mock Respose", () => {
 
                         cy.visit(getDynamicUrl(config));
 
-                        cy.waitUntilRequestIsDone().then((interceptor) =>
-                            interceptor.removeMock(mock3Id)
-                        );
+                        cy.waitUntilRequestIsDone().then((interceptor) => {
+                            expect(interceptor.removeMock(mock3Id)).to.be.true;
+                            expect(interceptor.removeMock(mock3Id)).to.be.false;
+                        });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
                             expect(stats?.response?.body).to.deep.eq(responseBody1);

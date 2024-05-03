@@ -8,3 +8,5 @@ _logs
 _stats
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
+.nyc_output
+coverage

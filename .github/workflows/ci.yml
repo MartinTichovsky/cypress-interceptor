@@ -46,6 +46,12 @@ jobs:
       - name: Test
         run: npm run server & npm run test
 
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          base-path: packages/cypress-latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   bump-version:
     if: github.ref == 'refs/heads/main'
     needs: [build-and-test]
