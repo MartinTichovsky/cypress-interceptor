@@ -138,4 +138,8 @@ describe("Custom", () => {
             });
         });
     });
+
+    it("Stop Timing", () => {
+        cy.stopTiming().should("be.undefined");
+    });
 });

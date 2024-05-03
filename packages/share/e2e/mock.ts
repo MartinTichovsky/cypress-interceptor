@@ -97,11 +97,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
-                    expect(stats?.response?.statusCode_origin).to.eq(203);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode_origin).to.eq(203);
                 }
             );
 
@@ -111,9 +113,11 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch2}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                    expect(stats?.response?.statusCode).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                    expect(stats!.response!.statusCode).to.eq(200);
                 }
             );
 
@@ -170,11 +174,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
-                    expect(stats?.response?.statusCode_origin).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode_origin).to.eq(200);
                 }
             );
 
@@ -184,11 +190,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch2}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
-                    expect(stats?.response?.statusCode_origin).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode_origin).to.eq(200);
                 }
             );
 
@@ -198,9 +206,11 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch3}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                    expect(stats?.response?.statusCode).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                    expect(stats!.response!.statusCode).to.eq(200);
                 }
             );
 
@@ -256,11 +266,13 @@ describe("Mock Respose", () => {
             [testPath_Fetch1, testPath_Fetch2, testPath_Fetch3].forEach((id) => {
                 cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${id}` }).then(
                     (stats) => {
-                        expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                        expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                        expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be
                             .true;
-                        expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
-                        expect(stats?.response?.statusCode_origin).to.eq(200);
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                        expect(stats!.response!.statusCode_origin).to.eq(200);
                     }
                 );
 
@@ -270,15 +282,21 @@ describe("Mock Respose", () => {
             });
 
             cy.interceptorLastRequest({ url: `**/${testPath_Fetch1}` }).then((stats) => {
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
             });
 
             cy.interceptorLastRequest({ url: `**/${testPath_Fetch2}` }).then((stats) => {
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
             });
 
             cy.interceptorLastRequest({ url: `**/${testPath_Fetch3}` }).then((stats) => {
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
             });
         });
 
@@ -326,10 +344,12 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.response?.body).to.deep.eq(responseBody2);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                    expect(stats?.response?.statusCode).to.eq(202);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(responseBody2);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                    expect(stats!.response!.statusCode).to.eq(202);
                 }
             );
 
@@ -341,12 +361,14 @@ describe("Mock Respose", () => {
                 resourceType: "script",
                 url: `**/${testPath_Script1}`
             }).then((stats) => {
-                expect(stats?.response?.body).to.eq(
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.eq(
                     scriptResponse(testPath_Script1, mockResponseBody)
                 );
-                expect(stats?.response?.body_origin).to.eq(responseString);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats!.response!.body_origin).to.eq(responseString);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Script1, false).should("deep.equal", mockResponseBody);
@@ -355,14 +377,16 @@ describe("Mock Respose", () => {
                 resourceType: "script",
                 url: `**/${testPath_Script2}`
             }).then((stats) => {
-                expect(stats?.response?.body).to.eq(
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.eq(
                     scriptResponse(testPath_Script2, responseBody2)
                 );
-                expect(stats?.response?.body_origin).to.deep.eq(
+                expect(stats!.response!.body_origin).to.deep.eq(
                     scriptResponse(testPath_Script2, responseBody2)
                 );
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Script2, false).should("deep.equal", responseBody2);
@@ -455,11 +479,13 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -467,11 +493,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -479,11 +507,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -507,10 +537,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -518,11 +550,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -530,10 +564,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -555,11 +591,13 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", mockResponseBody);
@@ -567,10 +605,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -578,10 +618,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -604,11 +646,13 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", mockResponseBody);
@@ -616,11 +660,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -628,10 +674,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -654,10 +702,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -665,10 +715,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -676,10 +728,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -713,10 +767,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -724,11 +780,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -736,10 +794,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -763,10 +823,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -774,10 +836,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -785,10 +849,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -799,11 +865,13 @@ describe("Mock Respose", () => {
                 resourceType: "script",
                 url: crossDomainScript
             }).then((stats) => {
-                expect(stats?.response?.body).to.deep.eq(
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(
                     scriptResponse(crossDomainScript, mockResponseBody)
                 );
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(crossDomainScript, false).should("deep.equal", mockResponseBody);
@@ -825,10 +893,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -836,10 +906,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -847,10 +919,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -861,11 +935,13 @@ describe("Mock Respose", () => {
                 resourceType: "script",
                 url: crossDomainScript
             }).then((stats) => {
-                expect(stats?.response?.body).to.deep.eq(
+                expect(stats).not.to.be.undefined;
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(
                     scriptResponse(crossDomainScript, mockResponseBody)
                 );
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(crossDomainScript, false).should("deep.equal", mockResponseBody);
@@ -886,10 +962,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -897,11 +975,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -909,10 +989,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -935,10 +1017,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -946,11 +1030,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -958,10 +1044,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -984,10 +1072,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -995,11 +1085,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -1007,10 +1099,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -1033,10 +1127,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -1044,10 +1140,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -1055,11 +1153,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", mockResponseBody);
@@ -1084,10 +1184,12 @@ describe("Mock Respose", () => {
             cy.waitUntilRequestIsDone();
 
             cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                expect(stats?.request.method).to.eq("GET");
-                expect(stats?.response?.body).to.deep.eq(responseBody1);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("GET");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody1);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -1095,11 +1197,13 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch1).should("eq", 200);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
             });
 
             getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -1107,10 +1211,12 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
             cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                expect(stats?.request.method).to.eq("POST");
-                expect(stats?.response?.body).to.deep.eq(responseBody3);
-                expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                expect(stats?.response?.statusCode).to.eq(200);
+                expect(stats).not.to.be.undefined;
+                expect(stats!.request.method).to.eq("POST");
+                expect(stats!.response).not.to.be.undefined;
+                expect(stats!.response!.body).to.deep.eq(responseBody3);
+                expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                expect(stats!.response!.statusCode).to.eq(200);
             });
 
             getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
@@ -1165,11 +1271,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.eq(throttleDelay);
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1180,10 +1288,12 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch2}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.be.undefined;
-                    expect(stats?.response?.body).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                    expect(stats?.response?.statusCode).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                    expect(stats!.response!.statusCode).to.eq(200);
                 }
             );
 
@@ -1247,11 +1357,12 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1262,11 +1373,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch2}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.eq(throttleDelay);
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1277,10 +1390,12 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch3}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.be.undefined;
-                    expect(stats?.response?.body).to.deep.eq(responseBody3);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.false;
-                    expect(stats?.response?.statusCode).to.eq(200);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(responseBody3);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.false;
+                    expect(stats!.response!.statusCode).to.eq(200);
                 }
             );
 
@@ -1344,11 +1459,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch1}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.eq(throttleDelay);
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1359,11 +1476,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch2}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.eq(throttleDelay);
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1374,11 +1493,13 @@ describe("Mock Respose", () => {
 
             cy.interceptorLastRequest({ resourceType: "fetch", url: `**/${testPath_Fetch3}` }).then(
                 (stats) => {
-                    expect(stats?.delay).to.eq(throttleDelay);
-                    expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                    expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                    expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-                    expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.delay).to.eq(throttleDelay);
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                    expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+                    expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                 }
             );
 
@@ -1421,11 +1542,13 @@ describe("Mock Respose", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptorLastRequest({ url: `**/${testPath_Fetch1}` }).then((stats) => {
-            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-            expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to.be.true;
-            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
-            expect(stats?.response?.statusCode_origin).to.eq(200);
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+            expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+            expect(stats!.response!.statusCode_origin).to.eq(200);
         });
 
         getResponseBody(testPath_Fetch1).should("deep.equal", mockResponseBody);
@@ -1482,11 +1605,13 @@ describe("Mock Respose", () => {
                         });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody1);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch1).should("deep.equal", mockResponseBody);
@@ -1496,11 +1621,13 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch1).should("eq", mockResponseStatusCode);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -1510,11 +1637,13 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch3).should("deep.equal", mockResponseBody);
@@ -1533,10 +1662,12 @@ describe("Mock Respose", () => {
                         });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody1);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody1);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -1546,11 +1677,13 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch1).should("eq", 200);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody2);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody2);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch2).should("deep.equal", mockResponseBody);
@@ -1560,11 +1693,13 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch2).should("eq", mockResponseStatusCode);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch3).should("deep.equal", mockResponseBody);
@@ -1583,10 +1718,12 @@ describe("Mock Respose", () => {
                         });
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody1);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody1);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -1596,10 +1733,12 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch1).should("eq", 200);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody2);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody2);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -1609,11 +1748,13 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch2).should("eq", 200);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(mockResponseBody);
-                            expect(stats?.response?.body_origin).to.deep.eq(responseBody3);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                            expect(stats!.response!.body_origin).to.deep.eq(responseBody3);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.true;
-                            expect(stats?.response?.statusCode).to.eq(mockResponseStatusCode);
+                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
                         });
 
                         getResponseBody(testPath_Fetch3).should("deep.equal", mockResponseBody);
@@ -1629,10 +1770,12 @@ describe("Mock Respose", () => {
                         cy.waitUntilRequestIsDone();
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody1);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody1);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch1).should("deep.equal", responseBody1);
@@ -1642,10 +1785,12 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch1).should("eq", 200);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody2);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody2);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch2).should("deep.equal", responseBody2);
@@ -1655,10 +1800,12 @@ describe("Mock Respose", () => {
                         getResponseStatus(testPath_Fetch2).should("eq", 200);
 
                         cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                            expect(stats?.response?.body).to.deep.eq(responseBody3);
-                            expect(checkHeaders(stats?.response?.headers, mockResponseHeaders)).to
+                            expect(stats).not.to.be.undefined;
+                            expect(stats!.response).not.to.be.undefined;
+                            expect(stats!.response!.body).to.deep.eq(responseBody3);
+                            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to
                                 .be.false;
-                            expect(stats?.response?.statusCode).to.eq(200);
+                            expect(stats!.response!.statusCode).to.eq(200);
                         });
 
                         getResponseBody(testPath_Fetch3).should("deep.equal", responseBody3);
