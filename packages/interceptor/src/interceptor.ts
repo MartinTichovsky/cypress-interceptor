@@ -189,7 +189,7 @@ export interface InterceptorOptions {
      */
     ingoreCrossDomain?: boolean;
     /**
-     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr", "websocket"],
+     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr"],
      *
      * Provide "all" for processing all requests no matter to the resource type
      */
@@ -403,7 +403,7 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
 }
 
 const DEFAULT_INTERVAL = 500;
-const DEFAULT_RESOURCE_TYPES: ResourceType[] = ["document", "fetch", "script", "xhr", "websocket"];
+const DEFAULT_RESOURCE_TYPES: ResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
 
 const defaultOptions: Required<InterceptorOptions> = {

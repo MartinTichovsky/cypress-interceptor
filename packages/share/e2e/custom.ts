@@ -8,7 +8,7 @@ describe("Custom", () => {
                 disableCache: undefined,
                 debug: false,
                 ingoreCrossDomain: true,
-                resourceTypes: ["document", "fetch", "script", "xhr", "websocket"]
+                resourceTypes: ["document", "fetch", "script", "xhr"]
             });
         });
     });

@@ -155,7 +155,7 @@ __`INTERCEPTOR_REQUEST_TIMEOUT`__ - value (in ms) of how long Cypress will be wa
 
 __You should not be using `cy.intercept` together with Interceptor. Interceptor is using `cy.intercept` to catch all requests and if you rewrite the global rule, you can destroy the logic for catching requests and Interceptor may not work.__
 
-By default only requests with resource type in ["document", "fetch", "script", "xhr", "websocket"] are logged. If you want to log another types like images, CSS, etc., set `resourceTypes` of [cy.interceptorOptions](#cyinterceptoroptions).
+By default only requests with resource type in ["document", "fetch", "script", "xhr"] are logged. If you want to log another types like images, CSS, etc., set `resourceTypes` of [cy.interceptorOptions](#cyinterceptoroptions).
 
 In almost all methods is a route matcher ([`IRouteMatcher`](#iroutematcher)) which can be string or RegExp ([`StringMatcher`](#stringmatcher)) or an object with multiple matching options. For more information about matching options explore [`IRouteMatcherObject`](#iroutematcherobject). 
 
@@ -257,7 +257,7 @@ Set Interceptor options. Best to call at the beggining of the test, in `before` 
 disableCache: undefined,
 debug: false,
 ingoreCrossDomain: true,
-resourceTypes: ["document", "fetch", "script", "xhr", "websocket"]
+resourceTypes: ["document", "fetch", "script", "xhr"]
 ```
 
 ### Example
@@ -668,7 +668,7 @@ interface InterceptorOptions {
      */
     ingoreCrossDomain?: boolean;
     /**
-     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr", "websocket"],
+     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr"],
      *
      * Provide "all" for processing all requests no matter to the resource type
      */
