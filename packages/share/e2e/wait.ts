@@ -508,6 +508,7 @@ describe("Wait For Requests", () => {
                     return;
                 }
 
+                /* istanbul ignore next */
                 throw new Error(error.message);
             });
         });
@@ -529,6 +530,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ waitTimeout: duration / 2 }, errMessage);
 
+            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -539,6 +541,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: "script", waitTimeout: 5000 }, errMessage);
 
+            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -551,6 +554,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: "script" }, errMessage);
 
+            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });

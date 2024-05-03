@@ -19,11 +19,11 @@ describe("Testing that the Interceptor logs requests correctly", () => {
 
         cy.interceptorStats().then((stats) => expect(stats.length).to.eq(1));
 
-        cy.interceptorLastRequest().then((request) => {
-            expect(request).not.to.be.undefined;
-            expect(request?.delay).to.be.undefined;
-            expect(request?.resourceType).to.eq("document");
-            expect(request?.url).to.eq("http://localhost:3000/");
+        cy.interceptorLastRequest().then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.delay).to.be.undefined;
+            expect(stats!.resourceType).to.eq("document");
+            expect(stats!.url).to.eq("http://localhost:3000/");
         });
 
         // visit a site with scripts, styles, etc.
@@ -43,11 +43,11 @@ describe("Testing that the Interceptor logs requests correctly", () => {
             expect(stats[1].url).to.eq("http://localhost:3000/public/");
         });
 
-        cy.interceptorLastRequest({ resourceType: "document" }).then((request) => {
-            expect(request).not.to.be.undefined;
-            expect(request?.delay).to.be.undefined;
-            expect(request?.resourceType).to.eq("document");
-            expect(request?.url).to.eq("http://localhost:3000/public/");
+        cy.interceptorLastRequest({ resourceType: "document" }).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.delay).to.be.undefined;
+            expect(stats!.resourceType).to.eq("document");
+            expect(stats!.url).to.eq("http://localhost:3000/public/");
         });
 
         cy.interceptorStats({ resourceType: "script" }).then((stats) => {
@@ -57,11 +57,11 @@ describe("Testing that the Interceptor logs requests correctly", () => {
             expect(stats[0].url).to.eq("http://localhost:3000/script.js");
         });
 
-        cy.interceptorLastRequest({ resourceType: "script" }).then((request) => {
-            expect(request).not.to.be.undefined;
-            expect(request?.delay).to.be.undefined;
-            expect(request?.resourceType).to.eq("script");
-            expect(request?.url).to.eq("http://localhost:3000/script.js");
+        cy.interceptorLastRequest({ resourceType: "script" }).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.delay).to.be.undefined;
+            expect(stats!.resourceType).to.eq("script");
+            expect(stats!.url).to.eq("http://localhost:3000/script.js");
         });
     });
 
@@ -581,11 +581,13 @@ describe("Testing that the server works correctly", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptorLastRequest().then((request) => {
-            expect(request?.request.query).to.has.property("val1", query.val1);
-            expect(request?.request.query).to.has.property("val2", query.val2);
-            expect(request?.request.body).to.deep.eq(requestBody);
-            expect(request?.response?.body).to.deep.eq(responseBody);
+        cy.interceptorLastRequest().then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.request.query).to.has.property("val1", query.val1);
+            expect(stats!.request.query).to.has.property("val2", query.val2);
+            expect(stats!.request.body).to.deep.eq(requestBody);
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.body).to.deep.eq(responseBody);
         });
     });
 
@@ -617,10 +619,12 @@ describe("Testing that the server works correctly", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptorLastRequest().then((request) => {
-            expect(request?.request.query).to.has.property("val1", query.val1);
-            expect(request?.request.query).to.has.property("val2", query.val2);
-            expect(request?.response?.body).to.deep.eq(responseBody);
+        cy.interceptorLastRequest().then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.request.query).to.has.property("val1", query.val1);
+            expect(stats!.request.query).to.has.property("val2", query.val2);
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.body).to.deep.eq(responseBody);
         });
     });
 
@@ -672,20 +676,34 @@ describe("Testing that the server works correctly", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptorLastRequest(`**/${fetchGetPath}`).then((request) => {
-            expect(request?.response?.statusCode).to.eq(fetchGetResponseStatus);
+        cy.interceptorLastRequest(`**/${fetchGetPath}`).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.statusCode).to.eq(fetchGetResponseStatus);
         });
-        cy.interceptorLastRequest(`**/${fethPostPath}`).then((request) => {
-            expect(request?.response?.statusCode).to.eq(fetchPostResponseStatus);
+
+        cy.interceptorLastRequest(`**/${fethPostPath}`).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.statusCode).to.eq(fetchPostResponseStatus);
         });
-        cy.interceptorLastRequest(`**/${styleSheetPath}`).then((request) => {
-            expect(request?.response?.statusCode).to.eq(styleSheetResponseStatus);
+
+        cy.interceptorLastRequest(`**/${styleSheetPath}`).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.statusCode).to.eq(styleSheetResponseStatus);
         });
-        cy.interceptorLastRequest(`**/${imagePath}`).then((request) => {
-            expect(request?.response?.statusCode).to.eq(imageResponseStatus);
+
+        cy.interceptorLastRequest(`**/${imagePath}`).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.statusCode).to.eq(imageResponseStatus);
         });
-        cy.interceptorLastRequest(`**/${javaScriptPath}`).then((request) => {
-            expect(request?.response?.statusCode).to.eq(javaScriptStatus);
+
+        cy.interceptorLastRequest(`**/${javaScriptPath}`).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.statusCode).to.eq(javaScriptStatus);
         });
     });
 

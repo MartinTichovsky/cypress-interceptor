@@ -1028,6 +1028,7 @@ export class Interceptor {
 
     // DEBUG TOOLS
 
+    /* istanbul ignore next */
     getFileNameFromCurrentTest = (currentTest: typeof Cypress.currentTest | undefined) => {
         return currentTest
             ? currentTest.titlePath.length
@@ -1036,6 +1037,7 @@ export class Interceptor {
             : "unknown";
     };
 
+    /* istanbul ignore next */
     getFilePath = (
         currentTest: typeof Cypress.currentTest | string | undefined,
         outputDir: string,
@@ -1043,6 +1045,7 @@ export class Interceptor {
     ) =>
         `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${typeof currentTest === "string" ? currentTest : this.getFileNameFromCurrentTest(currentTest)}.${type}.log`;
 
+    /* istanbul ignore next */
     replacer = (_key: string, value: unknown) => (typeof value === "undefined" ? null : value);
 
     /**

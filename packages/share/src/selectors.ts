@@ -1,32 +1,20 @@
 export const getResponseBody = (id: string, isFetch = true) =>
     getLoadedSector(id, isFetch)
         .find("[data-response-type=body]")
-        .then(([$el]) => {
-            try {
-                return JSON.parse($el.innerHTML);
-            } catch {
-                return undefined;
-            }
-        });
+        .then(([$el]) => JSON.parse($el.innerHTML));
 
-export const getResponseDuration = (id: string, isFetch = true) =>
-    getLoadedSector(id, isFetch)
+export const getResponseDuration = (id: string) =>
+    getLoadedSector(id, true)
         .find("[data-response-type=duration]")
         .then(([$el]) => parseInt($el.innerText));
 
-export const getResponseHeaders = (id: string, isFetch = true) =>
-    getLoadedSector(id, isFetch)
+export const getResponseHeaders = (id: string) =>
+    getLoadedSector(id, true)
         .find("[data-response-type=headers]")
-        .then(([$el]) => {
-            try {
-                return JSON.parse($el.innerHTML);
-            } catch {
-                return undefined;
-            }
-        });
+        .then(([$el]) => JSON.parse($el.innerHTML));
 
-export const getResponseStatus = (id: string, isFetch = true) =>
-    getLoadedSector(id, isFetch)
+export const getResponseStatus = (id: string) =>
+    getLoadedSector(id, true)
         .find("[data-response-type=status-code]")
         .then(([$el]) => parseInt($el.innerText));
 
