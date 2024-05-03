@@ -7,12 +7,15 @@ describe("Wait For Requests", () => {
     const testPath_Fetch2 = "api/fetch-2";
     const testPath_Fetch3 = "test/fetch-3";
 
+    const testPath_Script1 = "sources/script-1.js";
+    const testPath_Script2 = "sources/script-2.js";
+
     const delay = 1000;
     const duration = 1500;
     const doubleDuration = duration * 2;
     const tripleDuration = duration * 3;
 
-    describe("Enforce check", () => {
+    describe("Enforce check = true", () => {
         it("With following request - auto", () => {
             cy.startTiming();
 
@@ -37,7 +40,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
 
             cy.stopTiming().should("be.gt", delay + duration + tripleDuration);
 
@@ -73,7 +76,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch1}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch1}` });
 
             cy.stopTiming().should("be.gt", duration);
 
@@ -86,7 +89,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -129,7 +132,6 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(
                 {
-                    enforceCheck: true,
                     url: new RegExp(
                         `(${toRegExp(testPath_Fetch1)})|(${toRegExp(testPath_Fetch2)})$`,
                         "gi"
@@ -150,7 +152,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -199,7 +201,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
 
             cy.stopTiming().should("be.gt", delay + tripleDuration);
 
@@ -268,7 +270,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch1}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch1}` });
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(5);
@@ -288,7 +290,7 @@ describe("Wait For Requests", () => {
 
             fireRequest();
 
-            cy.waitUntilRequestIsDone({ enforceCheck: true, url: `**/${testPath_Fetch2}` });
+            cy.waitUntilRequestIsDone({ url: `**/${testPath_Fetch2}` });
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(6);
@@ -304,6 +306,120 @@ describe("Wait For Requests", () => {
                 expect(stats[4].url.endsWith(testPath_Fetch3)).to.be.true;
                 expect(stats[5].isPending).to.be.false;
                 expect(stats[5].url.endsWith(testPath_Fetch2)).to.be.true;
+            });
+        });
+    });
+
+    describe("Enforce check = false", () => {
+        it("By resource type", () => {
+            const waitTimeout = 5000;
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 150,
+                        duration: waitTimeout * 2,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        type: "fetch"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone({ enforceCheck: false, resourceType: "script", waitTimeout });
+
+            cy.stopTiming().should("be.lt", waitTimeout);
+
+            cy.interceptorStats({ resourceType: "script" }).then((stats) => {
+                expect(stats.length).to.eq(0);
+            });
+
+            cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.true;
+            });
+        });
+
+        it("By URL match", () => {
+            const waitTimeout = 5000;
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 150,
+                        duration: waitTimeout * 2,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        type: "fetch"
+                    },
+                    {
+                        delay: 150,
+                        duration: waitTimeout * 2,
+                        path: testPath_Script1,
+                        type: "script"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone({
+                enforceCheck: false,
+                url: `**/${testPath_Script2}`,
+                waitTimeout
+            });
+
+            cy.stopTiming().should("be.lt", waitTimeout);
+
+            cy.interceptorStats({ resourceType: "script" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.true;
+            });
+
+            cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.true;
+            });
+        });
+
+        it("Must wait for the pending request", () => {
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 150,
+                        duration: doubleDuration,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        type: "fetch"
+                    },
+                    {
+                        delay: 150,
+                        duration,
+                        path: testPath_Script1,
+                        type: "script"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone({
+                enforceCheck: false,
+                url: `**/${testPath_Script1}`
+            });
+
+            cy.stopTiming().should("be.gt", duration);
+
+            cy.interceptorStats({ resourceType: "script" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.false;
+            });
+
+            cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.true;
             });
         });
     });
@@ -371,7 +487,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ waitBetweenRequests: delay });
+            cy.waitUntilRequestIsDone({ waitForNextRequest: delay });
 
             cy.stopTiming().should("be.gt", delay + duration + doubleDuration);
 
@@ -416,7 +532,19 @@ describe("Wait For Requests", () => {
             cy.waitUntilRequestIsDone({ waitTimeout: duration / 2 }, errMessage);
 
             cy.wrap(null).then(() => {
-                throw new Error("This line should be reached");
+                throw new Error("This line should not be reached");
+            });
+        });
+
+        it("Enforce check", () => {
+            cy.startTiming();
+
+            cy.visit(getDynamicUrl([]));
+
+            cy.waitUntilRequestIsDone({ resourceType: "script", waitTimeout: 5000 }, errMessage);
+
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
             });
         });
     });

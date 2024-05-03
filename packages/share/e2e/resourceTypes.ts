@@ -109,16 +109,13 @@ describe("Resource Types", () => {
                 expect(stats[0].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "fetch" }).should("eq", 1);
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 1);
 
             cy.interceptorStats({ resourceType: "script" }).then((stats) =>
                 stats.every((entry) => expect(entry.isPending).to.be.true)
             );
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: ["fetch", "script"] }).should(
-                "eq",
-                2
-            );
+            cy.interceptorRequestCalls({ resourceType: ["fetch", "script"] }).should("eq", 2);
         });
 
         it("Script", () => {
@@ -151,16 +148,13 @@ describe("Resource Types", () => {
                 expect(stats[0].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 1);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 1);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) =>
                 stats.every((entry) => expect(entry.isPending).to.be.true)
             );
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: ["fetch", "script"] }).should(
-                "eq",
-                2
-            );
+            cy.interceptorRequestCalls({ resourceType: ["fetch", "script"] }).should("eq", 2);
         });
     });
 
@@ -180,7 +174,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -188,7 +182,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "fetch" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "image" }).then((stats) => {
                 expect(stats.length).to.eq(0);
@@ -198,14 +192,11 @@ describe("Resource Types", () => {
                 expect(stats.length).to.eq(0);
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: ["fetch", "script"] }).should(
-                "eq",
-                4
-            );
+            cy.interceptorRequestCalls({ resourceType: ["fetch", "script"] }).should("eq", 4);
         });
 
         it("Custom settings - all", () => {
-            cy.setInterceptorOptions({ resourceTypes: "all" });
+            cy.interceptorOptions({ resourceTypes: "all" });
 
             cy.visit(getDynamicUrl(config));
 
@@ -221,7 +212,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -229,7 +220,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "fetch" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "image" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -237,7 +228,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "image" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "image" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "stylesheet" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -245,18 +236,18 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "stylesheet" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "stylesheet" }).should("eq", 2);
 
-            cy.howManyTimesHasBeenRequestCalled({
+            cy.interceptorRequestCalls({
                 resourceType: ["fetch", "image", "script", "stylesheet"]
             }).should("eq", 8);
-            cy.howManyTimesHasBeenRequestCalled({
+            cy.interceptorRequestCalls({
                 resourceType: ["fetch", "script"]
             }).should("eq", 4);
         });
 
         it("Custom settings - fetch", () => {
-            cy.setInterceptorOptions({ resourceTypes: "fetch" });
+            cy.interceptorOptions({ resourceTypes: "fetch" });
 
             cy.visit(getDynamicUrl(config));
 
@@ -272,17 +263,17 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "fetch" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 2);
 
             cy.interceptorStats().then((stats) => {
                 expect(stats.length).to.eq(2);
             });
 
-            cy.howManyTimesHasBeenRequestCalled().should("eq", 2);
+            cy.interceptorRequestCalls().should("eq", 2);
         });
 
         it("Custom settings - fetch - script", () => {
-            cy.setInterceptorOptions({ resourceTypes: ["fetch", "script"] });
+            cy.interceptorOptions({ resourceTypes: ["fetch", "script"] });
 
             cy.visit(getDynamicUrl(config));
 
@@ -298,7 +289,7 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "fetch" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 2);
 
             cy.interceptorStats({ resourceType: "script" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -306,17 +297,17 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 2);
 
             cy.interceptorStats().then((stats) => {
                 expect(stats.length).to.eq(4);
             });
 
-            cy.howManyTimesHasBeenRequestCalled().should("eq", 4);
+            cy.interceptorRequestCalls().should("eq", 4);
         });
 
         it("Custom settings - script", () => {
-            cy.setInterceptorOptions({ resourceTypes: "script" });
+            cy.interceptorOptions({ resourceTypes: "script" });
 
             cy.visit(getDynamicUrl(config));
 
@@ -332,17 +323,17 @@ describe("Resource Types", () => {
                 expect(stats[1].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 2);
 
             cy.interceptorStats().then((stats) => {
                 expect(stats.length).to.eq(2);
             });
 
-            cy.howManyTimesHasBeenRequestCalled().should("eq", 2);
+            cy.interceptorRequestCalls().should("eq", 2);
         });
 
         it("Custom settings - script - cross origin", () => {
-            cy.setInterceptorOptions({ resourceTypes: "script", ingoreCrossDomain: false });
+            cy.interceptorOptions({ resourceTypes: "script", ingoreCrossDomain: false });
 
             cy.visit(getDynamicUrl(config));
 
@@ -359,13 +350,13 @@ describe("Resource Types", () => {
                 expect(stats[2].isPending).to.be.false;
             });
 
-            cy.howManyTimesHasBeenRequestCalled({ resourceType: "script" }).should("eq", 3);
+            cy.interceptorRequestCalls({ resourceType: "script" }).should("eq", 3);
 
             cy.interceptorStats().then((stats) => {
                 expect(stats.length).to.eq(3);
             });
 
-            cy.howManyTimesHasBeenRequestCalled().should("eq", 3);
+            cy.interceptorRequestCalls().should("eq", 3);
         });
     });
 });

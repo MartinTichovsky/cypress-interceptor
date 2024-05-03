@@ -3,7 +3,7 @@ import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { crossDomainScript } from "../src/constants";
 import { getResponseDuration } from "../src/selectors";
-import { isObject } from "../src/utils";
+import { createMatcher, isObject } from "../src/utils";
 
 describe("Throttle Request", () => {
     const testPath_Fetch1 = "test/fetch-1";
@@ -15,8 +15,47 @@ describe("Throttle Request", () => {
     const throttleDelay = duration * 3;
 
     describe("By resource type", () => {
+        it("All", () => {
+            cy.throttleInterceptorRequest({ resourceType: "all" }, duration, { times: 0 });
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        requests: [
+                            {
+                                duration,
+                                path: testPath_Script1,
+                                type: "script"
+                            }
+                        ],
+                        type: "fetch"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone();
+
+            cy.stopTiming().should("be.gt", duration * 4);
+
+            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                expect(stats?.delay).to.eq(duration);
+            });
+
+            getResponseDuration(testPath_Fetch1).should("be.gt", duration * 2);
+
+            cy.interceptorLastRequest(`**/${testPath_Script1}`).then((stats) => {
+                expect(stats?.delay).to.eq(duration);
+            });
+        });
+
         it("Fetch - default once", () => {
-            cy.throttleRequest({ resourceType: "fetch" }, throttleDelay);
+            cy.throttleInterceptorRequest({ resourceType: "fetch" }, throttleDelay);
 
             cy.startTiming();
 
@@ -61,7 +100,7 @@ describe("Throttle Request", () => {
         });
 
         it("Fetch - 2 times", () => {
-            cy.throttleRequest({ resourceType: "fetch" }, throttleDelay, { times: 2 });
+            cy.throttleInterceptorRequest({ resourceType: "fetch" }, throttleDelay, { times: 2 });
 
             cy.startTiming();
 
@@ -120,7 +159,7 @@ describe("Throttle Request", () => {
         });
 
         it("Fetch - infinitely", () => {
-            cy.throttleRequest({ resourceType: "fetch" }, throttleDelay, { times: 0 });
+            cy.throttleInterceptorRequest({ resourceType: "fetch" }, throttleDelay, { times: 0 });
 
             cy.startTiming();
 
@@ -177,7 +216,7 @@ describe("Throttle Request", () => {
         });
 
         it("Script", () => {
-            cy.throttleRequest({ resourceType: "script" }, throttleDelay);
+            cy.throttleInterceptorRequest({ resourceType: "script" }, throttleDelay);
 
             cy.startTiming();
 
@@ -220,8 +259,47 @@ describe("Throttle Request", () => {
             }
         ];
 
+        it("All", () => {
+            cy.throttleInterceptorRequest("*", duration, { times: 0 });
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        requests: [
+                            {
+                                duration,
+                                path: testPath_Script1,
+                                type: "script"
+                            }
+                        ],
+                        type: "fetch"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone();
+
+            cy.stopTiming().should("be.gt", duration * 4);
+
+            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                expect(stats?.delay).to.eq(duration);
+            });
+
+            getResponseDuration(testPath_Fetch1).should("be.gt", duration * 2);
+
+            cy.interceptorLastRequest(`**/${testPath_Script1}`).then((stats) => {
+                expect(stats?.delay).to.eq(duration);
+            });
+        });
+
         it("Fetch - default once", () => {
-            cy.throttleRequest(`**/${testPath_Fetch1}`, throttleDelay);
+            cy.throttleInterceptorRequest(`**/${testPath_Fetch1}`, throttleDelay);
 
             cy.startTiming();
 
@@ -249,7 +327,7 @@ describe("Throttle Request", () => {
         });
 
         it("Fetch - 2 times", () => {
-            cy.throttleRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 2 });
+            cy.throttleInterceptorRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 2 });
 
             // first load
 
@@ -355,7 +433,7 @@ describe("Throttle Request", () => {
                     .should("be.lt", duration + throttleDelay);
             };
 
-            cy.throttleRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 0 });
+            cy.throttleInterceptorRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 0 });
 
             // first load
 
@@ -458,7 +536,7 @@ describe("Throttle Request", () => {
         ];
 
         it("Method", () => {
-            cy.throttleRequest({ method: "POST" }, throttleDelay);
+            cy.throttleInterceptorRequest({ method: "POST" }, throttleDelay);
 
             cy.startTiming();
 
@@ -499,7 +577,10 @@ describe("Throttle Request", () => {
 
         it("Query - shallow match", () => {
             // first load
-            cy.throttleRequest({ query: { page: query2.page } }, throttleDelay);
+            cy.throttleInterceptorRequest(
+                { queryMatcher: createMatcher({ page: query2.page }) },
+                throttleDelay
+            );
 
             cy.startTiming();
 
@@ -535,7 +616,10 @@ describe("Throttle Request", () => {
                 .should("be.lt", duration + throttleDelay);
 
             // second load
-            cy.throttleRequest({ query: { list: query1.list } }, throttleDelay);
+            cy.throttleInterceptorRequest(
+                { queryMatcher: createMatcher({ list: query1.list }) },
+                throttleDelay
+            );
 
             cy.startTiming();
 
@@ -571,7 +655,13 @@ describe("Throttle Request", () => {
                 .should("be.lt", duration + throttleDelay);
 
             // third load
-            cy.throttleRequest({ query: { state: query1.state } }, throttleDelay, { times: 2 });
+            cy.throttleInterceptorRequest(
+                { queryMatcher: createMatcher({ state: query1.state }) },
+                throttleDelay,
+                {
+                    times: 2
+                }
+            );
 
             cy.startTiming();
 
@@ -606,7 +696,10 @@ describe("Throttle Request", () => {
         });
 
         it("Query - sctrict match - should not match", () => {
-            cy.throttleRequest({ query: { page: "99" }, queryStrictMatch: true }, throttleDelay);
+            cy.throttleInterceptorRequest(
+                { queryMatcher: createMatcher({ page: "99" }, true) },
+                throttleDelay
+            );
 
             cy.startTiming();
 
@@ -650,11 +743,13 @@ describe("Throttle Request", () => {
         });
 
         it("Query - sctrict match - should match", () => {
-            cy.throttleRequest(
+            cy.throttleInterceptorRequest(
                 {
                     // url contain extra params generated in getDynamicUrl function
-                    query: { ...query2, duration: duration.toString(), path: testPath_Fetch2 },
-                    queryStrictMatch: true
+                    queryMatcher: createMatcher(
+                        { ...query2, duration: duration.toString(), path: testPath_Fetch2 },
+                        true
+                    )
                 },
                 throttleDelay
             );
@@ -694,8 +789,8 @@ describe("Throttle Request", () => {
         });
 
         it("Cross domain", () => {
-            cy.setInterceptorOptions({ ingoreCrossDomain: false });
-            cy.throttleRequest({ crossDomain: true }, throttleDelay);
+            cy.interceptorOptions({ ingoreCrossDomain: false });
+            cy.throttleInterceptorRequest({ crossDomain: true }, throttleDelay);
 
             cy.startTiming();
 
@@ -738,8 +833,8 @@ describe("Throttle Request", () => {
         });
 
         it("HTTPS", () => {
-            cy.setInterceptorOptions({ ingoreCrossDomain: false });
-            cy.throttleRequest({ https: true }, throttleDelay);
+            cy.interceptorOptions({ ingoreCrossDomain: false });
+            cy.throttleInterceptorRequest({ https: true }, throttleDelay);
 
             cy.startTiming();
 
@@ -782,7 +877,7 @@ describe("Throttle Request", () => {
         });
 
         it("URL - ends with", () => {
-            cy.throttleRequest({ url: `**/${testPath_Fetch2}` }, throttleDelay);
+            cy.throttleInterceptorRequest({ url: `**/${testPath_Fetch2}` }, throttleDelay);
 
             cy.startTiming();
 
@@ -819,7 +914,7 @@ describe("Throttle Request", () => {
         });
 
         it("URL - contains", () => {
-            cy.throttleRequest({ url: "**/api/**" }, throttleDelay);
+            cy.throttleInterceptorRequest({ url: "**/api/**" }, throttleDelay);
 
             cy.startTiming();
 
@@ -856,7 +951,7 @@ describe("Throttle Request", () => {
         });
 
         it("URL - RegExp", () => {
-            cy.throttleRequest({ url: /fetch-2$/i }, throttleDelay);
+            cy.throttleInterceptorRequest({ url: /fetch-2$/i }, throttleDelay);
 
             cy.startTiming();
 
@@ -893,7 +988,10 @@ describe("Throttle Request", () => {
         });
 
         it("Headers", () => {
-            cy.throttleRequest({ headers: headers3 }, throttleDelay);
+            cy.throttleInterceptorRequest(
+                { headersMatcher: createMatcher(headers3) },
+                throttleDelay
+            );
 
             cy.startTiming();
 
@@ -930,7 +1028,7 @@ describe("Throttle Request", () => {
         });
 
         it("Body matcher", () => {
-            cy.throttleRequest(
+            cy.throttleInterceptorRequest(
                 {
                     bodyMatcher: (body) => isObject(body) && "pre" in body && body.pre === body2.pre
                 },
@@ -996,145 +1094,145 @@ describe("Throttle Request", () => {
             }
         ];
 
-        cy.throttleRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 0 }).then(
+        cy.throttleInterceptorRequest(`**/${testPath_Fetch1}`, throttleDelay, { times: 0 }).then(
             (throttle1Id) => {
-                cy.throttleRequest(`**/${testPath_Fetch2}`, throttleDelay, { times: 0 }).then(
-                    (throttle2Id) => {
-                        cy.throttleRequest(`**/${testPath_Fetch3}`, throttleDelay, {
-                            times: 0
-                        }).then((throttle3Id) => {
-                            // first load
+                cy.throttleInterceptorRequest(`**/${testPath_Fetch2}`, throttleDelay, {
+                    times: 0
+                }).then((throttle2Id) => {
+                    cy.throttleInterceptorRequest(`**/${testPath_Fetch3}`, throttleDelay, {
+                        times: 0
+                    }).then((throttle3Id) => {
+                        // first load
 
-                            cy.startTiming();
+                        cy.startTiming();
 
-                            cy.visit(getDynamicUrl(config));
+                        cy.visit(getDynamicUrl(config));
 
-                            cy.waitUntilRequestIsDone().then((interceptor) =>
-                                interceptor.removeThrottle(throttle1Id)
-                            );
+                        cy.waitUntilRequestIsDone().then((interceptor) =>
+                            interceptor.removeThrottle(throttle1Id)
+                        );
 
-                            cy.stopTiming().should("be.gt", throttleDelay);
+                        cy.stopTiming().should("be.gt", throttleDelay);
 
-                            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch1).should("be.gt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch2).should("be.gt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
-
-                            // second load
-
-                            cy.startTiming();
-
-                            cy.visit(getDynamicUrl(config));
-
-                            cy.waitUntilRequestIsDone().then((interceptor) =>
-                                interceptor.removeThrottle(throttle2Id)
-                            );
-
-                            cy.stopTiming().should("be.gt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch2).should("be.gt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
-
-                            // third load
-
-                            cy.startTiming();
-
-                            cy.visit(getDynamicUrl(config));
-
-                            cy.waitUntilRequestIsDone().then((interceptor) =>
-                                interceptor.removeThrottle(throttle3Id)
-                            );
-
-                            cy.stopTiming().should("be.gt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch2).should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                                expect(stats?.delay).to.eq(throttleDelay);
-                                expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
-
-                            // fourth load
-
-                            cy.startTiming();
-
-                            cy.visit(getDynamicUrl(config));
-
-                            cy.waitUntilRequestIsDone();
-
-                            cy.stopTiming().should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch2).should("be.lt", throttleDelay);
-
-                            cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
-                                expect(stats?.delay).to.be.undefined;
-                                expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
-                            });
-
-                            getResponseDuration(testPath_Fetch3).should("be.lt", throttleDelay);
+                        cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
                         });
-                    }
-                );
+
+                        getResponseDuration(testPath_Fetch1).should("be.gt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch2).should("be.gt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
+
+                        // second load
+
+                        cy.startTiming();
+
+                        cy.visit(getDynamicUrl(config));
+
+                        cy.waitUntilRequestIsDone().then((interceptor) =>
+                            interceptor.removeThrottle(throttle2Id)
+                        );
+
+                        cy.stopTiming().should("be.gt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch2).should("be.gt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
+
+                        // third load
+
+                        cy.startTiming();
+
+                        cy.visit(getDynamicUrl(config));
+
+                        cy.waitUntilRequestIsDone().then((interceptor) =>
+                            interceptor.removeThrottle(throttle3Id)
+                        );
+
+                        cy.stopTiming().should("be.gt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch2).should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
+                            expect(stats?.delay).to.eq(throttleDelay);
+                            expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch3).should("be.gt", throttleDelay);
+
+                        // fourth load
+
+                        cy.startTiming();
+
+                        cy.visit(getDynamicUrl(config));
+
+                        cy.waitUntilRequestIsDone();
+
+                        cy.stopTiming().should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch1}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch1)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch1).should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch2}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch2)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch2).should("be.lt", throttleDelay);
+
+                        cy.interceptorLastRequest(`**/${testPath_Fetch3}`).then((stats) => {
+                            expect(stats?.delay).to.be.undefined;
+                            expect(stats?.url?.endsWith(testPath_Fetch3)).to.be.true;
+                        });
+
+                        getResponseDuration(testPath_Fetch3).should("be.lt", throttleDelay);
+                    });
+                });
             }
         );
     });

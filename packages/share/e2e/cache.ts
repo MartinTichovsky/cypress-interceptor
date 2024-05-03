@@ -11,7 +11,7 @@ describe("Cache", () => {
     const testPath_Stylesheet2 = "cache/styles-2.css";
 
     it("Enabled", () => {
-        cy.setInterceptorOptions({
+        cy.interceptorOptions({
             disableCache: false,
             resourceTypes: "all"
         });
