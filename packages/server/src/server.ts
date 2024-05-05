@@ -51,11 +51,17 @@ const XHRContentType = "application/json";
 app.ws("/*", (ws) => {
     ws.on("message", (msg: string) => {
         try {
-            // const data = JSON.parse(msg);
-            ws.send(msg);
-            // if (data.responseBody) {
-            //     ws.send(data.responseBody);
-            // }
+            const data = JSON.parse(msg);
+
+            if (data.response) {
+                wait(getNumberFomString(data.duration))
+                    .then(() => {
+                        ws.send(data.response);
+                    })
+                    .catch(() => {
+                        //
+                    });
+            }
         } catch {
             //
         }

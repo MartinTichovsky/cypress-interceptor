@@ -1,23 +1,34 @@
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 describe("Websocket", () => {
-    it.only("Basic", () => {
-        cy.interceptorOptions({ resourceTypes: "all" });
-
+    it("Basic", () => {
         cy.visit(
             getDynamicUrl([
                 {
-                    delay: 100,
-                    body: "aa",
-                    responseBody: "bbb",
-                    path: "wss",
+                    data: "send data 1",
+                    duration: 5000,
+                    path: "aaa",
+                    response: "some response 1",
+                    type: "websocket"
+                },
+                {
+                    data: "send data 2",
+                    delay: 5000,
+                    path: "bbb",
+                    response: "some response 2",
                     type: "websocket"
                 }
             ])
         );
 
-        cy.interceptor().then((interceptor) => {
-            //  debugger;
-        });
+        cy.waitUntilWebsocketAction([
+            {
+                type: "onmessage"
+            },
+            {
+                type: "send",
+                url: "**/bbb"
+            }
+        ]);
     });
 });

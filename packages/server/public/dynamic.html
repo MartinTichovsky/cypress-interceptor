@@ -170,20 +170,22 @@
             else if (type === "websocket") {
                 const webSocket = new WebSocket(`ws://localhost:3000/${path}`);
 
-                webSocket.onmessage = (response) => {
-                    const div = document.createElement("div");
+                const div = document.createElement("div");
 
+                webSocket.onmessage = (response) => {
                     const divResponse = document.createElement("div")
-                    divResponse.setAttribute("data-response-type", "body");
+                    divResponse.setAttribute("data-response-type", "message");
                     divResponse.innerHTML = response.data;
 
                     div.appendChild(divResponse);
-
-                    wrapInSection(`${path}_loaded`, div);
                 }
 
                 webSocket.onopen = () => {
-                    webSocket.send(JSON.stringify(entry.body));
+                    if (entry.data || entry.response) {
+                        webSocket.send(JSON.stringify({ data: entry.data, duration: entry.duration, response: entry.response }));
+                    }
+
+                    wrapInSection(`${path}_loaded`, div);
                 }
             }
         }

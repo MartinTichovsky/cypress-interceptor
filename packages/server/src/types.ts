@@ -1,73 +1,89 @@
-export type DynamicRequest = {
-    /**
-     * If true, the response will contain "Cache-Control": "public, max-age=3600",
-     * and the request will be cached for all the tests
-     */
-    enableCache?: boolean;
-    /**
-     * Delay when start the request
-     */
-    delay?: number;
-    /**
-     * Duration of the request
-     */
-    duration?: number;
-    /**
-     * If true, a click will be required to fire the request
-     */
-    fireOnClick?: boolean;
-    /**
-     * A relative path, such as /script.js, /testing-endpoint, etc.
-     */
-    path: string;
-    /**
-     * A custom query
-     */
-    query?: Record<string, string>;
-    /**
-     * Possible following requests after this one
-     */
-    requests?: DynamicRequest[];
-    /**
-     * Custom response status
-     */
-    status?: number;
-} & (
+export type DynamicRequest =
+    | ({
+          /**
+           * If true, the response will contain "Cache-Control": "public, max-age=3600",
+           * and the request will be cached for all the tests
+           */
+          enableCache?: boolean;
+          /**
+           * Delay when start the request
+           */
+          delay?: number;
+          /**
+           * Duration of the request
+           */
+          duration?: number;
+          /**
+           * If true, a click will be required to fire the request
+           */
+          fireOnClick?: boolean;
+          /**
+           * A relative path, such as /script.js, /testing-endpoint, etc.
+           */
+          path: string;
+          /**
+           * A custom query
+           */
+          query?: Record<string, string>;
+          /**
+           * Possible following requests after this one
+           */
+          requests?: DynamicRequest[];
+          /**
+           * Custom response status
+           */
+          status?: number;
+      } & (
+          | {
+                /**
+                 * The response
+                 */
+                responseBody?: string;
+                type: "image" | "script" | "stylesheet";
+            }
+          | {
+                /**
+                 * Body sent by fetch
+                 */
+                body?: unknown;
+                /**
+                 * Headers sent by fetch
+                 */
+                headers?: Record<string, string>;
+                /**
+                 * The response
+                 */
+                responseBody?: Record<string, unknown>;
+                /**
+                 * The request method
+                 */
+                method: "GET" | "POST";
+                type: "fetch";
+            }
+      ))
     | {
           /**
-           * The response
+           * Data sent by websocket
            */
-          responseBody?: string;
-          type: "image" | "script" | "stylesheet";
-      }
-    | {
+          data?: string;
           /**
-           * Body sent by fetch
+           * Delay when start the request
            */
-          body?: unknown;
+          delay?: number;
           /**
-           * Headers sent by fetch
+           * Duration of the request
            */
-          headers?: Record<string, string>;
+          duration?: number;
           /**
-           * The response
+           * A relative path to ws://localhost:3000/{path}
            */
-          responseBody?: Record<string, unknown>;
+          path: string;
           /**
-           * The request method
+           * The response of websocket
            */
-          method: "GET" | "POST";
-          type: "fetch";
-      }
-    | {
+          response?: string;
           /**
-           * Body sent by websocket
+           * Type
            */
-          body?: string;
-          /**
-           * The response
-           */
-          responseBody?: string;
           type: "websocket";
-      }
-);
+      };
