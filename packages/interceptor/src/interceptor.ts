@@ -153,6 +153,10 @@ export interface CallStack {
      */
     response?: IResponse;
     /**
+     * Time when the request started
+     */
+    timeStart: Date;
+    /**
      * URL of the request without query string
      */
     url: string;
@@ -206,9 +210,34 @@ export interface IDebug {
      */
     method: string;
     /**
+     * Request info
+     */
+    request?: IRequest;
+    /**
      * Resource type
      */
     resourceType?: string;
+    /**
+     * Response
+     */
+    response?: {
+        /**
+         * The response body
+         */
+        body: unknown;
+        /**
+         * Headers of the response
+         */
+        headers: IHeaders;
+        /**
+         * The response status code
+         */
+        statusCode: number;
+        /**
+         * The HTTP status message
+         */
+        statusMessage: string;
+    };
     /**
      * Time when this entry is created
      */
@@ -280,10 +309,6 @@ export interface IRequest {
      * URL query string as object
      */
     query: Record<string, string | number>;
-    /**
-     * Time when the request started
-     */
-    timeStart: Date;
 }
 
 export interface IResponse {
@@ -298,7 +323,7 @@ export interface IResponse {
     /**
      * Headers of the response (with mock if provided)
      */
-    headers: IHeadersNormalized;
+    headers: IHeaders;
     /**
      * The response status code (replaced by mock if provided)
      */
@@ -452,6 +477,12 @@ export class Interceptor {
                     queueId,
                     method: req.method,
                     resourceType: req.resourceType,
+                    request: {
+                        body: req.body,
+                        headers: req.headers,
+                        method: req.method,
+                        query: req.query
+                    },
                     time: new Date(),
                     type: "start",
                     url: req.url
@@ -483,13 +514,19 @@ export class Interceptor {
                             queueId,
                             method: req.method,
                             resourceType: req.resourceType,
+                            response: {
+                                body: res.body,
+                                headers: res.headers,
+                                statusCode: res.statusCode,
+                                statusMessage: res.statusMessage
+                            },
                             time: new Date(),
                             type: "skipped-done",
                             url: req.url
                         });
                     }
-                    this.disableCacheInResponse(res.headers);
-                    res.send();
+
+                    res.send(res.statusCode, res.body, this.disableCacheInResponse());
                 });
 
                 return;
@@ -515,10 +552,10 @@ export class Interceptor {
                     body: req.body,
                     headers: req.headers,
                     method: req.method,
-                    query: req.query,
-                    timeStart: new Date()
+                    query: req.query
                 },
                 resourceType: req.resourceType,
+                timeStart: new Date(),
                 url: req.url.replace(/\?(.*)/, ""),
                 urlQuery: req.url
             };
@@ -531,6 +568,12 @@ export class Interceptor {
                         queueId,
                         method: req.method,
                         resourceType: req.resourceType,
+                        response: {
+                            body: res.body,
+                            headers: res.headers,
+                            statusCode: res.statusCode,
+                            statusMessage: res.statusMessage
+                        },
                         time: new Date(),
                         type: "logged-done",
                         url: req.url
@@ -547,7 +590,7 @@ export class Interceptor {
                 const body = mock?.generateBody?.(res.body) ?? mock?.body ?? res.body;
 
                 const headers = {
-                    ...this.normalizeHeaders(res.headers),
+                    ...res.headers,
                     ...mock?.headers
                 };
 
@@ -569,8 +612,7 @@ export class Interceptor {
                     res.setDelay(item.delay);
                 }
 
-                this.disableCacheInResponse(headers);
-                res.send(statusCode, body, headers);
+                res.send(statusCode, body, this.disableCacheInResponse(mock?.headers));
 
                 /**
                  * Set the request as finished with a delay. It is crucial for the browser to let the response process,
@@ -634,13 +676,18 @@ export class Interceptor {
         }
     }
 
-    private disableCacheInResponse(headers: IHeaders) {
+    private disableCacheInResponse(headers: IHeadersNormalized = {}) {
         if (
             (this._disableCacheByEnv && this._options.disableCache !== false) ||
             this._options.disableCache
         ) {
-            headers["cache-control"] = "no-store";
+            return {
+                ...headers,
+                "cache-control": "no-store"
+            };
         }
+
+        return headers;
     }
 
     private filterItemsByMatcher(routeMatcher?: IRouteMatcher) {

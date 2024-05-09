@@ -79,7 +79,7 @@ describe("Stats", () => {
                     responseBody: JSON.stringify(responseBody)
                 });
                 expect(stats.request.method).to.eq("POST");
-                expect(new Date(stats.request.timeStart).getTime()).to.be.gt(timeStart);
+                expect(new Date(stats.timeStart).getTime()).to.be.gt(timeStart);
                 expect(stats.resourceType).to.eq("fetch");
                 expect(stats.response).not.to.be.undefined;
                 expect(stats.response!.body).to.deep.eq(responseBody);
@@ -138,7 +138,7 @@ describe("Stats", () => {
                     responseBody: responseBody
                 });
                 expect(stats.request.method).to.eq("GET");
-                expect(new Date(stats.request.timeStart).getTime()).to.be.gt(timeStart);
+                expect(new Date(stats.timeStart).getTime()).to.be.gt(timeStart);
                 expect(stats.resourceType).to.eq("script");
                 expect(stats.response).not.to.be.undefined;
                 expect(stats.response!.body).to.eq(responseBody);

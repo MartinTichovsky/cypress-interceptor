@@ -20,7 +20,7 @@ describe("Mock Respose", () => {
     const duration = 2000;
 
     const checkHeaders = (
-        headers: { [key: string]: string } | undefined,
+        headers: { [key: string]: string | string[] } | undefined,
         mockHeaders: { [key: string]: string }
     ) =>
         Object.keys(mockHeaders).every(
