@@ -602,7 +602,7 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 ## writeDebugToLog
 
 ```ts
-writeDebugToLog(currentTest: typeof Cypress.currentTest | string | undefined, outputDir: string);
+writeDebugToLog(outputDir: string, fileName?: string);
 ```
 
 Write the debug information to a file (debug must be enabled). The file will contain JSON.stringify of [`getDebugInfo`](#getdebuginfo).
@@ -612,10 +612,10 @@ Write the debug information to a file (debug must be enabled). The file will con
 ```ts
 afterAll(() => {
     cy.interceptor().then(interceptor => {
-        // example output will be "./out/Description - It.debug.log" (the name of the file `Description - It` will be composed from Cypress.currentTest)
-        interceptor.writeDebugToLog(Cypress.currentTest, "./out");
+        // example output will be "./out/test.cy.ts (Description - It).debug.log" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
+        interceptor.writeDebugToLog("./out");
         // example output will be "./out/file_name.debug.log"
-        interceptor.writeDebugToLog("file_name", "./out");
+        interceptor.writeDebugToLog("./out", "file_name");
     });
 });
 ```
@@ -623,7 +623,7 @@ afterAll(() => {
 ## writeStatsToLog
 
 ```ts
-public writeStatsToLog(currentTest: typeof Cypress.currentTest | string | undefined, outputDir: string);
+public writeStatsToLog(outputDir: string, fileName?: string);
 ```
 
 Write the logged requests' information to a file. The file will contain JSON.stringify of [`callStack`](#callstack).
@@ -633,10 +633,10 @@ Write the logged requests' information to a file. The file will contain JSON.str
 ```ts
 afterAll(() => {
     cy.interceptor().then(interceptor => {
-        // example output will be "./out/Description - It.stats.log" (the name of the file `Description - It` will be composed from Cypress.currentTest)
-        interceptor.writeStatsToLog(Cypress.currentTest, "./out");
+        // example output will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
+        interceptor.writeStatsToLog("./out");
         // example output will be "./out/file_name.stats.log"
-        interceptor.writeStatsToLog("file_name", "./out");
+        interceptor.writeStatsToLog("./out", "file_name");
     });
 });
 ```

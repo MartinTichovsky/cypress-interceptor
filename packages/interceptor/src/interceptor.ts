@@ -1,5 +1,6 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
+import { getFilePath } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
@@ -1075,61 +1076,36 @@ export class Interceptor {
 
     // DEBUG TOOLS
 
-    /* istanbul ignore next */
-    getFileNameFromCurrentTest = (currentTest: typeof Cypress.currentTest | undefined) => {
-        return currentTest
-            ? currentTest.titlePath.length
-                ? currentTest.titlePath.join(" - ")
-                : currentTest.title
-            : "unknown";
-    };
-
-    /* istanbul ignore next */
-    getFilePath = (
-        currentTest: typeof Cypress.currentTest | string | undefined,
-        outputDir: string,
-        type: string
-    ) =>
-        `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${typeof currentTest === "string" ? currentTest : this.getFileNameFromCurrentTest(currentTest)}.${type}.log`;
-
-    /* istanbul ignore next */
-    replacer = (_key: string, value: unknown) => (typeof value === "undefined" ? null : value);
-
     /**
      * Write the debug information to a file (debug must be enabled),
      * example: in `afterEach`
-     *      => interceptor.writeDebugToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.debug.log"
-     *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.log"
+     *      => interceptor.writeDebugToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.debug.json"
+     *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.json"
      *
-     * @param currentTest Current test instance for generating a name of the file, or the name of the file
      * @param outputDir A path for the output directory
+     * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
-    public writeDebugToLog(
-        currentTest: typeof Cypress.currentTest | string | undefined,
-        outputDir: string
-    ) {
+    public writeDebugToLog(outputDir: string, fileName?: string) {
+        console.log(getFilePath(fileName, outputDir, "debug"));
         cy.writeFile(
-            this.getFilePath(currentTest, outputDir, "debug"),
-            JSON.stringify(this.getDebugInfo())
+            getFilePath(fileName, outputDir, "debug"),
+            JSON.stringify(this.getDebugInfo(), undefined, 4)
         );
     }
 
     /**
      * Write the logged requests' information to a file,
      * example: in `afterEach`
-     *      => interceptor.writeStatsToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.stats.log"
-     *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.log"
+     *      => interceptor.writeStatsToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.stats.json"
+     *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.json"
      *
-     * @param currentTest Current test instance for generating a name of the file, or the name of the file
      * @param outputDir A path for the output directory
+     * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
-    public writeStatsToLog(
-        currentTest: typeof Cypress.currentTest | string | undefined,
-        outputDir: string
-    ) {
+    public writeStatsToLog(outputDir: string, fileName?: string) {
         cy.writeFile(
-            this.getFilePath(currentTest, outputDir, "stats"),
-            JSON.stringify(this.callStack)
+            getFilePath(fileName, outputDir, "stats"),
+            JSON.stringify(this.callStack, undefined, 4)
         );
     }
 }

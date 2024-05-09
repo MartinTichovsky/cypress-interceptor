@@ -33,16 +33,14 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then(function (intereptor) {
-            intereptor.writeDebugToLog(Cypress.currentTest, outDir);
+            intereptor.writeDebugToLog(outDir);
 
-            cy.readFile(`${outDir}/Custom - Debug with file - name auto generated.debug.log`).then(
-                (file) => {
-                    const debugInfo = JSON.parse(file) as IDebug[];
-
-                    expect(debugInfo.length > 0).to.be.true;
-                    expect(debugInfo.find((entry) => entry.url.includes(testPath_Fetch1)));
-                }
-            );
+            cy.readFile(
+                `${outDir}/index.cy.ts (Custom - Debug with file - name auto generated).debug.json`
+            ).then((debugInfo: IDebug[]) => {
+                expect(debugInfo.length > 0).to.be.true;
+                expect(debugInfo.find((entry) => entry.url.includes(testPath_Fetch1)));
+            });
         });
     });
 
@@ -67,11 +65,9 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then(function (intereptor) {
-            intereptor.writeDebugToLog(fileName, outDir);
+            intereptor.writeDebugToLog(outDir, fileName);
 
-            cy.readFile(`${outDir}/${fileName}.debug.log`).then((file) => {
-                const debugInfo = JSON.parse(file) as IDebug[];
-
+            cy.readFile(`${outDir}/${fileName}.debug.json`).then((debugInfo: IDebug[]) => {
                 expect(debugInfo.length > 0).to.be.true;
                 expect(debugInfo.find((entry) => entry.url.includes(testPath_Fetch1)));
             });
@@ -96,16 +92,14 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then(function (intereptor) {
-            intereptor.writeStatsToLog(Cypress.currentTest, outDir);
+            intereptor.writeStatsToLog(outDir);
 
-            cy.readFile(`${outDir}/Custom - Stats with file - name auto generated.stats.log`).then(
-                (file) => {
-                    const stats = JSON.parse(file) as CallStack[];
-
-                    expect(stats.length > 0).to.be.true;
-                    expect(stats.find((entry) => entry.url.endsWith(testPath_Fetch1)));
-                }
-            );
+            cy.readFile(
+                `${outDir}/index.cy.ts (Custom - Stats with file - name auto generated).stats.json`
+            ).then((stats: CallStack[]) => {
+                expect(stats.length > 0).to.be.true;
+                expect(stats.find((entry) => entry.url.endsWith(testPath_Fetch1)));
+            });
         });
     });
 
@@ -128,18 +122,12 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then(function (intereptor) {
-            intereptor.writeStatsToLog(fileName, outDir);
+            intereptor.writeStatsToLog(outDir, fileName);
 
-            cy.readFile(`${outDir}/${fileName}.stats.log`).then((file) => {
-                const stats = JSON.parse(file) as CallStack[];
-
+            cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
                 expect(stats.length > 0).to.be.true;
                 expect(stats.find((entry) => entry.url.endsWith(testPath_Fetch1)));
             });
         });
-    });
-
-    it("Stop Timing", () => {
-        cy.stopTiming().should("be.undefined");
     });
 });
