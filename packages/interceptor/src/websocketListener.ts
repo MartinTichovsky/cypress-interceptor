@@ -1,37 +1,52 @@
 type Listener = (action: WebSocketAction) => void;
 
-export type WebSocketAction = {
+export interface WSCreate extends WebSocketActionCommon {
+    data?: undefined;
+    type: "create";
+}
+
+export interface WSClose extends WebSocketActionCommon {
+    data: {
+        code?: number;
+        reason?: string;
+    };
+    type: "close";
+}
+
+export interface WSOnClose extends WebSocketActionCommon {
+    data: CloseEvent;
+    type: "onclose";
+}
+
+export interface WSOnMessage extends WebSocketActionCommon {
+    data: MessageEvent;
+    type: "onmessage";
+}
+
+export interface WSOnErrorOrOnOpen extends WebSocketActionCommon {
+    data: Event;
+    type: "onerror" | "onopen";
+}
+
+export interface WSSend extends WebSocketActionCommon {
+    data: string | ArrayBufferLike | Blob | ArrayBufferView;
+    type: "send";
+}
+
+export type WebSocketAction =
+    | WSCreate
+    | WSClose
+    | WSOnClose
+    | WSOnMessage
+    | WSOnErrorOrOnOpen
+    | WSSend;
+
+export type WebSocketActionCommon = {
+    query: Record<string, string | number>;
     protocols?: string | string[];
-    url: string | URL;
-} & (
-    | {
-          data?: undefined;
-          type: "create";
-      }
-    | {
-          data: {
-              code?: number;
-              reason?: string;
-          };
-          type: "close";
-      }
-    | {
-          data: CloseEvent;
-          type: "onclose";
-      }
-    | {
-          data: MessageEvent<unknown>;
-          type: "onmessage";
-      }
-    | {
-          data: Event;
-          type: "onerror" | "onopen";
-      }
-    | {
-          data: string | ArrayBufferLike | Blob | ArrayBufferView;
-          type: "send";
-      }
-);
+    url: string;
+    urlQuery: string;
+};
 
 export class WebsocketListener {
     private listeners: Listener[] = [];
@@ -42,9 +57,5 @@ export class WebsocketListener {
 
     subscribe(listener: Listener) {
         this.listeners.push(listener);
-    }
-
-    unsubscribe(listener: Listener) {
-        this.listeners = this.listeners.filter((entry) => entry !== listener);
     }
 }

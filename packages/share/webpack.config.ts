@@ -11,6 +11,7 @@ export const createWebpackConfig = (codeCoverage = false) => ({
                     {
                         loader: "babel-loader",
                         options: {
+                            plugins: codeCoverage ? ["istanbul"] : [],
                             presets: ["@babel/preset-env", "@babel/preset-typescript"]
                         }
                     }

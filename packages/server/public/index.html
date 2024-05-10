@@ -1,41 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, minimum-scale=1, width=device-width" />
+        <link rel="stylesheet" type="text/css" href="/style.css" />
+        <script src="/script.js"></script>
+        <!-- cross domain request -->
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    </head>
 
-<head>
-    <meta charset=utf-8>
-    <meta name=viewport content="initial-scale=1, minimum-scale=1, width=device-width">
-    <link rel="stylesheet" type="text/css" href="/style.css" />
-    <script src="/script.js"></script>
-    <!-- cross domain request -->
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-</head>
+    <body>
+        <h1>Example page static</h1>
 
-<body>
-    <h1>Example page static</h1>
+        <img src="/image.png" />
 
-    <img src="/image.png" />
+        <script>
+            fetch("/fetch", {
+                body: undefined,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                method: "GET"
+            }).then(async (response) => {
+                //
+            });
 
-    <script>
-        fetch("/fetch", {
-            body: undefined,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            method: "GET"
-        }).then(async (response) => {
-            //
-        })
-
-        fetch("/fetch", {
-            body: undefined,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            method: "POST"
-        }).then(async (response) => {
-            //
-        })
-    </script>
-</body>
-
+            fetch("/fetch", {
+                body: undefined,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                method: "POST"
+            }).then(async (response) => {
+                //
+            });
+        </script>
+    </body>
 </html>

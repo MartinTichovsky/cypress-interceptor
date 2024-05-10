@@ -502,15 +502,31 @@ describe("Wait For Requests", () => {
     describe("Expected fail", () => {
         const errMessage = "<EXPECTED ERROR>";
 
-        before(() => {
-            Cypress.on("fail", (error) => {
-                if (error.message === errMessage) {
-                    return;
-                }
+        const listener = (error: Error) => {
+            if (error.message === errMessage) {
+                return;
+            }
 
-                /* istanbul ignore next */
-                throw new Error(error.message);
-            });
+            /* istanbul ignore next */
+            throw new Error(error.message);
+        };
+
+        after(() => {
+            Cypress.off("fail", listener);
+        });
+
+        before(() => {
+            Cypress.on("fail", listener);
+        });
+
+        let envTimeout: unknown;
+
+        beforeEach(() => {
+            envTimeout = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+        });
+
+        afterEach(() => {
+            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
         });
 
         it("Max wait", () => {

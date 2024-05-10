@@ -1,4 +1,21 @@
-export type DynamicRequest =
+export interface WSMessage {
+    data: string;
+    delay?: number;
+}
+
+export interface WSCommunication {
+    responseData?: string;
+    responseDelay?: number;
+    sendData: string;
+    sendDelay?: number;
+}
+
+export type DynamicRequest = {
+    /**
+     * If true, a click will be required to fire the request
+     */
+    fireOnClick?: boolean;
+} & (
     | ({
           /**
            * If true, the response will contain "Cache-Control": "public, max-age=3600",
@@ -13,10 +30,6 @@ export type DynamicRequest =
            * Duration of the request
            */
           duration?: number;
-          /**
-           * If true, a click will be required to fire the request
-           */
-          fireOnClick?: boolean;
           /**
            * A relative path, such as /script.js, /testing-endpoint, etc.
            */
@@ -63,27 +76,47 @@ export type DynamicRequest =
       ))
     | {
           /**
-           * Data sent by websocket
+           * A data send to the server when create for getting custom responses
            */
-          data?: string;
+          autoResponse?: WSMessage[];
+          /**
+           * Close after receiving a message
+           */
+          close?: {
+              code?: number;
+              reason?: string;
+          };
+          /**
+           * Communication between the client and server
+           */
+          communication?: WSCommunication[];
           /**
            * Delay when start the request
            */
           delay?: number;
           /**
-           * Duration of the request
+           * Throw an error
            */
-          duration?: number;
+          error?: boolean;
           /**
            * A relative path to ws://localhost:3000/{path}
            */
           path: string;
           /**
-           * The response of websocket
+           * Protocols of the websocket
            */
-          response?: string;
+          protocols?: string | string[];
           /**
-           * Type
+           * A custom query
+           */
+          query?: Record<string, string>;
+          /**
+           * A queue of sending messages
+           */
+          sendQueue?: WSMessage[];
+          /**
+           * Websocket Type
            */
           type: "websocket";
-      };
+      }
+);

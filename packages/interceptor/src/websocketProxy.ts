@@ -1,18 +1,43 @@
 import { WebsocketListener } from "./websocketListener";
 
+const getQueryObjectFromString = (url: string) => {
+    const urlObject = new URL(url.toString());
+    const queryArray = [...urlObject.searchParams.entries()];
+
+    const result: Record<string, string | number> = {};
+
+    for (const entry of queryArray) {
+        result[entry[0]] = entry[1];
+    }
+
+    return result;
+};
+
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
     const listener = (win: Cypress.AUTWindow) => {
         class WebSocketProxy extends WebSocket {
+            private _URL: {
+                query: Record<string, string | number>;
+                url: string;
+                urlQuery: string;
+            };
+
             constructor(
                 url: string | URL,
                 private protocols?: string | string[]
             ) {
                 super(url, protocols);
 
+                this._URL = {
+                    query: getQueryObjectFromString(url.toString()),
+                    url: url.toString().replace(/\?(.*)/, ""),
+                    urlQuery: url.toString()
+                };
+
                 websocketListener.fireAction({
                     protocols: this.protocols,
                     type: "create",
-                    url: this.url
+                    ...this._URL
                 });
 
                 // create to catch actions if not set
@@ -41,7 +66,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                     },
                     protocols: this.protocols,
                     type: "close",
-                    url: this.url
+                    ...this._URL
                 });
 
                 return super.close(code, reason);
@@ -53,7 +78,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                         data: ev,
                         protocols: this.protocols,
                         type: "onclose",
-                        url: this.url
+                        ...this._URL
                     });
 
                     return value(ev);
@@ -66,11 +91,15 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                         data: ev,
                         protocols: this.protocols,
                         type: "onerror",
-                        url: this.url
+                        ...this._URL
                     });
 
                     return value(ev);
                 };
+            }
+
+            error(ev: Event) {
+                super.onerror?.(ev);
             }
 
             set onopen(value: (ev: Event) => void) {
@@ -79,7 +108,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                         data: ev,
                         protocols: this.protocols,
                         type: "onopen",
-                        url: this.url
+                        ...this._URL
                     });
 
                     return value(ev);
@@ -91,7 +120,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                     data,
                     protocols: this.protocols,
                     type: "send",
-                    url: this.url
+                    ...this._URL
                 });
 
                 return super.send(data);
@@ -103,7 +132,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                         data: ev,
                         protocols: this.protocols,
                         type: "onmessage",
-                        url: this.url
+                        ...this._URL
                     });
 
                     return value(ev);

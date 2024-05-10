@@ -1,4 +1,4 @@
-import { deepCopy, getFilePath, testUrlMatch } from "./utils";
+import { deepCopy, getFilePath, isNonNullableObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 import { WebSocketAction, WebsocketListener } from "./websocketListener";
 
@@ -7,23 +7,25 @@ declare global {
         interface Chainable {
             wsInterceptor: () => Chainable<WebsocketInterceptor>;
             wsInterceptorLastRequest: (
-                matcher?: IMatcher
+                matcher?: IWSMatcher
             ) => Chainable<CallStackWebsocket | undefined>;
+            wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+            wsResetInterceptorWatch: () => void;
             waitUntilWebsocketAction(
                 options?: WaitUntilActionOptions,
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
             waitUntilWebsocketAction(
-                matcher?: IMatcher | IMatcher[],
+                matcher?: IWSMatcher | IWSMatcher[],
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
             waitUntilWebsocketAction(
-                matcher?: IMatcher | IMatcher[],
+                matcher?: IWSMatcher | IWSMatcher[],
                 options?: WaitUntilActionOptions,
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
             waitUntilWebsocketAction(
-                matcherOrOptions?: IMatcher | IMatcher[] | WaitUntilActionOptions,
+                matcherOrOptions?: IWSMatcher | IWSMatcher[] | WaitUntilActionOptions,
                 errorMessageOrOptions?: string | WaitUntilActionOptions,
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
@@ -38,32 +40,45 @@ export type CallStackWebsocket = WebSocketAction & {
     timeStart: Date;
 };
 
-export type IMatcher = {
+export type IWSMatcher = {
+    /**
+     * A matcher for query string
+     *
+     * @param query The URL query string
+     * @returns True if matches
+     */
+    queryMatcher?: (query: Record<string, string | number>) => boolean;
+    /**
+     * Match by protocols
+     */
     protocols?: string | string[];
+    /**
+     * A URL matcher, use * or ** to match any word in string ("**\/api/call", ...)
+     */
     url?: StringMatcher;
 } & (
     | {
-          type?: "create" | "close" | "onclose" | "onerror" | "onmessage" | "onopen" | "send";
+          types?: ("create" | "close" | "onclose" | "onerror" | "onopen" | "onmessage" | "send")[];
+      }
+    | {
+          type?: "create" | "onerror" | "onopen";
       }
     | {
           code?: number;
           reason?: string;
-          type: "close";
+          type?: "close";
       }
     | {
-          // data: CloseEvent;
+          code?: number;
+          reason?: string;
           type: "onclose";
       }
     | {
-          // data: MessageEvent<unknown>;
+          data?: string;
           type: "onmessage";
       }
     | {
-          // data: Event;
-          type: "onerror" | "onopen";
-      }
-    | {
-          // data: string | ArrayBufferLike | Blob | ArrayBufferView;
+          data?: string;
           type: "send";
       }
 );
@@ -71,7 +86,7 @@ export type IMatcher = {
 type StringMatcher = string | RegExp;
 
 export interface WaitUntilActionOptions {
-    enforceCheck?: boolean;
+    countMatch?: number;
     waitTimeout?: number;
 }
 
@@ -95,7 +110,7 @@ export class WebsocketInterceptor {
         return deepCopy(this._callStack);
     }
 
-    private filterItemsByMatcher(matcher?: IMatcher) {
+    private filterItemsByMatcher(matcher?: IWSMatcher) {
         return (item: CallStackWebsocket) => {
             if (!matcher) {
                 return true;
@@ -104,27 +119,56 @@ export class WebsocketInterceptor {
             let matches = 0;
             let mustMatch = 0;
 
-            switch (matcher.type) {
-                case "close": {
-                    break;
-                }
-                case "create": {
-                    break;
-                }
-                case "onclose": {
-                    break;
-                }
-                case "onerror": {
-                    break;
-                }
-                case "onmessage": {
-                    break;
-                }
-                case "onopen": {
-                    break;
-                }
-                case "send": {
-                    break;
+            if ("type" in matcher) {
+                switch (matcher.type) {
+                    case "close":
+                    case "onclose": {
+                        if (matcher.reason !== undefined) {
+                            mustMatch++;
+
+                            matches +=
+                                isNonNullableObject(item.data) &&
+                                "reason" in item.data &&
+                                matcher.reason === item.data.reason
+                                    ? 1
+                                    : 0;
+                        }
+
+                        if (matcher.code !== undefined) {
+                            mustMatch++;
+
+                            matches +=
+                                isNonNullableObject(item.data) &&
+                                "code" in item.data &&
+                                matcher.code === item.data.code
+                                    ? 1
+                                    : 0;
+                        }
+
+                        break;
+                    }
+                    case "onmessage": {
+                        if (matcher.data) {
+                            mustMatch++;
+
+                            matches +=
+                                isNonNullableObject(item.data) &&
+                                "data" in item.data &&
+                                matcher.data === item.data.data
+                                    ? 1
+                                    : 0;
+                        }
+                        break;
+                    }
+                    case "send": {
+                        if (matcher.data) {
+                            mustMatch++;
+
+                            matches += matcher.data === item.data ? 1 : 0;
+                        }
+
+                        break;
+                    }
                 }
             }
 
@@ -141,10 +185,22 @@ export class WebsocketInterceptor {
                 matches += matcherProtocols.every((entry) => itemProtocols.includes(entry)) ? 1 : 0;
             }
 
-            if (matcher.type) {
+            if (matcher.queryMatcher !== undefined) {
+                mustMatch++;
+
+                matches += matcher.queryMatcher(item.query) ? 1 : 0;
+            }
+
+            if ("type" in matcher && matcher.type) {
                 mustMatch++;
 
                 matches += matcher.type === item.type ? 1 : 0;
+            }
+
+            if ("types" in matcher && matcher.types) {
+                mustMatch++;
+
+                matches += matcher.types.includes(item.type) ? 1 : 0;
             }
 
             if (matcher.url) {
@@ -157,24 +213,27 @@ export class WebsocketInterceptor {
         };
     }
 
-    public getLastRequest(matcher?: IMatcher) {
+    public getLastRequest(matcher?: IWSMatcher) {
         const items = this._callStack.filter(this.filterItemsByMatcher(matcher));
 
         return items.length ? deepCopy(items[items.length - 1]) : undefined;
     }
 
-    private isThereActionMatch(matcher?: IMatcher | IMatcher[], enforceCheck = true) {
+    public getStats(matcher?: IWSMatcher) {
+        return deepCopy(this._callStack.filter(this.filterItemsByMatcher(matcher)));
+    }
+
+    private isThereActionMatch(matcher: IWSMatcher | IWSMatcher[], countMatch = 1) {
         const matcherArray = Array.isArray(matcher) ? matcher : [matcher];
+        const callStack = this._callStack.slice(this._skip);
 
         const itemsArray = matcherArray.map(
-            (entry) =>
-                this._callStack.slice(this._skip).filter(this.filterItemsByMatcher(entry)).length >
-                0
+            (entry) => callStack.filter(this.filterItemsByMatcher(entry)).length >= countMatch
         );
 
-        return enforceCheck
-            ? itemsArray.every((hasItems) => hasItems)
-            : itemsArray.some((items) => items);
+        return matcherArray.length > 0
+            ? itemsArray.length && itemsArray.every((hasItems) => hasItems)
+            : callStack.length > 0;
     }
 
     public resetWatch() {
@@ -186,16 +245,16 @@ export class WebsocketInterceptor {
         errorMessage?: string
     ): Cypress.Chainable<this>;
     public waitUntilWebsocketAction(
-        matcher?: IMatcher | IMatcher[],
+        matcher?: IWSMatcher | IWSMatcher[],
         errorMessage?: string
     ): Cypress.Chainable<this>;
     public waitUntilWebsocketAction(
-        matcher?: IMatcher | IMatcher[],
+        matcher?: IWSMatcher | IWSMatcher[],
         options?: WaitUntilActionOptions,
         errorMessage?: string
     ): Cypress.Chainable<this>;
     public waitUntilWebsocketAction(
-        matcherOrOptions?: IMatcher | IMatcher[] | WaitUntilActionOptions,
+        matcherOrOptions?: IWSMatcher | IWSMatcher[] | WaitUntilActionOptions,
         errorMessageOrOptions?: string | WaitUntilActionOptions,
         errorMessage?: string
     ) {
@@ -218,29 +277,25 @@ export class WebsocketInterceptor {
     }
 
     private waitUntilWebsocketAction_isMatcher(
-        matcher?: IMatcher | IMatcher[] | string | WaitUntilActionOptions
-    ): matcher is IMatcher | IMatcher[] {
+        matcher?: IWSMatcher | IWSMatcher[] | string | WaitUntilActionOptions
+    ): matcher is IWSMatcher | IWSMatcher[] {
         return (
-            typeof matcher === "object" &&
-            matcher !== null &&
+            isNonNullableObject(matcher) &&
             (Array.isArray(matcher) || !this.waitUntilWebsocketAction_isOption(matcher))
         );
     }
 
     private waitUntilWebsocketAction_isOption(
-        options?: IMatcher | IMatcher[] | string | WaitUntilActionOptions
+        options?: IWSMatcher | IWSMatcher[] | string | WaitUntilActionOptions
     ): options is WaitUntilActionOptions {
         return (
-            typeof options === "object" &&
-            options !== null &&
-            ("enforceCheck" in options ||
-                "waitForNextRequest" in options ||
-                "waitTimeout" in options)
+            isNonNullableObject(options) &&
+            ("countMatch" in options || "enforceCheck" in options || "waitTimeout" in options)
         );
     }
 
     private waitUntilWebsocketAction_withWait(
-        matcher: IMatcher | IMatcher[] = [],
+        matcher: IWSMatcher | IWSMatcher[] = [],
         options: WaitUntilActionOptions = {},
         startTime: number,
         errorMessage?: string
@@ -249,7 +304,7 @@ export class WebsocketInterceptor {
             (options.waitTimeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT) -
             (performance.now() - startTime);
 
-        return waitTill(() => !this.isThereActionMatch(matcher, options.enforceCheck), {
+        return waitTill(() => !this.isThereActionMatch(matcher, options.countMatch), {
             errorMessage,
             interval: DEFAULT_INTERVAL,
             timeout
@@ -258,13 +313,10 @@ export class WebsocketInterceptor {
 
     // DEBUG TOOLS
 
-    public writeStatsToLog(
-        currentTest: typeof Cypress.currentTest | string | undefined,
-        outputDir: string
-    ) {
+    public writeStatsToLog(outputDir: string, matcher?: IWSMatcher, fileName?: string) {
         cy.writeFile(
-            getFilePath(currentTest, outputDir, "stats"),
-            JSON.stringify(this.callStack, undefined, 4)
+            getFilePath(fileName, outputDir, "ws.stats"),
+            JSON.stringify(this.callStack.filter(this.filterItemsByMatcher(matcher)), replacer, 4)
         );
     }
 }

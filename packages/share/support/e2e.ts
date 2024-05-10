@@ -1,3 +1,4 @@
+import "@cypress/code-coverage/support";
 import "cypress-interceptor/src/index";
 import "cypress-interceptor/src/websocket";
 

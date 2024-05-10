@@ -1,6 +1,6 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
-import { deepCopy, getFilePath, testUrlMatch } from "./utils";
+import { deepCopy, getFilePath, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
@@ -186,7 +186,7 @@ export interface InterceptorOptions {
      */
     disableCache?: boolean;
     /**
-     * When it is true, calling `getDebugInfo()` will return an array with all catched requests
+     * When it is true, calling `debugInfo` will return an array with all catched requests
      */
     debug?: boolean;
     /**
@@ -369,7 +369,7 @@ export type IRouteMatcherObject = {
      * @param headers The request headers
      * @returns True if matches
      */
-    headersMatcher?: (headers: IHeadersNormalized) => boolean;
+    headersMatcher?: (headers: IHeaders) => boolean;
     /**
      * If true, only HTTPS requests match
      */
@@ -436,7 +436,7 @@ const DEFAULT_TIMEOUT = 10000;
 
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
-    debug: false,
+    debug: undefined!,
     ingoreCrossDomain: true,
     resourceTypes: DEFAULT_RESOURCE_TYPES
 };
@@ -649,6 +649,15 @@ export class Interceptor {
     }
 
     /**
+     * Get an array with all logged/skiped calls to track down a possible issue.
+     *
+     * @returns An array with debug information
+     */
+    public get debugInfo() {
+        return deepCopy(this._debugInfo);
+    }
+
+    /**
      * Returns true if debug is enabled by Interceptor options or Cypress environment
      * variable `INTERCEPTOR_DEBUG`. The Interceptor `debug` option has the highest
      * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
@@ -687,9 +696,7 @@ export class Interceptor {
             if (routeMatcher.headersMatcher) {
                 mustMatch++;
 
-                matches += routeMatcher.headersMatcher(this.normalizeHeaders(item.request.headers))
-                    ? 1
-                    : 0;
+                matches += routeMatcher.headersMatcher(item.request.headers) ? 1 : 0;
             }
 
             if (routeMatcher.bodyMatcher !== undefined) {
@@ -750,15 +757,6 @@ export class Interceptor {
 
             return matches === mustMatch;
         };
-    }
-
-    /**
-     * Get an array with all logged/skiped calls to track down a possible issue.
-     *
-     * @returns An array with debug information
-     */
-    public getDebugInfo() {
-        return deepCopy(this._debugInfo);
     }
 
     private getMock(item: CallStack) {
@@ -871,17 +869,6 @@ export class Interceptor {
         return mockEntry.id;
     }
 
-    private normalizeHeaders(headers: IHeaders): IHeadersNormalized {
-        const normalized: IHeadersNormalized = {};
-
-        for (const key in headers) {
-            const entry = headers[key];
-            normalized[key] = Array.isArray(entry) ? entry.join(",") : entry;
-        }
-
-        return normalized;
-    }
-
     /**
      * Remove a mock entry by id
      *
@@ -958,7 +945,7 @@ export class Interceptor {
      * throttles the first matching request, then the throttle is removed. Set `times`
      * in options to change how many times should be the matching requests throttled.
      *
-     * @param urlMatcher A route matcher
+     * @param routeMatcher A route matcher
      * @param delay A delay in ms
      * @param options Throttle options (it can include mocking the response)
      * @returns An id of the created throttle. It is needed if you want to remove
@@ -1057,10 +1044,9 @@ export class Interceptor {
      * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
     public writeDebugToLog(outputDir: string, fileName?: string) {
-        console.log(getFilePath(fileName, outputDir, "debug"));
         cy.writeFile(
             getFilePath(fileName, outputDir, "debug"),
-            JSON.stringify(this.getDebugInfo(), undefined, 4)
+            JSON.stringify(this.debugInfo, replacer, 4)
         );
     }
 
@@ -1071,12 +1057,17 @@ export class Interceptor {
      *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.json"
      *
      * @param outputDir A path for the output directory
+     * @param routeMatcher A route matcher
      * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
-    public writeStatsToLog(outputDir: string, fileName?: string) {
+    public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string) {
         cy.writeFile(
             getFilePath(fileName, outputDir, "stats"),
-            JSON.stringify(this.callStack, undefined, 4)
+            JSON.stringify(
+                this.callStack.filter(this.filterItemsByMatcher(routeMatcher)),
+                replacer,
+                4
+            )
         );
     }
 }

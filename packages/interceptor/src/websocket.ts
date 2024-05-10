@@ -13,6 +13,10 @@ beforeEach(() => {
     Cypress.Commands.add("wsInterceptorLastRequest", (matcher) =>
         cy.wrap(websocketInterceptor.getLastRequest(matcher))
     );
+    Cypress.Commands.add("wsInterceptorStats", (matcher) =>
+        cy.wrap(websocketInterceptor.getStats(matcher))
+    );
+    Cypress.Commands.add("wsResetInterceptorWatch", () => websocketInterceptor.resetWatch());
     Cypress.Commands.add("waitUntilWebsocketAction", (...args) =>
         websocketInterceptor.waitUntilWebsocketAction(
             ...(args as Parameters<typeof websocketInterceptor.waitUntilWebsocketAction>)
@@ -24,6 +28,8 @@ beforeEach(() => {
 
 // afterEach(function () {
 //     cy.wsInterceptor().then((wsInterceptor) => {
-//         wsInterceptor.writeStatsToLog(Cypress.currentTest, "./_stats");
+//         if (wsInterceptor.callStack.length) {
+//             wsInterceptor.writeStatsToLog("./_stats");
+//         }
 //     });
 // });

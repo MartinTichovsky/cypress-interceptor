@@ -42,7 +42,7 @@ describe("Debug", () => {
         cy.interceptor().then((interceptor) => {
             expect(interceptor.debugIsEnabled).to.be.true;
 
-            const debugInfo = interceptor.getDebugInfo();
+            const debugInfo = interceptor.debugInfo;
 
             expect(debugInfo.length > 0).to.be.true;
             expect(!!debugInfo.find((entry) => entry.type === "logged")).to.be.true;
@@ -63,7 +63,7 @@ describe("Debug", () => {
         cy.interceptor().then((interceptor) => {
             expect(interceptor.debugIsEnabled).to.be.true;
 
-            const debugInfo = interceptor.getDebugInfo();
+            const debugInfo = interceptor.debugInfo;
 
             expect(debugInfo.length > 0).to.be.true;
             expect(!!debugInfo.find((entry) => entry.type === "logged")).to.be.true;
@@ -86,7 +86,7 @@ describe("Debug", () => {
         cy.interceptor().then((interceptor) => {
             expect(interceptor.debugIsEnabled).to.be.true;
 
-            const debugInfo = interceptor.getDebugInfo();
+            const debugInfo = interceptor.debugInfo;
 
             expect(debugInfo.length > 0).to.be.true;
             expect(!!debugInfo.find((entry) => entry.type === "logged")).to.be.true;
@@ -107,7 +107,7 @@ describe("Debug", () => {
         cy.interceptor().then((interceptor) => {
             expect(interceptor.debugIsEnabled).to.be.false;
 
-            const debugInfo = interceptor.getDebugInfo();
+            const debugInfo = interceptor.debugInfo;
 
             expect(debugInfo.length > 0).to.be.false;
         });

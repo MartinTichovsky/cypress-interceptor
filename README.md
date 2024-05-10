@@ -8,6 +8,31 @@
 
 Cypress Interceptor is a global substitute for `cy.intercept`. It is a crucial helper for your tests based on HTTP/HTTPS requests. The main reason why this package was created is the function `waitUntilRequestIsDone`. This function waits until one or more requests are finished using the provided arguments. More information below.
 
+#### Why to use?
+
+```ts
+/*
+ * Let's say we have some content to check out. It can be a table, data grid,
+ * list of products, ... - just any AJAX action. 
+*/
+it("Table with products", () => {
+    // on the page should be a table with a list of products
+    cy.visit("my-page.org");
+
+    // we would like to check out that the table exists
+    cy.get("table#my-table").should("exist");
+
+    // navigate to the next page
+    cy.get("button#next").click();
+
+    waitUntilRequestIsDone();
+
+    // 
+    cy.get("table#my-table").should("exist");
+})
+
+```
+
 ## Getting started
 
 It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
@@ -15,6 +40,10 @@ It is very simple, just install the package using `yarn` or `npm` and import the
 ```js
 import "cypress-interceptor";
 ```
+
+## Would you just log all requests to a file on fail?
+
+[Take a look to this example](#log-on-fail).
 
 ## Interceptor Cypress commands
 
@@ -145,7 +174,7 @@ e2e: {
 }
 ```
 
-__`INTERCEPTOR_DEBUG`__ - enables logging of all requests. More in [`getDebugInfo`](#getdebuginfo)
+__`INTERCEPTOR_DEBUG`__ - enables logging of all requests. More in [`debugInfo`](#debuginfo)
 
 __`INTERCEPTOR_DISABLE_CACHE`__ - when set to true, all requests will contain an additional header `"cache-control": "no-store"`
 
@@ -255,7 +284,7 @@ Set Interceptor options. Best to call at the beggining of the test, in `before` 
 
 ```ts
 disableCache: undefined,
-debug: false,
+debug: undefined,
 ingoreCrossDomain: true,
 resourceTypes: ["document", "fetch", "script", "xhr"]
 ```
@@ -529,6 +558,14 @@ get callStack();
 
 Return a copy of all logged requests since the Interceptor has been created (the Interceptor is created in `beforeEach`).
 
+## debugInfo
+
+```ts
+get debugInfo();
+```
+
+Get an array with all logged/skiped calls to track down a possible issue. All requests not matching the global resource types or cross domain option are skipped.
+
 ## debugIsEnabled
 
 ```ts
@@ -542,14 +579,6 @@ Returns true if debug is enabled by Interceptor options or Cypress environment v
 ```ts
 return this._options.debug ?? !!Cypress.env("INTERCEPTOR_DEBUG");
 ```
-
-## getDebugInfo
-
-```ts
-getDebugInfo();
-```
-
-Get an array with all logged/skiped calls to track down a possible issue. All requests not matching the global resource types or cross domain option are skipped.
 
 ## getLastRequest
 
@@ -605,7 +634,7 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 writeDebugToLog(outputDir: string, fileName?: string);
 ```
 
-Write the debug information to a file (debug must be enabled). The file will contain JSON.stringify of [`getDebugInfo`](#getdebuginfo).
+Write the debug information to a file (debug must be enabled). The file will contain JSON.stringify of [`debugInfo`](#debuginfo).
 
 ### Example
 
@@ -623,8 +652,11 @@ afterAll(() => {
 ## writeStatsToLog
 
 ```ts
-public writeStatsToLog(outputDir: string, fileName?: string);
+public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string);
 ```
+
+_References:_
+  - [`IRouteMatcher`](#iroutematcher)
 
 Write the logged requests' information to a file. The file will contain JSON.stringify of [`callStack`](#callstack).
 
@@ -636,7 +668,9 @@ afterAll(() => {
         // example output will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
         interceptor.writeStatsToLog("./out");
         // example output will be "./out/file_name.stats.json"
-        interceptor.writeStatsToLog("./out", "file_name");
+        interceptor.writeStatsToLog("./out", undefined, "file_name");
+        // write only "fetch" requests
+        interceptor.writeStatsToLog("./out", { resourceType: "fetch" });
     });
 });
 ```
@@ -660,7 +694,7 @@ interface InterceptorOptions {
      */
     disableCache?: boolean;
     /**
-     * When it is true, calling `getDebugInfo()` will return an array with all catched requests
+     * When it is true, calling `debugInfo` will return an array with all catched requests
      */
     debug?: boolean;
     /**
@@ -819,3 +853,30 @@ interface WaitUntilRequestOptions extends IRouteMatcherObject {
     waitTimeout?: number;
 }
 ```
+
+# Useful tips
+
+## Log on fail
+
+You can use Interceptor to write all non cached requests to a file. Just use this code in your `cypress/support/e2e.ts` or `cypress/support/e2e.js`:
+
+```ts
+import "cypress-interceptor";
+
+afterEach(function () {
+    if (this.currentTest?.state === 'failed') {
+        cy.interceptor().then(interceptor => {
+            interceptor.writeStatsToLog('./mochawesome-report/_interceptor');
+        });
+    }
+});
+```
+
+The code above will write all requests to the output file. But you can use a route matcher to filter only requests you want. For example:
+
+```ts
+// the output will contain only ajax requests
+interceptor.writeStatsToLog('./mochawesome-report/_interceptor', { resourceType: ["fetch", "xhr"] });
+```
+
+See the methods you can use: [`writeStatsToLog`](#writestatstolog) or [`writeDebugToLog`](#writedebugtolog)

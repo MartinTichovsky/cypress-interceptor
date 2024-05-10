@@ -41,7 +41,12 @@ export const getFileNameFromCurrentTest = () => {
 };
 
 export const getFilePath = (fileName: string | undefined, outputDir: string, type: string) =>
-    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${fileName ? fileName : getFileNameFromCurrentTest()}.${type}.json`;
+    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${(fileName ? fileName : getFileNameFromCurrentTest()).replace(/(\/|\\)/gi, "|")}.${type}.json`;
+
+export const isNonNullableObject = (
+    object: unknown
+): object is Record<string | symbol | number, unknown> =>
+    typeof object === "object" && object !== null;
 
 export const replacer = (_key: string, value: unknown) =>
     typeof value === "undefined" ? null : value;

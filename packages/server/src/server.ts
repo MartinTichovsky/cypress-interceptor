@@ -2,8 +2,10 @@ import * as cors from "cors";
 import * as express from "express";
 import * as expressWs from "express-ws";
 import * as path from "path";
+import { WebSocket } from "ws";
 
 import { getExampleResponse } from "./exampleResponse";
+import { WSMessage } from "./types";
 
 const app = expressWs(express()).app;
 const port = 3000;
@@ -28,6 +30,10 @@ interface TestingEndpointRequest {
     status?: string;
 }
 
+interface WsEndpointRequest {
+    autoResponse?: string;
+}
+
 const getResponseBody = (
     req: express.Request<unknown, unknown, unknown, TestingEndpointRequest>
 ) => {
@@ -48,24 +54,48 @@ const getNumberFomString = (num: string | undefined, defaultNumber = 0) => {
 
 const XHRContentType = "application/json";
 
-app.ws("/*", (ws) => {
+const executeAutoResponse = async (ws: WebSocket, autoResponse: WSMessage[]) => {
+    if (!autoResponse.length) {
+        return;
+    }
+
+    if (autoResponse[0].delay) {
+        await wait(autoResponse[0].delay);
+    }
+
+    ws.send(autoResponse[0].data);
+
+    autoResponse.shift();
+
+    void executeAutoResponse(ws, autoResponse);
+};
+
+app.ws("/*", (ws, req) => {
     ws.on("message", (msg: string) => {
         try {
             const data = JSON.parse(msg);
 
-            if (data.response) {
-                wait(getNumberFomString(data.duration))
+            if (data && data.response) {
+                wait(getNumberFomString(data.delay))
                     .then(() => {
                         ws.send(data.response);
                     })
-                    .catch(() => {
-                        //
+                    .catch((er) => {
+                        console.error(er);
                     });
             }
         } catch {
             //
         }
     });
+
+    const query: WsEndpointRequest = req.query;
+
+    const autoResponse: WSMessage[] = query.autoResponse ? JSON.parse(query.autoResponse) : [];
+
+    if (autoResponse.length) {
+        void executeAutoResponse(ws, autoResponse);
+    }
 });
 
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {

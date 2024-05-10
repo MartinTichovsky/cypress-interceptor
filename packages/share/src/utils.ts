@@ -1,6 +1,6 @@
 export const createMatcher =
     (subject: Record<string, string | number>, strictMatch = false) =>
-    (query: Record<string, string | number>) =>
+    (query: Record<string, string | string[] | number>) =>
         Object.keys(subject).every((key) => key in query && query[key] === subject[key])
             ? strictMatch
                 ? Object.keys(query).every((key) => key in subject && query[key] === subject[key])
