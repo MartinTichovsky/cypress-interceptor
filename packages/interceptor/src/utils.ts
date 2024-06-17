@@ -1,3 +1,7 @@
+type CommonObject<T> = {
+    [K in keyof T]?: T[K];
+};
+
 export const deepCopy = <T>(value: T) => {
     if (
         typeof value === "object" &&
@@ -41,7 +45,12 @@ export const getFileNameFromCurrentTest = () => {
 };
 
 export const getFilePath = (fileName: string | undefined, outputDir: string, type: string) =>
-    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${fileName ? fileName : getFileNameFromCurrentTest()}.${type}.json`;
+    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${(fileName ? fileName : getFileNameFromCurrentTest()).replace(/(\/|\\)/gi, "|")}.${type}.json`;
+
+export const isNonNullableObject = (
+    object: unknown
+): object is Record<string | symbol | number, unknown> =>
+    typeof object === "object" && object !== null;
 
 export const replacer = (_key: string, value: unknown) =>
     typeof value === "undefined" ? null : value;
@@ -52,4 +61,12 @@ export const testUrlMatch = (urlMatcher: string | RegExp, url: string) => {
     }
 
     return urlMatcher.test(url);
+};
+
+export const removeUndefinedFromObject = <T, K extends keyof T>(object: CommonObject<T>) => {
+    const result = { ...object };
+
+    Object.keys(result).forEach((key) => result[key as K] === undefined && delete result[key as K]);
+
+    return result;
 };

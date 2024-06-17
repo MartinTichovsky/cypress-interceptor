@@ -1,62 +1,122 @@
-export type DynamicRequest = {
-    /**
-     * If true, the response will contain "Cache-Control": "public, max-age=3600",
-     * and the request will be cached for all the tests
-     */
-    enableCache?: boolean;
-    /**
-     * Delay when start the request
-     */
+export interface WSMessage {
+    data: string;
     delay?: number;
-    /**
-     * Duration of the request
-     */
-    duration?: number;
+}
+
+export interface WSCommunication {
+    responseData?: string;
+    responseDelay?: number;
+    sendData: string;
+    sendDelay?: number;
+}
+
+export type DynamicRequest = {
     /**
      * If true, a click will be required to fire the request
      */
     fireOnClick?: boolean;
-    /**
-     * A relative path, such as /script.js, /testing-endpoint, etc.
-     */
-    path: string;
-    /**
-     * A custom query
-     */
-    query?: Record<string, string>;
-    /**
-     * Possible following requests after this one
-     */
-    requests?: DynamicRequest[];
-    /**
-     * Custom response status
-     */
-    status?: number;
 } & (
+    | ({
+          /**
+           * If true, the response will contain "Cache-Control": "public, max-age=3600",
+           * and the request will be cached for all the tests
+           */
+          enableCache?: boolean;
+          /**
+           * Delay when start the request
+           */
+          delay?: number;
+          /**
+           * Duration of the request
+           */
+          duration?: number;
+          /**
+           * A relative path, such as /script.js, /testing-endpoint, etc.
+           */
+          path: string;
+          /**
+           * A custom query
+           */
+          query?: Record<string, string>;
+          /**
+           * Possible following requests after this one
+           */
+          requests?: DynamicRequest[];
+          /**
+           * Custom response status
+           */
+          status?: number;
+      } & (
+          | {
+                /**
+                 * The response
+                 */
+                responseBody?: string;
+                type: "image" | "script" | "stylesheet";
+            }
+          | {
+                /**
+                 * Body sent by fetch
+                 */
+                body?: unknown;
+                /**
+                 * Headers sent by fetch
+                 */
+                headers?: Record<string, string>;
+                /**
+                 * The response
+                 */
+                responseBody?: Record<string, unknown>;
+                /**
+                 * The request method
+                 */
+                method: "GET" | "POST";
+                type: "fetch";
+            }
+      ))
     | {
           /**
-           * The response
+           * A data send to the server when create for getting custom responses
            */
-          responseBody?: string;
-          type: "image" | "script" | "stylesheet";
-      }
-    | {
+          autoResponse?: WSMessage[];
           /**
-           * Body sent by fetch
+           * Close after receiving a message
            */
-          body?: unknown;
+          close?: {
+              code?: number;
+              reason?: string;
+          };
           /**
-           * Headers sent by fetch
+           * Communication between the client and server
            */
-          headers?: Record<string, string>;
+          communication?: WSCommunication[];
           /**
-           * The response
+           * Delay when start the request
            */
-          responseBody?: Record<string, unknown>;
+          delay?: number;
           /**
-           * The request method
+           * Throw an error
            */
-          method: "GET" | "POST";
-          type: "fetch";
+          error?: boolean;
+          /**
+           * A relative path to ws://localhost:3000/{path}
+           */
+          path: string;
+          /**
+           * Protocols of the websocket
+           */
+          protocols?: string | string[];
+          /**
+           * A custom query
+           */
+          query?: Record<string, string>;
+          /**
+           * A queue of sending messages
+           */
+          sendQueue?: WSMessage[];
+          /**
+           * Websocket Type
+           */
+          type: "websocket";
       }
 );

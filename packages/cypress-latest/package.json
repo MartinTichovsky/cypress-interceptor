@@ -4,6 +4,9 @@
   "scripts": {
     "cy:open": "cypress open --e2e",
     "cy:run": "cypress run",
+    "cy:run:chrome": "cypress run -b chrome",
+    "cy:run:edge": "cypress run -b edge",
+    "cy:run:firefox": "cypress run -b firefox",
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {

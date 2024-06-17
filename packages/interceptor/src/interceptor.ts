@@ -1,6 +1,6 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
-import { getFilePath } from "./utils";
+import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
@@ -120,10 +120,6 @@ declare global {
     }
 }
 
-type CommonObject<T> = {
-    [K in keyof T]?: T[K];
-};
-
 export interface CallStack {
     /**
      * Cross domain requests will have this property set to true
@@ -144,7 +140,7 @@ export interface CallStack {
     /**
      * Resource type
      */
-    resourceType: ResourceType;
+    resourceType: IResourceType;
     /**
      * Request info
      */
@@ -186,7 +182,7 @@ export interface InterceptorOptions {
      */
     disableCache?: boolean;
     /**
-     * When it is true, calling `getDebugInfo()` will return an array with all catched requests
+     * When it is true, calling `debugInfo` will return an array with all catched requests
      */
     debug?: boolean;
     /**
@@ -198,7 +194,7 @@ export interface InterceptorOptions {
      *
      * Provide "all" for processing all requests no matter to the resource type
      */
-    resourceTypes?: ResourceType | ResourceType[] | "all";
+    resourceTypes?: IResourceType | IResourceType[] | "all";
 }
 
 export interface IDebug {
@@ -312,6 +308,8 @@ export interface IRequest {
     query: Record<string, string | number>;
 }
 
+export type IResourceType = Exclude<ResourceType, "websocket">;
+
 export interface IResponse {
     /**
      * The response body, it can be anything (replaced by mock if provided)
@@ -367,7 +365,7 @@ export type IRouteMatcherObject = {
      * @param headers The request headers
      * @returns True if matches
      */
-    headersMatcher?: (headers: IHeadersNormalized) => boolean;
+    headersMatcher?: (headers: IHeaders) => boolean;
     /**
      * If true, only HTTPS requests match
      */
@@ -386,7 +384,7 @@ export type IRouteMatcherObject = {
     /**
      * Resource type (document, script, fetch, ....)
      */
-    resourceType?: ResourceType | ResourceType[] | "all";
+    resourceType?: IResourceType | IResourceType[] | "all";
     /**
      * A URL matcher, use * or ** to match any word in string ("**\/api/call", "**\/script.js", ...)
      */
@@ -429,12 +427,12 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
 }
 
 const DEFAULT_INTERVAL = 500;
-const DEFAULT_RESOURCE_TYPES: ResourceType[] = ["document", "fetch", "script", "xhr"];
+const DEFAULT_RESOURCE_TYPES: IResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
 
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
-    debug: false,
+    debug: undefined!,
     ingoreCrossDomain: true,
     resourceTypes: DEFAULT_RESOURCE_TYPES
 };
@@ -470,8 +468,13 @@ export class Interceptor {
         let queueCounter = 0;
 
         cy.intercept("**", (req) => {
+            if (req.resourceType === "websocket") {
+                return;
+            }
+
             const queueId = ++queueCounter;
             const crossDomain = req.headers["host"] !== document.location.host;
+            const resourceType = req.resourceType;
 
             if (this.debugIsEnabled) {
                 this._debugInfo.push({
@@ -491,18 +494,18 @@ export class Interceptor {
             }
 
             if (
-                !req.resourceType ||
+                !resourceType ||
                 (Array.isArray(this._options.resourceTypes)
-                    ? !this._options.resourceTypes.includes(req.resourceType)
+                    ? !this._options.resourceTypes.includes(resourceType)
                     : this._options.resourceTypes !== "all" &&
-                      this._options.resourceTypes !== req.resourceType) ||
+                      this._options.resourceTypes !== resourceType) ||
                 (this._options.ingoreCrossDomain && crossDomain)
             ) {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
                         queueId,
                         method: req.method,
-                        resourceType: req.resourceType,
+                        resourceType,
                         time: new Date(),
                         type: "skipped",
                         url: req.url
@@ -539,7 +542,7 @@ export class Interceptor {
                 this._debugInfo.push({
                     queueId,
                     method: req.method,
-                    resourceType: req.resourceType,
+                    resourceType,
                     time: new Date(),
                     type: "logged",
                     url: req.url
@@ -638,7 +641,16 @@ export class Interceptor {
      * (the Interceptor is created in `beforeEach`)
      */
     public get callStack() {
-        return this.deepCopy(this._callStack);
+        return deepCopy(this._callStack);
+    }
+
+    /**
+     * Get an array with all logged/skiped calls to track down a possible issue.
+     *
+     * @returns An array with debug information
+     */
+    public get debugInfo() {
+        return deepCopy(this._debugInfo);
     }
 
     /**
@@ -648,33 +660,6 @@ export class Interceptor {
      */
     public get debugIsEnabled() {
         return this._options.debug ?? this._debugByEnv;
-    }
-
-    private deepCopy<T>(value: T) {
-        if (
-            typeof value === "object" &&
-            value !== null &&
-            !Array.isArray(value) &&
-            Object.keys(value).length
-        ) {
-            const copy = {} as typeof value;
-
-            for (const key in value) {
-                copy[key] = this.deepCopy(value[key]);
-            }
-
-            return copy;
-        } else if (Array.isArray(value)) {
-            const copy = [] as typeof value;
-
-            for (const key in value) {
-                copy[key] = this.deepCopy(value[key]);
-            }
-
-            return copy;
-        } else {
-            return value;
-        }
     }
 
     private disableCacheInResponse(headers: IHeadersNormalized = {}) {
@@ -698,7 +683,7 @@ export class Interceptor {
             }
 
             if (routeMatcher instanceof RegExp || typeof routeMatcher === "string") {
-                return this.testUrlMatch(routeMatcher, item.url);
+                return testUrlMatch(routeMatcher, item.url);
             }
 
             let matches = 0;
@@ -707,9 +692,7 @@ export class Interceptor {
             if (routeMatcher.headersMatcher) {
                 mustMatch++;
 
-                matches += routeMatcher.headersMatcher(this.normalizeHeaders(item.request.headers))
-                    ? 1
-                    : 0;
+                matches += routeMatcher.headersMatcher(item.request.headers) ? 1 : 0;
             }
 
             if (routeMatcher.bodyMatcher !== undefined) {
@@ -765,21 +748,11 @@ export class Interceptor {
             if (routeMatcher.url) {
                 mustMatch++;
 
-                matches += this.testUrlMatch(routeMatcher.url, item.url) ? 1 : 0;
+                matches += testUrlMatch(routeMatcher.url, item.url) ? 1 : 0;
             }
 
             return matches === mustMatch;
         };
-    }
-
-    /**
-     * Get an array with all logged/skiped calls to track down a possible issue.
-     * All requests not matching the global resource types or cross domain option are skipped
-     *
-     * @returns An array with debug information
-     */
-    public getDebugInfo() {
-        return this.deepCopy(this._debugInfo);
     }
 
     private getMock(item: CallStack) {
@@ -810,7 +783,7 @@ export class Interceptor {
     public getLastRequest(routeMatcher?: IRouteMatcher) {
         const items = this._callStack.filter(this.filterItemsByMatcher(routeMatcher));
 
-        return items.length ? this.deepCopy(items[items.length - 1]) : undefined;
+        return items.length ? deepCopy(items[items.length - 1]) : undefined;
     }
 
     /**
@@ -822,7 +795,7 @@ export class Interceptor {
      *          if none match, returns an empty array
      */
     public getStats(routeMatcher?: IRouteMatcher) {
-        return this.deepCopy(this._callStack.filter(this.filterItemsByMatcher(routeMatcher)));
+        return deepCopy(this._callStack.filter(this.filterItemsByMatcher(routeMatcher)));
     }
 
     private getThrottle(item: CallStack) {
@@ -892,17 +865,6 @@ export class Interceptor {
         return mockEntry.id;
     }
 
-    private normalizeHeaders(headers: IHeaders): IHeadersNormalized {
-        const normalized: IHeadersNormalized = {};
-
-        for (const key in headers) {
-            const entry = headers[key];
-            normalized[key] = Array.isArray(entry) ? entry.join(",") : entry;
-        }
-
-        return normalized;
-    }
-
     /**
      * Remove a mock entry by id
      *
@@ -933,16 +895,6 @@ export class Interceptor {
         return false;
     }
 
-    private removeUndefinedFromObject<T, K extends keyof T>(object: CommonObject<T>) {
-        const result = { ...object };
-
-        Object.keys(result).forEach(
-            (key) => result[key as K] === undefined && delete result[key as K]
-        );
-
-        return result;
-    }
-
     /**
      * Reset the watch of Interceptor. It sets the pointer to the last call. It is
      * needed to reset the pointer when you want to wait for certain requests.
@@ -966,20 +918,12 @@ export class Interceptor {
     public setOptions(options: InterceptorOptions = this._options): InterceptorOptions {
         this._options = {
             ...this._options,
-            ...this.removeUndefinedFromObject(options),
+            ...removeUndefinedFromObject(options),
             // only one option allowed to be undefined
             debug: options.debug!
         };
 
-        return this.deepCopy(this._options);
-    }
-
-    private testUrlMatch(urlMatcher: StringMatcher, url: string) {
-        if (typeof urlMatcher === "string") {
-            urlMatcher = new RegExp(`^${urlMatcher.replace(/(\*)+/gi, "(.*)")}$`);
-        }
-
-        return urlMatcher.test(url);
+        return deepCopy(this._options);
     }
 
     /**
@@ -987,7 +931,7 @@ export class Interceptor {
      * throttles the first matching request, then the throttle is removed. Set `times`
      * in options to change how many times should be the matching requests throttled.
      *
-     * @param urlMatcher A route matcher
+     * @param routeMatcher A route matcher
      * @param delay A delay in ms
      * @param options Throttle options (it can include mocking the response)
      * @returns An id of the created throttle. It is needed if you want to remove
@@ -1058,7 +1002,7 @@ export class Interceptor {
                 timeout
             }
         ).then(() => {
-            // check out with a delay if there is an another request after the last one
+            // check with a delay if there is an another request after the last one
             return cy
                 .wait(stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_INTERVAL, {
                     log: false
@@ -1079,33 +1023,38 @@ export class Interceptor {
     /**
      * Write the debug information to a file (debug must be enabled),
      * example: in `afterEach`
-     *      => interceptor.writeDebugToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.debug.json"
-     *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.json"
+     *      => interceptor.writeDebugToLog("./out") => example output will be "./out/Description - It.debug.json"
+     *      => interceptor.writeDebugToLog("./out", "file_name") => example output will be "./out/file_name.debug.json"
      *
      * @param outputDir A path for the output directory
      * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
     public writeDebugToLog(outputDir: string, fileName?: string) {
-        console.log(getFilePath(fileName, outputDir, "debug"));
         cy.writeFile(
             getFilePath(fileName, outputDir, "debug"),
-            JSON.stringify(this.getDebugInfo(), undefined, 4)
+            JSON.stringify(this.debugInfo, replacer, 4)
         );
     }
 
     /**
-     * Write the logged requests' information to a file,
+     * Write the logged requests' (or filtered by the provided route matcher) information to a file
      * example: in `afterEach`
-     *      => interceptor.writeStatsToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.stats.json"
-     *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.json"
+     *      => interceptor.writeStatsToLog("./out") => example output will be "./out/Description - It.stats.json"
+     *      => interceptor.writeStatsToLog("./out", undefined, "file_name") => example output will be "./out/file_name.stats.json"
+     *      => interceptor.writeStatsToLog("./out", { type: "onmessage" }) => write only "onmessage" requests to the output file
      *
      * @param outputDir A path for the output directory
+     * @param routeMatcher A route matcher
      * @param currentTest A name of the file, if undefined, it will be composed from the running test
      */
-    public writeStatsToLog(outputDir: string, fileName?: string) {
+    public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string) {
         cy.writeFile(
             getFilePath(fileName, outputDir, "stats"),
-            JSON.stringify(this.callStack, undefined, 4)
+            JSON.stringify(
+                this.callStack.filter(this.filterItemsByMatcher(routeMatcher)),
+                replacer,
+                4
+            )
         );
     }
 }

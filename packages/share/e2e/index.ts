@@ -7,3 +7,4 @@ export * from "./serverFunctionality";
 export * from "./stats";
 export * from "./throttle";
 export * from "./wait";
+export * from "./websocket";
