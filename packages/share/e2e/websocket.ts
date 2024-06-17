@@ -134,16 +134,10 @@ describe("Websocket", () => {
                 expect(stats[1].type).to.eq("onopen");
                 expect(stats[2].data).not.to.be.empty;
                 expect(stats[2].type).to.eq("send");
-                const data3 = stats[3].data;
-                expect(typeof data3 === "object" && "data" in data3 && data3.data).to.eq(
-                    responseData1
-                );
+                expect(stats[3].data).to.haveOwnProperty("data", responseData1);
                 expect(stats[4].data).not.to.be.empty;
                 expect(stats[4].type).to.eq("send");
-                const data5 = stats[5].data;
-                expect(typeof data5 === "object" && "data" in data5 && data5.data).to.eq(
-                    responseData2
-                );
+                expect(stats[5].data).to.haveOwnProperty("data", responseData2);
             });
 
             cy.wsInterceptorStats({
@@ -164,18 +158,9 @@ describe("Websocket", () => {
                 expect(stats.length).to.eq(5);
                 expect(stats[0].type).to.eq("create");
                 expect(stats[1].type).to.eq("onopen");
-                const data2 = stats[2].data;
-                expect(typeof data2 === "object" && "data" in data2 && data2.data).to.eq(
-                    autoResponse1
-                );
-                const data3 = stats[3].data;
-                expect(typeof data3 === "object" && "data" in data3 && data3.data).to.eq(
-                    autoResponse2
-                );
-                const data4 = stats[4].data;
-                expect(typeof data4 === "object" && "data" in data4 && data4.data).to.eq(
-                    autoResponse3
-                );
+                expect(stats[2].data).to.haveOwnProperty("data", autoResponse1);
+                expect(stats[3].data).to.haveOwnProperty("data", autoResponse2);
+                expect(stats[4].data).to.haveOwnProperty("data", autoResponse3);
             });
 
             cy.wsInterceptorStats({
@@ -203,6 +188,34 @@ describe("Websocket", () => {
 
             // just for testing that it passes
             cy.waitUntilWebsocketAction({ waitTimeout: 5000 });
+        });
+
+        it("Default options - will not wait to the first action", () => {
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        communication: [
+                            {
+                                responseData: responseData1,
+                                responseDelay: delay,
+                                sendData: sendData1,
+                                sendDelay: delay
+                            },
+                            {
+                                responseData: responseData2,
+                                responseDelay: delay,
+                                sendData: sendData2
+                            }
+                        ],
+                        path: path1,
+                        query: query1,
+                        type: "websocket"
+                    }
+                ])
+            );
+
+            cy.waitUntilWebsocketAction();
         });
     });
 
@@ -345,17 +358,11 @@ describe("Websocket", () => {
                     expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be.undefined;
                     expect(stats[2].data).not.to.be.empty;
                     expect(stats[2].type).to.eq("send");
-                    const data3 = stats[3].data;
-                    expect(typeof data3 === "object" && "data" in data3 && data3.data).to.eq(
-                        responseData11
-                    );
+                    expect(stats[3].data).to.haveOwnProperty("data", responseData11);
                     expect(stats[3].type).to.eq("onmessage");
                     expect(stats[4].data).not.to.be.empty;
                     expect(stats[4].type).to.eq("send");
-                    const data5 = stats[5].data;
-                    expect(typeof data5 === "object" && "data" in data5 && data5.data).to.eq(
-                        responseData12
-                    );
+                    expect(stats[5].data).to.haveOwnProperty("data", responseData12);
                     expect(stats[5].type).to.eq("onmessage");
                 });
             });
@@ -383,17 +390,11 @@ describe("Websocket", () => {
                             .undefined;
                         expect(stats[2].data).not.to.be.empty;
                         expect(stats[2].type).to.eq("send");
-                        const data3 = stats[3].data;
-                        expect(typeof data3 === "object" && "data" in data3 && data3.data).to.eq(
-                            responseData11
-                        );
+                        expect(stats[3].data).to.haveOwnProperty("data", responseData11);
                         expect(stats[3].type).to.eq("onmessage");
                         expect(stats[4].data).not.to.be.empty;
                         expect(stats[4].type).to.eq("send");
-                        const data5 = stats[5].data;
-                        expect(typeof data5 === "object" && "data" in data5 && data5.data).to.eq(
-                            responseData12
-                        );
+                        expect(stats[5].data).to.haveOwnProperty("data", responseData12);
                         expect(stats[5].type).to.eq("onmessage");
                     }
                 );
@@ -448,17 +449,11 @@ describe("Websocket", () => {
                     expect(stats.find((entry) => entry.url.endsWith(path2))).not.to.be.undefined;
                     expect(stats[2].data).not.to.be.empty;
                     expect(stats[2].type).to.eq("send");
-                    const data3 = stats[3].data;
-                    expect(typeof data3 === "object" && "data" in data3 && data3.data).to.eq(
-                        responseData21
-                    );
+                    expect(stats[3].data).to.haveOwnProperty("data", responseData21);
                     expect(stats[3].type).to.eq("onmessage");
                     expect(stats[4].data).not.to.be.empty;
                     expect(stats[4].type).to.eq("send");
-                    const data5 = stats[5].data;
-                    expect(typeof data5 === "object" && "data" in data5 && data5.data).to.eq(
-                        responseData22
-                    );
+                    expect(stats[5].data).to.haveOwnProperty("data", responseData22);
                     expect(stats[5].type).to.eq("onmessage");
                 });
 
@@ -470,15 +465,9 @@ describe("Websocket", () => {
 
                 cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(2);
-                    const data0 = stats[0].data;
-                    expect(typeof data0 === "object" && "data" in data0 && data0.data).to.eq(
-                        responseData11
-                    );
+                    expect(stats[0].data).to.haveOwnProperty("data", responseData11);
                     expect(stats[0].type).to.eq("onmessage");
-                    const data1 = stats[1].data;
-                    expect(typeof data1 === "object" && "data" in data1 && data1.data).to.eq(
-                        responseData12
-                    );
+                    expect(stats[1].data).to.haveOwnProperty("data", responseData12);
                     expect(stats[1].type).to.eq("onmessage");
                 });
             });
@@ -526,12 +515,8 @@ describe("Websocket", () => {
 
         cy.wsInterceptorLastRequest({ type: "close" }).then((entry) => {
             expect(entry).not.to.be.undefined;
-            expect(
-                typeof entry!.data === "object" && "code" in entry!.data && entry!.data.code
-            ).to.eq(code);
-            expect(
-                typeof entry!.data === "object" && "reason" in entry!.data && entry!.data.reason
-            ).to.eq(reason);
+            expect(entry!.data).to.haveOwnProperty("code", code);
+            expect(entry!.data).to.haveOwnProperty("reason", reason);
             expect(entry!.url.toString().endsWith(path)).to.be.true;
         });
     });
@@ -595,10 +580,8 @@ describe("Websocket", () => {
 
         cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
             expect(stats.length).to.eq(2);
-            const data0 = stats[0].data;
-            expect(typeof data0 === "object" && "data" in data0 && data0.data).to.eq(response1);
-            const data1 = stats[1].data;
-            expect(typeof data1 === "object" && "data" in data1 && data1.data).to.eq(response2);
+            expect(stats[0].data).to.haveOwnProperty("data", response1);
+            expect(stats[1].data).to.haveOwnProperty("data", response2);
         });
     });
 
@@ -670,10 +653,8 @@ describe("Websocket", () => {
 
         cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
             expect(stats.length).to.eq(2);
-            const data0 = stats[0].data;
-            expect(typeof data0 === "object" && "data" in data0 && data0.data).to.eq(response1);
-            const data1 = stats[1].data;
-            expect(typeof data1 === "object" && "data" in data1 && data1.data).to.eq(response2);
+            expect(stats[0].data).to.haveOwnProperty("data", response1);
+            expect(stats[1].data).to.haveOwnProperty("data", response2);
         });
     });
 
@@ -798,6 +779,29 @@ describe("Websocket", () => {
             expect(stats.length).to.eq(4);
             expect(stats[stats.length - 2].data).to.eq(sendData1);
             expect(stats[stats.length - 1].data).to.eq(sendData2);
+        });
+    });
+
+    it("Set options", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    path: "some-path",
+                    type: "websocket"
+                }
+            ])
+        );
+
+        cy.wsInterceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.true;
+        });
+
+        cy.wsInterceptorOptions({ debug: false }).then((options) => {
+            expect(options).to.haveOwnProperty("debug", false);
+        });
+
+        cy.wsInterceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.false;
         });
     });
 });

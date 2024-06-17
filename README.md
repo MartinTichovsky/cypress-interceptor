@@ -4,33 +4,78 @@
 
 # Cypress Interceptor
 
+### Table of contents
+
+- Cypress Interceptor
+    - [About](#about)
+    - [Why to use](#why-to-use)
+    - [Getting started](#getting-started)
+    - [Interceptor Cypress commands](#interceptor-cypress-commands)
+    - [Cypress environment variables](#cypress-environment-variables)
+    - [Documentation and examples](#documentation-and-examples)
+        - [cy.interceptor](#cyinterceptor)
+        - [cy.interceptorLastRequest](#cyinterceptorlastrequest)
+        - [cy.interceptorOptions](#cyinterceptoroptions)
+        - [cy.interceptorRequestCalls](#cyinterceptorrequestcalls)
+        - [cy.interceptorStats](#cyinterceptorstats)
+        - [cy.mockInterceptorResponse](#cymockinterceptorresponse)
+        - [cy.resetInterceptorWatch](#cyresetinterceptorwatch)
+        - [cy.throttleInterceptorRequest](#cythrottleinterceptorrequest)
+        - [cy.waitUntilRequestIsDone](#cywaituntilrequestisdone)
+    - [Interceptor public methods](#interceptor-public-methods)
+        - [callStack](#callstack)
+        - [debugInfo](#debuginfo)
+        - [debugIsEnabled](#debugisenabled)
+        - [removeMock](#removemock)
+        - [removeThrottle](#removethrottle)
+        - [writeDebugToLog](#writedebugtolog)
+        - [writeStatsToLog](#writestatstolog)
+    - [Interfaces](#interfaces)
+    - [Useful tips](#useful-tips)
+- [Websocket Interceptor](#websocket-interceptor)
+    - [Getting started](#getting-started-1)
+    - [Websocket Interceptor Cypress commands](#websocket-interceptor-cypress-commands)
+    - [Cypress environment variables](#cypress-environment-variables-1)
+    - [Documentation and examples](#documentation-and-examples-1)
+        - [cy.wsInterceptor](#cywsinterceptor)
+        - [cy.wsInterceptorLastRequest](#cywsinterceptorlastrequest)
+        - [cy.wsInterceptorStats](#cywsinterceptorstats)
+        - [cy.wsResetInterceptorWatch](#cywsresetinterceptorwatch)
+        - [cy.waitUntilWebsocketAction](#cywaituntilwebsocketaction)
+    - [Websocket Interceptor public methods](#websocket-interceptor-public-methods)
+        - [callStack](#callstack-1)
+        - [debugIsEnabled](#debugisenabled-1)
+        - [writeStatsToLog](#writestatstolog-1)
+    - [Interfaces](#interfaces-1)
+
 ### About
 
 Cypress Interceptor is a global substitute for `cy.intercept`. It is a crucial helper for your tests based on HTTP/HTTPS requests. The main reason why this package was created is the function `waitUntilRequestIsDone`. This function waits until one or more requests are finished using the provided arguments. More information below.
 
+For working with websockets, go to the [websocket section](#websocket-interceptor).
+
 #### Why to use?
 
+Let's say we have some content to check. It can be a table, data grid, list of products, ... - just any content controlled by AJAX requests. If you use pure Cypress get/find, you can not be sure that the refresh was performed well.
+
 ```ts
-/*
- * Let's say we have some content to check out. It can be a table, data grid,
- * list of products, ... - just any AJAX action. 
-*/
-it("Table with products", () => {
-    // on the page should be a table with a list of products
+it("Table refresh", () => {
+    // on the page should be a table
     cy.visit("my-page.org");
 
-    // we would like to check out that the table exists
+    // check that the table exists, or check some content within the table
     cy.get("table#my-table").should("exist");
+    cy.get("table#my-table").should("contain", "1,500.00$");
 
-    // navigate to the next page
-    cy.get("button#next").click();
+    // refresh the table
+    cy.get("button#refresh").click();
 
     waitUntilRequestIsDone();
 
-    // 
+    // check that table exists and the refresh works
     cy.get("table#my-table").should("exist");
+    cy.get("table#my-table").should("contain", "1,500.00$");
 })
-
 ```
 
 ## Getting started
@@ -542,7 +587,7 @@ cy.waitUntilRequestIsDone({ resourceType: "fetch" });
 cy.waitUntilRequestIsDone({ enforceCheck: false, url: "http://my-page.org/source/script.js" });
 // wait maximum 200s for this fetch to finish
 cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", waitTimeout: 200000 });
-// wait 2s then check out if there is an another request after this one is finished
+// wait 2s then check if there is an another request after this one is finished
 cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", waitForNextRequest: 2000 });
 // wait until all cross domain requests are finished but do not fail if there is no one
 cy.waitUntilRequestIsDone({ crossDomain: true, enforceCheck: false });
@@ -553,7 +598,7 @@ cy.waitUntilRequestIsDone({ crossDomain: true, enforceCheck: false });
 ## callStack
 
 ```ts
-get callStack();
+get callStack(): CallStack[];
 ```
 
 Return a copy of all logged requests since the Interceptor has been created (the Interceptor is created in `beforeEach`).
@@ -561,7 +606,7 @@ Return a copy of all logged requests since the Interceptor has been created (the
 ## debugInfo
 
 ```ts
-get debugInfo();
+get debugInfo(): IDebug[];
 ```
 
 Get an array with all logged/skiped calls to track down a possible issue. All requests not matching the global resource types or cross domain option are skipped.
@@ -569,7 +614,7 @@ Get an array with all logged/skiped calls to track down a possible issue. All re
 ## debugIsEnabled
 
 ```ts
-get debugIsEnabled();
+get debugIsEnabled(): boolean;
 ```
 
 Returns true if debug is enabled by Interceptor options or Cypress environment variable `INTERCEPTOR_DEBUG`. The Interceptor `debug` option has the highest priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`.
@@ -599,7 +644,7 @@ Same as [`cy.mockInterceptorResponse`](#cymockinterceptorresponse).
 ## removeMock
 
 ```ts
-removeMock(id: number);
+removeMock(id: number): boolean;
 ```
 
 Remove a mock entry by id.
@@ -607,7 +652,7 @@ Remove a mock entry by id.
 ## removeThrottle
 
 ```ts
-removeThrottle(id: number);
+removeThrottle(id: number): boolean;
 ```
 
 Remove a throttle entry by id.
@@ -631,7 +676,7 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 ## writeDebugToLog
 
 ```ts
-writeDebugToLog(outputDir: string, fileName?: string);
+writeDebugToLog(outputDir: string, fileName?: string): void;
 ```
 
 Write the debug information to a file (debug must be enabled). The file will contain JSON.stringify of [`debugInfo`](#debuginfo).
@@ -652,13 +697,13 @@ afterAll(() => {
 ## writeStatsToLog
 
 ```ts
-public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string);
+public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string): void;
 ```
 
 _References:_
   - [`IRouteMatcher`](#iroutematcher)
 
-Write the logged requests' information to a file. The file will contain JSON.stringify of [`callStack`](#callstack).
+Write the logged requests' (or filtered by the provided route matcher) information to a file. The file will contain JSON.stringify of [`callStack`](#callstack).
 
 ### Example
 
@@ -864,9 +909,9 @@ You can use Interceptor to write all non cached requests to a file. Just use thi
 import "cypress-interceptor";
 
 afterEach(function () {
-    if (this.currentTest?.state === 'failed') {
+    if (this.currentTest?.state === "failed") {
         cy.interceptor().then(interceptor => {
-            interceptor.writeStatsToLog('./mochawesome-report/_interceptor');
+            interceptor.writeStatsToLog("./mochawesome-report/_interceptor");
         });
     }
 });
@@ -876,7 +921,392 @@ The code above will write all requests to the output file. But you can use a rou
 
 ```ts
 // the output will contain only ajax requests
-interceptor.writeStatsToLog('./mochawesome-report/_interceptor', { resourceType: ["fetch", "xhr"] });
+interceptor.writeStatsToLog("./mochawesome-report/_interceptor", { resourceType: ["fetch", "xhr"] });
 ```
 
 See the methods you can use: [`writeStatsToLog`](#writestatstolog) or [`writeDebugToLog`](#writedebugtolog)
+
+# Websocket Interceptor
+
+## Getting started
+
+It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
+
+```js
+import "cypress-interceptor/lib/websocket";
+```
+
+## Websocket Interceptor Cypress commands
+
+```ts
+/**
+ * Get an instance of Websocket Interceptor
+ *
+ * @returns An instance of Websocket Interceptor
+ */
+wsInterceptor: () => Chainable<WebsocketInterceptor>;
+/**
+ * Get the last call matching the provided matcher
+ *
+ * @param matcher A matcher
+ * @returns The last call information or undefined if none match
+ */
+wsInterceptorLastRequest: (
+    matcher?: IWSMatcher
+) => Chainable<CallStackWebsocket | undefined>;
+/**
+ * Set Websocket Interceptor options,
+ * must be called before a request/s occur
+ *
+ * @param options Options
+ * @returns Current Websocket Interceptor options
+ */
+wsInterceptorOptions: (
+    options?: WebsocketInterceptorOptions
+) => Chainable<WebsocketInterceptorOptions>;
+/**
+ * Get statistics for all requests matching the provided matcher since the beginning
+ * of the current test
+ *
+ * @param matcher A matcher
+ * @returns All requests matching the provided matcher with detailed information,
+ *          if none match, returns an empty array
+ */
+wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+/**
+ * Reset the watch of Websocket Interceptor
+ */
+wsResetInterceptorWatch: () => void;
+/**
+ * Wait until a websocket action occur
+ *
+ * @param options Action options
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    options?: WaitUntilActionOptions,
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+/**
+ * Wait until a websocket action occur
+ *
+ * @param matcher A matcher
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    matcher?: IWSMatcher | IWSMatcher[],
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+/**
+ * Wait until a websocket action occur
+ *
+ * @param matcher A matcher
+ * @param options Action options
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    matcher?: IWSMatcher | IWSMatcher[],
+    options?: WaitUntilActionOptions,
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+```
+
+## Cypress environment variables
+
+Same as [Cypress environment variables](#cypress-environment-variables).
+
+# Documentation and examples
+
+## cy.wsInterceptor
+
+```ts
+wsInterceptor: () => Chainable<WebsocketInterceptor>;
+```
+
+Get an instance of Websocket Interceptor
+
+### Example
+
+```ts
+cy.wsInterceptor().then(interceptor => {
+    interceptor.resetWatch();
+
+    if (interceptor.debugIsEnabled) {
+       intereptor.writeStatsToLog("_logs", { protocols: "soap" }, "stats");
+    }
+});
+```
+
+## cy.wsInterceptorLastRequest
+
+Get the last call matching the provided matcher
+
+```ts
+wsInterceptorLastRequest: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket | undefined>;
+```
+
+### Example
+
+```ts
+cy.wsInterceptorLastRequest({ url: "some-url" }).should("not.be.undefined");
+
+ cy.wsInterceptorLastRequest({ type: "close" }).then((entry) => {
+    expect(entry).not.to.be.undefined;
+    expect(entry!.data).to.haveOwnProperty("code", code);
+    expect(entry!.data).to.haveOwnProperty("reason", reason);
+    expect(entry!.url.toString().endsWith("some-url")).to.be.true;
+});
+```
+
+## cy.wsInterceptorOptions
+
+Set Websocket Interceptor options, must be called before a request/s occur
+
+```ts
+wsInterceptorOptions: (options?: WebsocketInterceptorOptions) => Chainable<WebsocketInterceptorOptions>;
+```
+
+## cy.wsInterceptorStats
+
+Get statistics for all requests matching the provided matcher since the beginning of the current test
+
+```ts
+wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+```
+
+### Example
+
+```ts
+cy.wsInterceptorStats({ type: "send" }).then((stats) => {
+    expect(stats.length).to.eq(2);
+    expect(stats[0].data).not.to.be.empty;
+    expect(stats[1].data).not.to.be.empty;
+});
+
+cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
+    expect(stats.length).to.eq(2);
+    expect(stats[0].data).to.haveOwnProperty("data", "some response 1");
+    expect(stats[1].data).to.haveOwnProperty("data", "some response 2");
+});
+```
+
+## cy.wsResetInterceptorWatch
+
+Reset the watch of Websocket Interceptor
+
+```ts
+wsResetInterceptorWatch: () => void;
+```
+
+## cy.waitUntilWebsocketAction
+
+Wait until a websocket action occur
+
+```ts
+/**
+ * Wait until a websocket action occur
+ *
+ * @param options Action options
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    options?: WaitUntilActionOptions,
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+/**
+ * Wait until a websocket action occur
+ *
+ * @param matcher A matcher
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    matcher?: IWSMatcher | IWSMatcher[],
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+/**
+ * Wait until a websocket action occur
+ *
+ * @param matcher A matcher
+ * @param options Action options
+ * @param errorMessage An error message when the maximum time of waiting is reached
+ */
+waitUntilWebsocketAction(
+    matcher?: IWSMatcher | IWSMatcher[],
+    options?: WaitUntilActionOptions,
+    errorMessage?: string
+): Cypress.Chainable<WebsocketInterceptor>;
+```
+
+### Example
+
+```ts
+// wait for the specific response
+cy.waitUntilWebsocketAction({
+    data: "some response",
+    type: "onmessage"
+});
+// wait for the specific send
+cy.waitUntilWebsocketAction({
+    data: "some data",
+    type: "send"
+});
+// wait for two sends
+cy.waitUntilWebsocketAction(
+    {
+        type: "send"
+    },
+    { countMatch: 2 }
+);
+// wait for multiple actions
+cy.waitUntilWebsocketAction([
+    {
+        data: "onmessage data",
+        type: "onmessage",
+        url: "**/path-1"
+    },
+    {
+        data: "send data",
+        type: "send",
+        url: "**/path-2"
+    },
+    {
+        data: "onmessage data",
+        protocols: "xmpp",
+        type: "onmessage",
+        url: "**/path-3"
+    }
+]);
+// wait for an action having a url filtered by RegExp
+cy.waitUntilWebsocketAction({
+    data: responseData12,
+    type: "onmessage",
+    url: new RegExp(`some-path$`, "i")
+});
+// wait for a specific close action having code and reason
+cy.waitUntilWebsocketAction([
+    {
+        code: 1000,
+        reason: "some reason",
+        type: "close"
+    }
+]);
+```
+
+## Websocket Interceptor public methods
+
+### callStack
+
+Return a copy of all logged requests since the Websocket Interceptor has been created (the Websocket Interceptor is created in `beforeEach`).
+
+```ts
+get callStack(): CallStackWebsocket[];
+```
+
+## debugIsEnabled
+
+```ts
+get debugIsEnabled(): boolean;
+```
+
+Returns true if debug is enabled by Websocket Interceptor options or Cypress environment variable `INTERCEPTOR_DEBUG`. The Websocket Interceptor `debug` option has the highest priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`.
+
+### Implementation
+
+```ts
+return this._options.debug ?? !!Cypress.env("INTERCEPTOR_DEBUG");
+```
+
+## getLastRequest
+
+Same as [`cy.wsInterceptorLastRequest`](#cywsinterceptorlastrequest).
+
+## getStats
+
+Same as [`cy.wsInterceptorStats](#cywsinterceptorstats).
+
+## resetWatch
+
+Same as [`cy.wsResetInterceptorWatch](#cywsresetinterceptorwatch).
+
+## setOptions
+
+Same as [`wsInterceptorOptions`](#cywsinterceptoroptions).
+
+## waitUntilWebsocketAction
+
+Same as [`cy.waitUntilWebsocketAction`](#cywaituntilwebsocketaction).
+
+## writeStatsToLog
+
+```ts
+writeStatsToLog(outputDir: string, matcher?: IWSMatcher, fileName?: string): void;
+```
+
+_References:_
+  - [`IWSMatcher`](#iwsmatcher)
+
+Write the logged requests' (or filtered by the provided matcher) information to a file. The file will contain JSON.stringify of [`callStack`](#callstack-1).
+
+### Example
+
+```ts
+afterAll(() => {
+    cy.wsInterceptor().then(interceptor => {
+        // example output will be "./out/test.cy.ts (Description - It).ws.stats.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
+        interceptor.writeStatsToLog("./out");
+        // example output will be "./out/file_name.ws.stats.json"
+        interceptor.writeStatsToLog("./out", undefined, "file_name");
+        // write only stats for a specific URL
+        interceptor.writeStatsToLog("./out", { url: "**/some-url" });
+    });
+});
+```
+
+# Interfaces
+
+## IWSMatcher
+
+```ts
+type IWSMatcher = {
+    /**
+     * A matcher for query string
+     *
+     * @param query The URL query string
+     * @returns True if matches
+     */
+    queryMatcher?: (query: Record<string, string | number>) => boolean;
+    /**
+     * Match by protocols
+     */
+    protocols?: string | string[];
+    /**
+     * A URL matcher, use * or ** to match any word in string ("**\/api/call", ...)
+     */
+    url?: StringMatcher;
+} & (
+    | {
+          types?: ("create" | "close" | "onclose" | "onerror" | "onopen" | "onmessage" | "send")[];
+      }
+    | {
+          type?: "create" | "onerror" | "onopen";
+      }
+    | {
+          code?: number;
+          reason?: string;
+          type?: "close";
+      }
+    | {
+          code?: number;
+          reason?: string;
+          type: "onclose";
+      }
+    | {
+          data?: string;
+          type: "onmessage";
+      }
+    | {
+          data?: string;
+          type: "send";
+      }
+);
+```

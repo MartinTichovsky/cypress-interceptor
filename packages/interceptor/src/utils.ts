@@ -1,3 +1,7 @@
+type CommonObject<T> = {
+    [K in keyof T]?: T[K];
+};
+
 export const deepCopy = <T>(value: T) => {
     if (
         typeof value === "object" &&
@@ -57,4 +61,12 @@ export const testUrlMatch = (urlMatcher: string | RegExp, url: string) => {
     }
 
     return urlMatcher.test(url);
+};
+
+export const removeUndefinedFromObject = <T, K extends keyof T>(object: CommonObject<T>) => {
+    const result = { ...object };
+
+    Object.keys(result).forEach((key) => result[key as K] === undefined && delete result[key as K]);
+
+    return result;
 };

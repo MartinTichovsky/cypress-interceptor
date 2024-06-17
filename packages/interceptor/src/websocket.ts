@@ -13,6 +13,9 @@ beforeEach(() => {
     Cypress.Commands.add("wsInterceptorLastRequest", (matcher) =>
         cy.wrap(websocketInterceptor.getLastRequest(matcher))
     );
+    Cypress.Commands.add("wsInterceptorOptions", (options) =>
+        cy.wrap(websocketInterceptor.setOptions(options))
+    );
     Cypress.Commands.add("wsInterceptorStats", (matcher) =>
         cy.wrap(websocketInterceptor.getStats(matcher))
     );
@@ -27,9 +30,7 @@ beforeEach(() => {
 // FOR DEBUG
 
 // afterEach(function () {
-//     cy.wsInterceptor().then((wsInterceptor) => {
-//         if (wsInterceptor.callStack.length) {
-//             wsInterceptor.writeStatsToLog("./_stats");
-//         }
+//     cy.wsInterceptor().then((interceptor) => {
+//         interceptor.writeStatsToLog("./_stats");
 //     });
 // });

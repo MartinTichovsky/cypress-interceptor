@@ -1,24 +1,82 @@
-import { deepCopy, getFilePath, isNonNullableObject, replacer, testUrlMatch } from "./utils";
+import {
+    deepCopy,
+    getFilePath,
+    isNonNullableObject,
+    removeUndefinedFromObject,
+    replacer,
+    testUrlMatch
+} from "./utils";
 import { waitTill } from "./wait";
 import { WebSocketAction, WebsocketListener } from "./websocketListener";
 
 declare global {
     namespace Cypress {
         interface Chainable {
+            /**
+             * Get an instance of Websocket Interceptor
+             *
+             * @returns An instance of Websocket Interceptor
+             */
             wsInterceptor: () => Chainable<WebsocketInterceptor>;
+            /**
+             * Get the last call matching the provided matcher
+             *
+             * @param matcher A matcher
+             * @returns The last call information or undefined if none match
+             */
             wsInterceptorLastRequest: (
                 matcher?: IWSMatcher
             ) => Chainable<CallStackWebsocket | undefined>;
+            /**
+             * Set Websocket Interceptor options,
+             * must be called before a request/s occur
+             *
+             * @param options Options
+             * @returns Current Websocket Interceptor options
+             */
+            wsInterceptorOptions: (
+                options?: WebsocketInterceptorOptions
+            ) => Chainable<WebsocketInterceptorOptions>;
+            /**
+             * Get statistics for all requests matching the provided matcher since the beginning
+             * of the current test
+             *
+             * @param matcher A matcher
+             * @returns All requests matching the provided matcher with detailed information,
+             *          if none match, returns an empty array
+             */
             wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+            /**
+             * Reset the watch of Websocket Interceptor
+             */
             wsResetInterceptorWatch: () => void;
+            /**
+             * Wait until a websocket action occur
+             *
+             * @param options Action options
+             * @param errorMessage An error message when the maximum time of waiting is reached
+             */
             waitUntilWebsocketAction(
                 options?: WaitUntilActionOptions,
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
+            /**
+             * Wait until a websocket action occur
+             *
+             * @param matcher A matcher
+             * @param errorMessage An error message when the maximum time of waiting is reached
+             */
             waitUntilWebsocketAction(
                 matcher?: IWSMatcher | IWSMatcher[],
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
+            /**
+             * Wait until a websocket action occur
+             *
+             * @param matcher A matcher
+             * @param options Action options
+             * @param errorMessage An error message when the maximum time of waiting is reached
+             */
             waitUntilWebsocketAction(
                 matcher?: IWSMatcher | IWSMatcher[],
                 options?: WaitUntilActionOptions,
@@ -86,18 +144,42 @@ export type IWSMatcher = {
 type StringMatcher = string | RegExp;
 
 export interface WaitUntilActionOptions {
+    /**
+     * How much requests should match the provided matcher
+     */
     countMatch?: number;
+    /**
+     * Time of how long Cypress will be waiting for the action.
+     * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
+     */
     waitTimeout?: number;
+}
+
+export interface WebsocketInterceptorOptions {
+    /**
+     * Set a debug mode
+     */
+    debug?: boolean;
 }
 
 const DEFAULT_INTERVAL = 500;
 const DEFAULT_TIMEOUT = 10000;
 
+const defaultOptions: Required<WebsocketInterceptorOptions> = {
+    debug: undefined!
+};
+
 export class WebsocketInterceptor {
     private _callStack: CallStackWebsocket[] = [];
+    private _debugByEnv = false;
+    private _options: Required<WebsocketInterceptorOptions> = {
+        ...defaultOptions
+    };
     private _skip = 0;
 
     constructor(websocketListener: WebsocketListener) {
+        this._debugByEnv = !!Cypress.env("INTERCEPTOR_DEBUG");
+
         websocketListener.subscribe((action) => {
             this._callStack.push({
                 ...action,
@@ -106,8 +188,21 @@ export class WebsocketInterceptor {
         });
     }
 
+    /**
+     * Return a copy of all logged requests since the Websocket Interceptor has been created
+     * (the Websocket Interceptor is created in `beforeEach`)
+     */
     public get callStack() {
         return deepCopy(this._callStack);
+    }
+
+    /**
+     * Returns true if debug is enabled by Websocket Interceptor options or Cypress environment
+     * variable `INTERCEPTOR_DEBUG`. The Websocket Interceptor `debug` option has the highest
+     * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
+     */
+    public get debugIsEnabled() {
+        return this._options.debug ?? this._debugByEnv;
     }
 
     private filterItemsByMatcher(matcher?: IWSMatcher) {
@@ -213,12 +308,26 @@ export class WebsocketInterceptor {
         };
     }
 
+    /**
+     * Get the last call matching the provided matcher
+     *
+     * @param matcher A matcher
+     * @returns The last call information or undefined if none match
+     */
     public getLastRequest(matcher?: IWSMatcher) {
         const items = this._callStack.filter(this.filterItemsByMatcher(matcher));
 
         return items.length ? deepCopy(items[items.length - 1]) : undefined;
     }
 
+    /**
+     * Get statistics for all requests matching the provided matcher since the beginning
+     * of the current test
+     *
+     * @param matcher A matcher
+     * @returns All requests matching the provided matcher with detailed information,
+     *          if none match, returns an empty array
+     */
     public getStats(matcher?: IWSMatcher) {
         return deepCopy(this._callStack.filter(this.filterItemsByMatcher(matcher)));
     }
@@ -236,18 +345,60 @@ export class WebsocketInterceptor {
             : callStack.length > 0;
     }
 
+    /**
+     * Reset the watch of Websocket Interceptor
+     */
     public resetWatch() {
         this._skip = this._callStack.length;
     }
 
+    /**
+     * Set Interceptor options,
+     * must be called befor a request/s occur
+     *
+     * @param options Options
+     * @returns Current Interceptor options
+     */
+    public setOptions(
+        options: WebsocketInterceptorOptions = this._options
+    ): WebsocketInterceptorOptions {
+        this._options = {
+            ...this._options,
+            ...removeUndefinedFromObject(options),
+            // only one option allowed to be undefined
+            debug: options.debug!
+        };
+
+        return deepCopy(this._options);
+    }
+
+    /**
+     * Wait until a websocket action occur
+     *
+     * @param options Action options
+     * @param errorMessage An error message when the maximum time of waiting is reached
+     */
     public waitUntilWebsocketAction(
         options?: WaitUntilActionOptions,
         errorMessage?: string
     ): Cypress.Chainable<this>;
+    /**
+     * Wait until a websocket action occur
+     *
+     * @param matcher A matcher
+     * @param errorMessage An error message when the maximum time of waiting is reached
+     */
     public waitUntilWebsocketAction(
         matcher?: IWSMatcher | IWSMatcher[],
         errorMessage?: string
     ): Cypress.Chainable<this>;
+    /**
+     * Wait until a websocket action occur
+     *
+     * @param matcher A matcher
+     * @param options Action options
+     * @param errorMessage An error message when the maximum time of waiting is reached
+     */
     public waitUntilWebsocketAction(
         matcher?: IWSMatcher | IWSMatcher[],
         options?: WaitUntilActionOptions,
@@ -313,6 +464,17 @@ export class WebsocketInterceptor {
 
     // DEBUG TOOLS
 
+    /**
+     * Write the logged requests' (or filtered by the provided matcher) information to a file,
+     * example: in `afterEach`
+     *      => wsInterceptor.writeStatsToLog("./out") => example output will be "./out/Description - It.stats.json"
+     *      => wsInterceptor.writeStatsToLog("./out", undefined, "file_name") => example output will be "./out/file_name.stats.json"
+     *      => wsInterceptor.writeStatsToLog("./out", { resourceType: "fetch" }) => write only fetch requests to the output file
+     *
+     * @param outputDir A path for the output directory
+     * @param matcher A matcher
+     * @param currentTest A name of the file, if undefined, it will be composed from the running test
+     */
     public writeStatsToLog(outputDir: string, matcher?: IWSMatcher, fileName?: string) {
         cy.writeFile(
             getFilePath(fileName, outputDir, "ws.stats"),

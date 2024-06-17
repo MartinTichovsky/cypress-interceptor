@@ -1,6 +1,6 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
-import { deepCopy, getFilePath, replacer, testUrlMatch } from "./utils";
+import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
@@ -119,10 +119,6 @@ declare global {
         }
     }
 }
-
-type CommonObject<T> = {
-    [K in keyof T]?: T[K];
-};
 
 export interface CallStack {
     /**
@@ -899,16 +895,6 @@ export class Interceptor {
         return false;
     }
 
-    private removeUndefinedFromObject<T, K extends keyof T>(object: CommonObject<T>) {
-        const result = { ...object };
-
-        Object.keys(result).forEach(
-            (key) => result[key as K] === undefined && delete result[key as K]
-        );
-
-        return result;
-    }
-
     /**
      * Reset the watch of Interceptor. It sets the pointer to the last call. It is
      * needed to reset the pointer when you want to wait for certain requests.
@@ -932,7 +918,7 @@ export class Interceptor {
     public setOptions(options: InterceptorOptions = this._options): InterceptorOptions {
         this._options = {
             ...this._options,
-            ...this.removeUndefinedFromObject(options),
+            ...removeUndefinedFromObject(options),
             // only one option allowed to be undefined
             debug: options.debug!
         };
@@ -1016,7 +1002,7 @@ export class Interceptor {
                 timeout
             }
         ).then(() => {
-            // check out with a delay if there is an another request after the last one
+            // check with a delay if there is an another request after the last one
             return cy
                 .wait(stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_INTERVAL, {
                     log: false
@@ -1037,8 +1023,8 @@ export class Interceptor {
     /**
      * Write the debug information to a file (debug must be enabled),
      * example: in `afterEach`
-     *      => interceptor.writeDebugToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.debug.json"
-     *      => interceptor.writeDebugToLog("file_name", "./out") => example output will be "./out/file_name.debug.json"
+     *      => interceptor.writeDebugToLog("./out") => example output will be "./out/Description - It.debug.json"
+     *      => interceptor.writeDebugToLog("./out", "file_name") => example output will be "./out/file_name.debug.json"
      *
      * @param outputDir A path for the output directory
      * @param currentTest A name of the file, if undefined, it will be composed from the running test
@@ -1051,10 +1037,11 @@ export class Interceptor {
     }
 
     /**
-     * Write the logged requests' information to a file,
+     * Write the logged requests' (or filtered by the provided route matcher) information to a file
      * example: in `afterEach`
-     *      => interceptor.writeStatsToLog(Cypress.currentTest, "./out") => example output will be "./out/Description - It.stats.json"
-     *      => interceptor.writeStatsToLog("file_name", "./out") => example output will be "./out/file_name.stats.json"
+     *      => interceptor.writeStatsToLog("./out") => example output will be "./out/Description - It.stats.json"
+     *      => interceptor.writeStatsToLog("./out", undefined, "file_name") => example output will be "./out/file_name.stats.json"
+     *      => interceptor.writeStatsToLog("./out", { type: "onmessage" }) => write only "onmessage" requests to the output file
      *
      * @param outputDir A path for the output directory
      * @param routeMatcher A route matcher
