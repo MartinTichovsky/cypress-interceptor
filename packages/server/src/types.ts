@@ -60,6 +60,10 @@ export type DynamicRequest = {
                  */
                 body?: unknown;
                 /**
+                 * A time when the request is canceled. Must be lower then duration
+                 */
+                cancelIn?: number;
+                /**
                  * Headers sent by fetch
                  */
                 headers?: Record<string, string>;
@@ -71,7 +75,7 @@ export type DynamicRequest = {
                  * The request method
                  */
                 method: "GET" | "POST";
-                type: "fetch";
+                type: "fetch" | "xhr";
             }
       ))
     | {

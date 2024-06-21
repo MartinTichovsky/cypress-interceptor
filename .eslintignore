@@ -4,3 +4,4 @@ node_modules/
 *.json
 packages/server/src/public/
 packages/server/src/exampleResponse/
+lib/

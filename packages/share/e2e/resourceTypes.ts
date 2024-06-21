@@ -118,6 +118,45 @@ describe("Resource Types", () => {
             cy.interceptorRequestCalls({ resourceType: ["fetch", "script"] }).should("eq", 2);
         });
 
+        it("XHR", () => {
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        duration: doubleDuration,
+                        path: testPath_Script1,
+                        type: "script"
+                    },
+                    {
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: apiPath_Fetch1,
+                        type: "xhr"
+                    }
+                ])
+            );
+
+            cy.startTiming();
+
+            cy.waitUntilRequestIsDone({ resourceType: "xhr" });
+
+            cy.stopTiming().should("be.gt", duration);
+
+            cy.interceptorStats({ resourceType: "xhr" }).then((stats) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].isPending).to.be.false;
+            });
+
+            cy.interceptorRequestCalls({ resourceType: "xhr" }).should("eq", 1);
+
+            cy.interceptorStats({ resourceType: "script" }).then((stats) =>
+                stats.every((entry) => expect(entry.isPending).to.be.true)
+            );
+
+            cy.interceptorRequestCalls({ resourceType: ["xhr", "script"] }).should("eq", 2);
+        });
+
         it("Script", () => {
             cy.visit(
                 getDynamicUrl([

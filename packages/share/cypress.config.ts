@@ -38,6 +38,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
         specPattern: ["cypress/e2e/**/*.cy.ts"]
     },
     experimentalInteractiveRunEvents: true,
+    experimentalMemoryManagement: true,
     fixturesFolder: false,
-    video: false
+    video: false,
 });

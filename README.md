@@ -26,6 +26,7 @@
         - [callStack](#callstack)
         - [debugInfo](#debuginfo)
         - [debugIsEnabled](#debugisenabled)
+        - [onRequestError](#onrequesterror)
         - [removeMock](#removemock)
         - [removeThrottle](#removethrottle)
         - [writeDebugToLog](#writedebugtolog)
@@ -70,7 +71,7 @@ it("Table refresh", () => {
     // refresh the table
     cy.get("button#refresh").click();
 
-    waitUntilRequestIsDone();
+    cy.waitUntilRequestIsDone();
 
     // check that table exists and the refresh works
     cy.get("table#my-table").should("exist");
@@ -447,7 +448,7 @@ cy.mockInterceptorResponse(
 cy.mockInterceptorResponse(
     { resourceType: "fetch" },
     { 
-        generateBody: (body) => {
+        generateBody: (_request, body) => {
             if (body && "userName" in body) {
                 body.userName = "LordVoldemort";
             }
@@ -641,6 +642,14 @@ Same as [`cy.interceptorRequestCalls`](#cyinterceptorrequestcalls).
 
 Same as [`cy.mockInterceptorResponse`](#cymockinterceptorresponse).
 
+## onRequestError
+
+Function called when a request is cancelled or fails.
+
+```ts
+onRequestError(func: OnRequestError);
+```
+
 ## removeMock
 
 ```ts
@@ -766,10 +775,11 @@ interface IMockResponse {
     /**
      * Generate a body with the original response body, this option is preferred before option `body`
      *
+     * @param request An object with the request data (body, query, method, ...)
      * @param originalBody The original response body
      * @returns A response body, it can be anything
      */
-    generateBody?: (originalBody: unknown) => unknown;
+    generateBody?: (request: IRequest, originalBody: unknown) => unknown;
     /**
      * If provided, will be added to the original response headers
      */
@@ -885,10 +895,10 @@ interface WaitUntilRequestOptions extends IRouteMatcherObject {
      */
     enforceCheck?: boolean;
     /**
-     * Time to wait in ms. Default set to 500
+     * Time to wait in ms. Default set to 750
      *
      * There is needed to wait if there is a possible following request after the last one (because of the JS code
-     * and subsequent requests)
+     * and subsequent requests). Set to 0 to skip repetitive checking for requests.
      */
     waitForNextRequest?: number;
     /**

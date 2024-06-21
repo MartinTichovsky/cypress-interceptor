@@ -1,5 +1,7 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
+import { __SKIP_ID, RequestListener } from "./requestListener";
+import { __REQUEST_KEY } from "./requestProxy";
 import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
@@ -146,6 +148,14 @@ export interface CallStack {
      */
     request: IRequest;
     /**
+     * An error when request fail
+     */
+    requestError?: unknown;
+    /**
+     * Id of the request
+     */
+    requestId: string | undefined;
+    /**
      * Response info
      */
     response?: IResponse;
@@ -267,10 +277,11 @@ export interface IMockResponse {
     /**
      * Generate a body with the original response body, this option is preferred before option `body`
      *
+     * @param request An object with the request data (body, query, method, ...)
      * @param originalBody The original response body
      * @returns A response body, it can be anything
      */
-    generateBody?: (originalBody: unknown) => unknown;
+    generateBody?: (request: IRequest, originalBody: unknown) => unknown;
     /**
      * If provided, will be added to the original response headers
      */
@@ -404,6 +415,17 @@ export interface IThrottleRequestOptions {
     times?: number;
 }
 
+export type OnRequestError = <TResult = never>(
+    args:
+        | [input: RequestInfo | URL, init?: RequestInit | undefined]
+        | [url: string | URL | undefined, method: string | undefined],
+    ev:
+        | ((reason: unknown) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null
+        | ProgressEvent<EventTarget>
+) => void;
+
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
      * True by default. If true, a request matching the provided route matcher must be logged by Interceptor,
@@ -413,10 +435,10 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
      */
     enforceCheck?: boolean;
     /**
-     * Time to wait in ms. Default set to 500
+     * Time to wait in ms. Default set to 750
      *
      * There is needed to wait if there is a possible following request after the last one (because of the JS code
-     * and subsequent requests)
+     * and subsequent requests). Set to 0 to skip repetitive checking for requests.
      */
     waitForNextRequest?: number;
     /**
@@ -429,6 +451,7 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
 const DEFAULT_INTERVAL = 500;
 const DEFAULT_RESOURCE_TYPES: IResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_WAIT_FOR_NEXT_REQUEST = 750;
 
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
@@ -439,8 +462,6 @@ const defaultOptions: Required<InterceptorOptions> = {
 
 export class Interceptor {
     private _callStack: CallStack[] = [];
-    private _disableCacheByEnv = false;
-    private _debugByEnv = false;
     private _debugInfo: IDebug[] = [];
     private _mock: {
         id: number;
@@ -449,6 +470,7 @@ export class Interceptor {
         routeMatcher: IRouteMatcher;
     }[] = [];
     private _mockId = 0;
+    private _onRequestError: OnRequestError | undefined;
     private _options: Required<InterceptorOptions> = {
         ...defaultOptions
     };
@@ -461,14 +483,69 @@ export class Interceptor {
     }[] = [];
     private _throttleId = 0;
 
-    constructor() {
-        this._disableCacheByEnv = !!Cypress.env("INTERCEPTOR_DISABLE_CACHE");
-        this._debugByEnv = !!Cypress.env("INTERCEPTOR_DEBUG");
-
+    constructor(requestListener: RequestListener) {
         let queueCounter = 0;
+
+        requestListener.subscribe(
+            (args, ev, requestId) => {
+                let method: string = "GET";
+                let url: string | undefined;
+                const [input, initOrMethod] = args;
+
+                if (input instanceof URL) {
+                    url = input.toString();
+                } else if (typeof input === "string") {
+                    url = input;
+                } else if (typeof input === "object") {
+                    url = input.url;
+                }
+
+                if (typeof initOrMethod === "string") {
+                    method = initOrMethod;
+                } else {
+                    method = initOrMethod?.method ?? "GET";
+                }
+
+                const pendingRequest = this._callStack.find(
+                    (item) =>
+                        item.isPending &&
+                        item.urlQuery === url &&
+                        item.request.method === method &&
+                        item.requestId === requestId
+                );
+
+                if (this._onRequestError) {
+                    this._onRequestError(args, ev);
+                }
+
+                if (pendingRequest) {
+                    pendingRequest.isPending = false;
+                    pendingRequest.requestError = ev;
+                }
+            },
+            () => {
+                for (const request of this._callStack) {
+                    if (
+                        request.isPending &&
+                        (request.resourceType === "fetch" || request.resourceType === "xhr")
+                    ) {
+                        request.isPending = false;
+                        request.requestError = "Cancelled: window reloaded during the request";
+                    }
+                }
+            }
+        );
 
         cy.intercept("**", (req) => {
             if (req.resourceType === "websocket") {
+                return;
+            }
+
+            const headers = new Headers(req.headers as HeadersInit);
+            const requestId = headers.get(__REQUEST_KEY) ?? undefined;
+
+            // skip requests called during unload
+            if (requestId === __SKIP_ID) {
                 return;
             }
 
@@ -478,8 +555,8 @@ export class Interceptor {
 
             if (this.debugIsEnabled) {
                 this._debugInfo.push({
-                    queueId,
                     method: req.method,
+                    queueId,
                     resourceType: req.resourceType,
                     request: {
                         body: req.body,
@@ -503,8 +580,8 @@ export class Interceptor {
             ) {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
-                        queueId,
                         method: req.method,
+                        queueId,
                         resourceType,
                         time: new Date(),
                         type: "skipped",
@@ -515,8 +592,8 @@ export class Interceptor {
                 req.continue((res) => {
                     if (this.debugIsEnabled) {
                         this._debugInfo.push({
-                            queueId,
                             method: req.method,
+                            queueId,
                             resourceType: req.resourceType,
                             response: {
                                 body: res.body,
@@ -540,8 +617,8 @@ export class Interceptor {
 
             if (this.debugIsEnabled) {
                 this._debugInfo.push({
-                    queueId,
                     method: req.method,
+                    queueId,
                     resourceType,
                     time: new Date(),
                     type: "logged",
@@ -558,6 +635,7 @@ export class Interceptor {
                     method: req.method,
                     query: req.query
                 },
+                requestId,
                 resourceType: req.resourceType,
                 timeStart: new Date(),
                 url: req.url.replace(/\?(.*)/, ""),
@@ -566,11 +644,15 @@ export class Interceptor {
 
             this._callStack.push(item);
 
+            if (this.requestTimeoutByEnv) {
+                req.responseTimeout = this.requestTimeoutByEnv + 5000;
+            }
+
             return req.continue((res) => {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
-                        queueId,
                         method: req.method,
+                        queueId,
                         resourceType: req.resourceType,
                         response: {
                             body: res.body,
@@ -591,10 +673,21 @@ export class Interceptor {
 
                 const mock = _mock ?? throttle.mockResponse;
 
-                const body = mock?.generateBody?.(res.body) ?? mock?.body ?? res.body;
+                const body =
+                    mock?.generateBody?.(
+                        {
+                            body: req.body,
+                            headers: req.headers,
+                            method: req.method,
+                            query: req.query
+                        },
+                        res.body
+                    ) ??
+                    mock?.body ??
+                    res.body;
 
                 const headers = {
-                    ...res.headers,
+                    ...Object.fromEntries(new Headers(res.headers as HeadersInit).entries()),
                     ...mock?.headers
                 };
 
@@ -636,6 +729,18 @@ export class Interceptor {
         });
     }
 
+    get debugByEnv() {
+        return !!Cypress.env("INTERCEPTOR_DEBUG");
+    }
+
+    get disableCacheByEnv() {
+        return !!Cypress.env("INTERCEPTOR_DISABLE_CACHE");
+    }
+
+    get requestTimeoutByEnv() {
+        return Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+    }
+
     /**
      * Return a copy of all logged requests since the Interceptor has been created
      * (the Interceptor is created in `beforeEach`)
@@ -659,12 +764,12 @@ export class Interceptor {
      * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
      */
     public get debugIsEnabled() {
-        return this._options.debug ?? this._debugByEnv;
+        return this._options.debug ?? this.debugByEnv;
     }
 
     private disableCacheInResponse(headers: IHeadersNormalized = {}) {
         if (
-            (this._disableCacheByEnv && this._options.disableCache !== false) ||
+            (this.disableCacheByEnv && this._options.disableCache !== false) ||
             this._options.disableCache
         ) {
             return {
@@ -866,6 +971,15 @@ export class Interceptor {
     }
 
     /**
+     * Function called when a request is cancelled or fails
+     *
+     * @param func A function called on error/cancel
+     */
+    public onRequestError(func: OnRequestError) {
+        this._onRequestError = func;
+    }
+
+    /**
      * Remove a mock entry by id
      *
      * @param id A unique id received from `mockResponse` or `cy.mockInterceptorResponse`
@@ -984,11 +1098,10 @@ export class Interceptor {
             stringMatcherOrOptions = { url: stringMatcherOrOptions };
         }
 
-        const timeout =
-            (stringMatcherOrOptions.waitTimeout ??
-                Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ??
-                DEFAULT_TIMEOUT) -
-            (performance.now() - startTime);
+        const totalTimeout =
+            stringMatcherOrOptions.waitTimeout ?? this.requestTimeoutByEnv ?? DEFAULT_TIMEOUT;
+
+        const timeout = totalTimeout - (performance.now() - startTime);
 
         return waitTill(
             () =>
@@ -999,22 +1112,32 @@ export class Interceptor {
             {
                 errorMessage,
                 interval: DEFAULT_INTERVAL,
-                timeout
+                timeout,
+                totalTimeout
             }
         ).then(() => {
+            const waitForNextRequestTime =
+                stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_WAIT_FOR_NEXT_REQUEST;
+
             // check with a delay if there is an another request after the last one
-            return cy
-                .wait(stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_INTERVAL, {
-                    log: false
-                })
-                .then(() =>
-                    this.isThereRequestPending(
-                        stringMatcherOrOptions,
-                        stringMatcherOrOptions.enforceCheck
-                    )
-                        ? this.waitUntilRequestIsDone_withWait(stringMatcherOrOptions, startTime)
-                        : cy.wrap(this)
-                );
+            return waitForNextRequestTime > 0
+                ? cy
+                      .wait(waitForNextRequestTime, {
+                          log: false
+                      })
+                      .then(() =>
+                          this.isThereRequestPending(
+                              stringMatcherOrOptions,
+                              stringMatcherOrOptions.enforceCheck
+                          )
+                              ? this.waitUntilRequestIsDone_withWait(
+                                    stringMatcherOrOptions,
+                                    startTime,
+                                    errorMessage
+                                )
+                              : cy.wrap(this)
+                      )
+                : cy.wrap(this);
         });
     }
 

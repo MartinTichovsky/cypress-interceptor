@@ -2,10 +2,10 @@ import { WebsocketInterceptor } from "./websocketInterceptor";
 import { WebsocketListener } from "./websocketListener";
 import { createWebsocketProxy } from "./websocketProxy";
 
-beforeEach(() => {
+const createCommands = () => {
     const websocketListener = new WebsocketListener();
 
-    Cypress.on("window:before:load", createWebsocketProxy(websocketListener));
+    cy.on("window:before:load", createWebsocketProxy(websocketListener));
 
     const websocketInterceptor = new WebsocketInterceptor(websocketListener);
 
@@ -25,6 +25,14 @@ beforeEach(() => {
             ...(args as Parameters<typeof websocketInterceptor.waitUntilWebsocketAction>)
         )
     );
+};
+
+before(() => {
+    createCommands();
+});
+
+beforeEach(() => {
+    createCommands();
 });
 
 // FOR DEBUG
