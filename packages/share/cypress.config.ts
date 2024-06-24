@@ -26,12 +26,12 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 })
             );
 
-            on("task", {
-                log(message) {
-                    console.log(message);
-                    return null;
-                }
-            });
+            // on("task", {
+            //     log(message) {
+            //         console.log(message);
+            //         return null;
+            //     }
+            // });
 
             return config;
         },
@@ -40,5 +40,5 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     experimentalInteractiveRunEvents: true,
     experimentalMemoryManagement: true,
     fixturesFolder: false,
-    video: false,
+    video: false
 });

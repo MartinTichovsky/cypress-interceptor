@@ -4,15 +4,35 @@
 
 # Cypress Interceptor
 
-### Table of contents
+## About
+
+Cypress Interceptor is a global substitute for `cy.intercept`. It is a crucial helper for your tests based on HTTP/HTTPS requests. The main reason why this package was created is the function `waitUntilRequestIsDone`. This function waits until one or more requests are finished using the provided arguments. More information below.
+
+For working with websockets, go to the [websocket section](#websocket-interceptor).
+
+## Limits
+
+__There are some limits while using this package:__
+
+1. Do not use any of Interceptor commands in `before` event. You can use it in `beforeEach` and in any other events.
+2. When you expecting a large response (aprox. more than 30MB), you must [bypass](#cybypassinterceptorresponse) the response because there is an issue in Cypress intercept and the request is never done in the web browser but finished in Cypress.
+
+## Whats new
+
+- added a possibility to bypass the response
+- work with canceled and aborted request
+- work with XHR requests
+- add support for Websockets
+
+## Table of contents
 
 - Cypress Interceptor
-    - [About](#about)
-    - [Why to use](#why-to-use)
+    - [Why to use?](#why-to-use)
     - [Getting started](#getting-started)
     - [Interceptor Cypress commands](#interceptor-cypress-commands)
     - [Cypress environment variables](#cypress-environment-variables)
     - [Documentation and examples](#documentation-and-examples)
+        - [cy.bypassInterceptorResponse](#cybypassinterceptorresponse)
         - [cy.interceptor](#cyinterceptor)
         - [cy.interceptorLastRequest](#cyinterceptorlastrequest)
         - [cy.interceptorOptions](#cyinterceptoroptions)
@@ -49,15 +69,11 @@
         - [writeStatsToLog](#writestatstolog-1)
     - [Interfaces](#interfaces-1)
 
-### About
+## Why to use?
 
-Cypress Interceptor is a global substitute for `cy.intercept`. It is a crucial helper for your tests based on HTTP/HTTPS requests. The main reason why this package was created is the function `waitUntilRequestIsDone`. This function waits until one or more requests are finished using the provided arguments. More information below.
+Generally when you can not safely check that the content has been changed by the finished request.
 
-For working with websockets, go to the [websocket section](#websocket-interceptor).
-
-#### Why to use?
-
-Let's say we have some content to check. It can be a table, data grid, list of products, ... - just any content controlled by AJAX requests. If you use pure Cypress get/find, you can not be sure that the refresh was performed well.
+For exapmle: Let's say we have a table, data grid, list of products, ... - just any content controlled by AJAX requests. If you use pure Cypress get/find, you can not be sure that the refresh was performed well.
 
 ```ts
 it("Table refresh", () => {
@@ -73,9 +89,12 @@ it("Table refresh", () => {
 
     cy.waitUntilRequestIsDone();
 
-    // check that table exists and the refresh works
+    // check the content again
     cy.get("table#my-table").should("exist");
     cy.get("table#my-table").should("contain", "1,500.00$");
+
+    // also you can check that the request was called
+    cy.interceptorLastRequest("**/my-page.org/api/refresh-table").should("not.be.undefined");
 })
 ```
 
@@ -94,6 +113,15 @@ import "cypress-interceptor";
 ## Interceptor Cypress commands
 
 ```ts
+/**
+ * Bypass a request response (it will not hit Cypress intercept response callback and not to
+ * store response data in the Interceptor stack, useful for big data responses)
+ *
+ * @param routeMatcher A route matcher
+ * @param times How many times the response should be mocked, by default it is set to 1.
+ *              Set to 0 to mock the response infinitely
+ */
+bypassInterceptorResponse: (routeMatcher: IRouteMatcher, times?: number) => void;
 /**
  * Get an instance of Interceptor
  *
@@ -278,6 +306,35 @@ it("Second test", () => {
 
 If there is a request to `https://my-page.org/source/my-script.js` it waits until it finishes otherwise it continues without fail.
 
+## cy.bypassInterceptorResponse
+
+Bypass a request response. It will not hit Cypress intercept response callback and not to store response data in the Interceptor stack, useful for big data responses.
+
+```ts
+bypassInterceptorResponse: (routeMatcher: IRouteMatcher, times?: number) => void;
+```
+
+_References:_
+  - [`IRouteMatcher`](#iroutematcher)
+
+### Example
+
+```ts
+// it will bypass one request for URL ends with `/get-data`
+cy.bypassInterceptorResponse("**/get-data");
+
+// click on some button triggering the request
+cy.click("button.getData");
+
+// wait for all requests to be done including the one ends with `/get-data`
+cy.waitUntilRequestIsDone();
+
+cy.interceptorLastRequest("**/get-data").then(stats => {
+    // the response will be undefined because the response is bypassed
+    expect(stats.response).to.be.undefined;
+});
+```
+
 ## cy.interceptor
 
 ```ts
@@ -305,6 +362,9 @@ cy.interceptor().then(interceptor => {
 ```ts
 interceptorLastRequest: (routeMatcher?: IRouteMatcher) => Chainable<CallStack | undefined>;
 ```
+
+_References:_
+  - [`IRouteMatcher`](#iroutematcher)
 
 Get the last call matching the provided route matcher. Similar to [`cy.interceptorStats`](#cyinterceptorstats).
 
@@ -644,7 +704,7 @@ Same as [`cy.mockInterceptorResponse`](#cymockinterceptorresponse).
 
 ## onRequestError
 
-Function called when a request is cancelled or fails.
+Function called when a request is cancelled, aborted or fails.
 
 ```ts
 onRequestError(func: OnRequestError);

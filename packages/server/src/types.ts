@@ -23,6 +23,10 @@ export type DynamicRequest = {
            */
           enableCache?: boolean;
           /**
+           * Receive big response
+           */
+          bigData?: boolean;
+          /**
            * Delay when start the request
            */
           delay?: number;

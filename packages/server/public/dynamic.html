@@ -104,6 +104,7 @@
 
                 const params = {
                     ...(typeof entry.query === "object" ? entry.query : undefined),
+                    ...(entry.bigData ? { bigData: true } : undefined),
                     duration: entry.duration,
                     enableCache: entry.enableCache,
                     path,
@@ -160,11 +161,13 @@
                             try {
                                 const div = document.createElement("div");
 
-                                const divResponse = document.createElement("div");
-                                divResponse.setAttribute("data-response-type", "body");
-                                divResponse.innerHTML = JSON.stringify(await response.json());
+                                if (!entry.bigData) {
+                                    const divResponse = document.createElement("div");
+                                    divResponse.setAttribute("data-response-type", "body");
+                                    divResponse.innerHTML = JSON.stringify(await response.json());
 
-                                div.appendChild(divResponse);
+                                    div.appendChild(divResponse);
+                                }
 
                                 const divStatusCode = document.createElement("div");
                                 divStatusCode.setAttribute("data-response-type", "status-code");
@@ -187,18 +190,18 @@
                                 div.appendChild(divDuration);
 
                                 wrapInSection(`${path}_loaded`, div);
-                            } catch {
-                                //
+                            } catch (e) {
+                                console.error(e);
                             }
 
                             try {
                                 processRequests(requests);
-                            } catch {
-                                //
+                            } catch (e) {
+                                console.error(e);
                             }
                         })
-                        .catch(() => {
-                            //
+                        .catch((e) => {
+                            console.error(e);
                         });
 
                     if (cancelIn !== undefined) {
@@ -215,45 +218,49 @@
                         ...(headers ? headers : {})
                     };
 
-                    request.onload = () => {
-                        const duration = performance.now() - startTime;
+                    request.onreadystatechange = () => {
+                        if (request.readyState === XMLHttpRequest.DONE) {
+                            const duration = performance.now() - startTime;
 
-                        try {
-                            const div = document.createElement("div");
+                            try {
+                                const div = document.createElement("div");
 
-                            const divResponse = document.createElement("div");
-                            divResponse.setAttribute("data-response-type", "body");
-                            divResponse.innerHTML = request.response;
+                                if (!entry.bigData) {
+                                    const divResponse = document.createElement("div");
+                                    divResponse.setAttribute("data-response-type", "body");
+                                    divResponse.innerHTML = request.response;
 
-                            div.appendChild(divResponse);
+                                    div.appendChild(divResponse);
+                                }
 
-                            const divStatusCode = document.createElement("div");
-                            divStatusCode.setAttribute("data-response-type", "status-code");
-                            divStatusCode.innerHTML = request.status;
+                                const divStatusCode = document.createElement("div");
+                                divStatusCode.setAttribute("data-response-type", "status-code");
+                                divStatusCode.innerHTML = request.status;
 
-                            div.appendChild(divStatusCode);
+                                div.appendChild(divStatusCode);
 
-                            const divHeaders = document.createElement("div");
-                            divHeaders.setAttribute("data-response-type", "headers");
-                            divHeaders.innerHTML = request.getAllResponseHeaders();
+                                const divHeaders = document.createElement("div");
+                                divHeaders.setAttribute("data-response-type", "headers");
+                                divHeaders.innerHTML = request.getAllResponseHeaders();
 
-                            div.appendChild(divHeaders);
+                                div.appendChild(divHeaders);
 
-                            const divDuration = document.createElement("div");
-                            divDuration.setAttribute("data-response-type", "duration");
-                            divDuration.innerHTML = duration;
+                                const divDuration = document.createElement("div");
+                                divDuration.setAttribute("data-response-type", "duration");
+                                divDuration.innerHTML = duration;
 
-                            div.appendChild(divDuration);
+                                div.appendChild(divDuration);
 
-                            wrapInSection(`${path}_loaded`, div);
-                        } catch {
-                            //
-                        }
+                                wrapInSection(`${path}_loaded`, div);
+                            } catch (e) {
+                                console.error(e);
+                            }
 
-                        try {
-                            processRequests(requests);
-                        } catch {
-                            //
+                            try {
+                                processRequests(requests);
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }
                     };
 

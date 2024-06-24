@@ -29,10 +29,6 @@ export class RequestListener {
         this._listeners.forEach((listener) => listener(args, ev, id));
     }
 
-    getCurrentState() {
-        return this._currentState;
-    }
-
     onCreate() {
         this._onCreate?.();
     }

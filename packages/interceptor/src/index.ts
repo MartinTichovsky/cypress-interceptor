@@ -23,7 +23,7 @@ const createCommands = () => {
         requestListener.setCurrentState("window:load");
     });
 
-    Cypress.Commands.add("bypassInterceptorRequest", (routeMatcher, times) =>
+    Cypress.Commands.add("bypassInterceptorResponse", (routeMatcher, times) =>
         interceptor.bypassRequest(routeMatcher, times)
     );
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));

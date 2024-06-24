@@ -9,11 +9,14 @@ declare global {
     namespace Cypress {
         interface Chainable {
             /**
+             * Bypass a request response. It will not hit Cypress intercept response callback and not to
+             * store response data in the Interceptor stack, useful for big data responses
              *
-             * @param routeMatcher
-             * @param times
+             * @param routeMatcher A route matcher
+             * @param times How many times the response should be mocked, by default it is set to 1.
+             *              Set to 0 to mock the response infinitely
              */
-            bypassInterceptorRequest: (routeMatcher: IRouteMatcher, times?: number) => void;
+            bypassInterceptorResponse: (routeMatcher: IRouteMatcher, times?: number) => void;
             /**
              * Get an instance of Interceptor
              *
@@ -795,9 +798,12 @@ export class Interceptor {
     }
 
     /**
+     * Bypass a request response. It will not hit Cypress intercept response callback and not to
+     * store response data in the Interceptor stack, useful for big data responses
      *
-     * @param routeMatcher
-     * @param times
+     * @param routeMatcher A route matcher
+     * @param times How many times the response should be mocked, by default it is set to 1.
+     *              Set to 0 to mock the response infinitely
      */
     public bypassRequest(routeMatcher: IRouteMatcher, times?: number) {
         this._bypassRequestStack.push({ routeMatcher, times });
@@ -898,7 +904,6 @@ export class Interceptor {
 
     private getInfoFromArgs(args: FetchXHRArgs) {
         let method: string = "GET";
-        let query: Record<string, string> | undefined;
         let url: string | undefined;
         const [input, initOrMethod] = args;
 
@@ -916,12 +921,7 @@ export class Interceptor {
             method = initOrMethod?.method ?? "GET";
         }
 
-        if (url) {
-            const urlQuery = new URL(url);
-            query = Object.fromEntries(urlQuery.searchParams.entries());
-        }
-
-        return { method, query, url };
+        return { method, url };
     }
 
     private getMock(item: CallStack) {
