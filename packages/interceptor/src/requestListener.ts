@@ -1,16 +1,18 @@
 type WindowState = "window:before:load" | "window:load" | "window:before:unload" | "window:unload";
 
-type Listener = <TResult = never>(
-    args:
-        | [input: RequestInfo | URL, init?: RequestInit | undefined]
-        | [url: string | URL | undefined, method: string | undefined],
-    onrejected:
-        | ((reason: unknown) => TResult | PromiseLike<TResult>)
-        | undefined
-        | null
-        | ProgressEvent<EventTarget>,
-    id: string | undefined
-) => void;
+export type FetchArgs = [input: RequestInfo | URL, init?: RequestInit | undefined];
+export type FetchReject<TResult = never> =
+    | ((reason: unknown) => TResult | PromiseLike<TResult>)
+    | undefined
+    | null;
+export type FetchXHRArgs = FetchArgs | XHRArgs;
+export type FetchXHRReject = FetchReject | XHRReject;
+export type XHRArgs = [url: string | URL | undefined, method: string | undefined];
+export type XHRReject = ProgressEvent<EventTarget>;
+
+type Listener = (args: FetchXHRArgs, onrejected: FetchXHRReject, id: string | undefined) => void;
+
+type OnRequestDone = (args: FetchXHRArgs, requestId: string | undefined) => void;
 
 export const __SKIP_ID = "-1";
 
@@ -19,28 +21,11 @@ export class RequestListener {
     private _id = 0;
     private _listeners: Listener[] = [];
     private _onCreate: (() => void) | undefined;
+    private _onRequestDone: OnRequestDone | undefined;
 
-    fireError<TResult = never>(
-        args: [input: RequestInfo | URL, init?: RequestInit | undefined],
-        ev: ((reason: unknown) => TResult | PromiseLike<TResult>) | undefined | null,
-        id: string | undefined
-    ): void;
-    fireError(
-        args: [url: string | URL | undefined, method: string | undefined],
-        ev: ProgressEvent<EventTarget>,
-        id: string | undefined
-    ): void;
-    fireError<TResult = never>(
-        args:
-            | [input: RequestInfo | URL, init?: RequestInit | undefined]
-            | [url: string | URL | undefined, method: string | undefined],
-        ev:
-            | ((reason: unknown) => TResult | PromiseLike<TResult>)
-            | undefined
-            | null
-            | ProgressEvent<EventTarget>,
-        id: string | undefined
-    ) {
+    fireError(args: FetchArgs, ev: FetchReject, id: string | undefined): void;
+    fireError(args: XHRArgs, ev: XHRReject, id: string | undefined): void;
+    fireError(args: FetchXHRArgs, ev: FetchXHRReject, id: string | undefined) {
         this._listeners.forEach((listener) => listener(args, ev, id));
     }
 
@@ -50,6 +35,10 @@ export class RequestListener {
 
     onCreate() {
         this._onCreate?.();
+    }
+
+    onRequestDone(args: FetchXHRArgs, requestId: string | undefined) {
+        this._onRequestDone?.(args, requestId);
     }
 
     /**
@@ -65,8 +54,9 @@ export class RequestListener {
         this._currentState = state;
     }
 
-    subscribe(listener: Listener, onCreate?: () => void) {
+    subscribe(listener: Listener, onCreate?: () => void, onRequestDone?: OnRequestDone) {
         this._listeners.push(listener);
         this._onCreate = onCreate;
+        this._onRequestDone = onRequestDone;
     }
 }

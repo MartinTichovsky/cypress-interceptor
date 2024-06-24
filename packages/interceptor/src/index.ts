@@ -23,6 +23,9 @@ const createCommands = () => {
         requestListener.setCurrentState("window:load");
     });
 
+    Cypress.Commands.add("bypassInterceptorRequest", (routeMatcher, times) =>
+        interceptor.bypassRequest(routeMatcher, times)
+    );
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
@@ -57,10 +60,6 @@ const createCommands = () => {
         interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
     );
 };
-
-before(() => {
-    createCommands();
-});
 
 beforeEach(() => {
     createCommands();

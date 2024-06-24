@@ -36,6 +36,7 @@ export const createRequestProxy = (requestListener: RequestListener) => {
             return new Promise((resolve, reject) => {
                 win.originFetch(input, init)
                     .then((result) => {
+                        requestListener.onRequestDone([input, init], requestId);
                         resolve(result);
                     })
                     .catch((error) => {
@@ -62,6 +63,17 @@ export const createRequestProxy = (requestListener: RequestListener) => {
                 };
             }
 
+            // catch the response
+            set onreadystatechange(value: (this: XMLHttpRequest, ev: Event) => unknown) {
+                super.onreadystatechange = (ev) => {
+                    if (this.readyState === XMLHttpRequest.DONE) {
+                        requestListener.onRequestDone([this._url, this._method], this._requestId);
+                    }
+
+                    value.bind(this)(ev);
+                };
+            }
+
             // catch an error of the request
             set onerror(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onerror = (ev) => {
@@ -78,6 +90,10 @@ export const createRequestProxy = (requestListener: RequestListener) => {
                 };
 
                 this.onerror = () => {
+                    //
+                };
+
+                this.onreadystatechange = () => {
                     //
                 };
             }

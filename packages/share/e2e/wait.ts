@@ -1,3 +1,4 @@
+import { FetchXHRArgs, FetchXHRReject } from "cypress-interceptor/src/requestListener";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { fireRequest, toRegExp } from "../src/utils";
@@ -97,16 +98,7 @@ describe("Wait For Requests", () => {
                 | ProgressEvent<EventTarget>;
 
             const spy = {
-                func<TResult = never>(
-                    [_input, _init]:
-                        | [input: RequestInfo | URL, init?: RequestInit | undefined]
-                        | [url: string | URL | undefined, method: string | undefined],
-                    _ev:
-                        | ((reason: unknown) => TResult | PromiseLike<TResult>)
-                        | undefined
-                        | null
-                        | ProgressEvent<EventTarget>
-                ) {
+                func([_input, _init]: FetchXHRArgs, _ev: FetchXHRReject) {
                     input = _input;
                     init = _init;
                     onrejected = _ev;

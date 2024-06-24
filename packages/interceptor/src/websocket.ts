@@ -27,10 +27,6 @@ const createCommands = () => {
     );
 };
 
-before(() => {
-    createCommands();
-});
-
 beforeEach(() => {
     createCommands();
 });

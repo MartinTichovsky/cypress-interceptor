@@ -1,6 +1,6 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
-import { __SKIP_ID, RequestListener } from "./requestListener";
+import { __SKIP_ID, FetchXHRArgs, FetchXHRReject, RequestListener } from "./requestListener";
 import { __REQUEST_KEY } from "./requestProxy";
 import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
@@ -8,6 +8,12 @@ import { waitTill } from "./wait";
 declare global {
     namespace Cypress {
         interface Chainable {
+            /**
+             *
+             * @param routeMatcher
+             * @param times
+             */
+            bypassInterceptorRequest: (routeMatcher: IRouteMatcher, times?: number) => void;
             /**
              * Get an instance of Interceptor
              *
@@ -122,6 +128,11 @@ declare global {
     }
 }
 
+export interface BypassRequestStack {
+    routeMatcher: IRouteMatcher;
+    times?: number;
+}
+
 export interface CallStack {
     /**
      * Cross domain requests will have this property set to true
@@ -139,6 +150,10 @@ export interface CallStack {
      * true if the request is still in progress
      */
     isPending: boolean;
+    /**
+     * An id in the queue
+     */
+    queueId: number;
     /**
      * Resource type
      */
@@ -252,6 +267,7 @@ export interface IDebug {
     /**
      * Type of the entry, sort by the sequence:
      *
+     * bypass       = item is bypassed
      * start        = the very beggining of the request
      * skipped      = the request is skipped and will not be processed due to
      *                not matching the resource types or cross domain option
@@ -259,7 +275,7 @@ export interface IDebug {
      * logged       = the request is logged and will be processed
      * logged-done  = the logged request is finished
      */
-    type: "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
+    type: "bypass" | "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
     /**
      * A full URL of the request with query string
      */
@@ -415,16 +431,7 @@ export interface IThrottleRequestOptions {
     times?: number;
 }
 
-export type OnRequestError = <TResult = never>(
-    args:
-        | [input: RequestInfo | URL, init?: RequestInit | undefined]
-        | [url: string | URL | undefined, method: string | undefined],
-    ev:
-        | ((reason: unknown) => TResult | PromiseLike<TResult>)
-        | undefined
-        | null
-        | ProgressEvent<EventTarget>
-) => void;
+export type OnRequestError = (args: FetchXHRArgs, ev: FetchXHRReject) => void;
 
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
@@ -461,6 +468,8 @@ const defaultOptions: Required<InterceptorOptions> = {
 };
 
 export class Interceptor {
+    private _bypassRequestStack: BypassRequestStack[] = [];
+    private _bypassIdStack: { item: CallStack; routeMatcher: IRouteMatcher }[] = [];
     private _callStack: CallStack[] = [];
     private _debugInfo: IDebug[] = [];
     private _mock: {
@@ -488,30 +497,14 @@ export class Interceptor {
 
         requestListener.subscribe(
             (args, ev, requestId) => {
-                let method: string = "GET";
-                let url: string | undefined;
-                const [input, initOrMethod] = args;
-
-                if (input instanceof URL) {
-                    url = input.toString();
-                } else if (typeof input === "string") {
-                    url = input;
-                } else if (typeof input === "object") {
-                    url = input.url;
-                }
-
-                if (typeof initOrMethod === "string") {
-                    method = initOrMethod;
-                } else {
-                    method = initOrMethod?.method ?? "GET";
-                }
+                const { method, url } = this.getInfoFromArgs(args);
 
                 const pendingRequest = this._callStack.find(
                     (item) =>
                         item.isPending &&
-                        item.urlQuery === url &&
+                        item.requestId === requestId &&
                         item.request.method === method &&
-                        item.requestId === requestId
+                        item.urlQuery === url
                 );
 
                 if (this._onRequestError) {
@@ -532,6 +525,33 @@ export class Interceptor {
                         request.isPending = false;
                         request.requestError = "Cancelled: window reloaded during the request";
                     }
+                }
+            },
+            (args, requestId) => {
+                const { method, url } = this.getInfoFromArgs(args);
+
+                const request = this._bypassIdStack.find(
+                    (entry) =>
+                        entry.item.requestId === requestId &&
+                        entry.item.request.method === method &&
+                        entry.item.urlQuery === url
+                );
+
+                if (!request) {
+                    return;
+                }
+
+                request.item.isPending = false;
+
+                if (this.debugIsEnabled) {
+                    this._debugInfo.push({
+                        method: request.item.request.method,
+                        queueId: request.item.queueId,
+                        resourceType: request.item.resourceType,
+                        time: new Date(),
+                        type: "bypass",
+                        url: request.item.url
+                    });
                 }
             }
         );
@@ -570,6 +590,23 @@ export class Interceptor {
                 });
             }
 
+            const item: CallStack = {
+                crossDomain,
+                isPending: true,
+                queueId,
+                request: {
+                    body: req.body,
+                    headers: req.headers,
+                    method: req.method,
+                    query: req.query
+                },
+                requestId,
+                resourceType: req.resourceType,
+                timeStart: new Date(),
+                url: req.url.replace(/\?(.*)/, ""),
+                urlQuery: req.url
+            };
+
             if (
                 !resourceType ||
                 (Array.isArray(this._options.resourceTypes)
@@ -589,7 +626,11 @@ export class Interceptor {
                     });
                 }
 
-                req.continue((res) => {
+                if (this.shouldBypassItem(item)) {
+                    return req.continue();
+                }
+
+                return req.continue((res) => {
                     if (this.debugIsEnabled) {
                         this._debugInfo.push({
                             method: req.method,
@@ -609,8 +650,6 @@ export class Interceptor {
 
                     res.send(res.statusCode, res.body, this.disableCacheInResponse());
                 });
-
-                return;
             }
 
             const startTime = performance.now();
@@ -626,26 +665,14 @@ export class Interceptor {
                 });
             }
 
-            const item: CallStack = {
-                crossDomain,
-                isPending: true,
-                request: {
-                    body: req.body,
-                    headers: req.headers,
-                    method: req.method,
-                    query: req.query
-                },
-                requestId,
-                resourceType: req.resourceType,
-                timeStart: new Date(),
-                url: req.url.replace(/\?(.*)/, ""),
-                urlQuery: req.url
-            };
-
             this._callStack.push(item);
 
             if (this.requestTimeoutByEnv) {
                 req.responseTimeout = this.requestTimeoutByEnv + 5000;
+            }
+
+            if (this.shouldBypassItem(item)) {
+                return req.continue();
             }
 
             return req.continue((res) => {
@@ -767,6 +794,15 @@ export class Interceptor {
         return this._options.debug ?? this.debugByEnv;
     }
 
+    /**
+     *
+     * @param routeMatcher
+     * @param times
+     */
+    public bypassRequest(routeMatcher: IRouteMatcher, times?: number) {
+        this._bypassRequestStack.push({ routeMatcher, times });
+    }
+
     private disableCacheInResponse(headers: IHeadersNormalized = {}) {
         if (
             (this.disableCacheByEnv && this._options.disableCache !== false) ||
@@ -858,6 +894,34 @@ export class Interceptor {
 
             return matches === mustMatch;
         };
+    }
+
+    private getInfoFromArgs(args: FetchXHRArgs) {
+        let method: string = "GET";
+        let query: Record<string, string> | undefined;
+        let url: string | undefined;
+        const [input, initOrMethod] = args;
+
+        if (input instanceof URL) {
+            url = input.toString();
+        } else if (typeof input === "string") {
+            url = input;
+        } else if (typeof input === "object") {
+            url = input.url;
+        }
+
+        if (typeof initOrMethod === "string") {
+            method = initOrMethod;
+        } else {
+            method = initOrMethod?.method ?? "GET";
+        }
+
+        if (url) {
+            const urlQuery = new URL(url);
+            query = Object.fromEntries(urlQuery.searchParams.entries());
+        }
+
+        return { method, query, url };
     }
 
     private getMock(item: CallStack) {
@@ -1038,6 +1102,29 @@ export class Interceptor {
         };
 
         return deepCopy(this._options);
+    }
+
+    private shouldBypassItem(item: CallStack) {
+        const bypassRequest = [...this._bypassRequestStack]
+            .reverse()
+            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
+
+        if (!bypassRequest) {
+            return false;
+        }
+
+        if (bypassRequest.times === undefined || bypassRequest.times === 1) {
+            this._bypassRequestStack.splice(this._bypassRequestStack.indexOf(bypassRequest), 1);
+        } else if (bypassRequest.times !== undefined && bypassRequest.times > 1) {
+            bypassRequest.times--;
+        }
+
+        this._bypassIdStack.push({
+            item,
+            routeMatcher: bypassRequest.routeMatcher
+        });
+
+        return true;
     }
 
     /**
