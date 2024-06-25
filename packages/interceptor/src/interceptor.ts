@@ -1,11 +1,22 @@
 import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
+import { __SKIP_ID, FetchXHRArgs, FetchXHRReject, RequestListener } from "./requestListener";
+import { __REQUEST_KEY } from "./requestProxy";
 import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
     namespace Cypress {
         interface Chainable {
+            /**
+             * Bypass a request response. It will not hit Cypress intercept response callback and not to
+             * store response data in the Interceptor stack, useful for big data responses
+             *
+             * @param routeMatcher A route matcher
+             * @param times How many times the response should be mocked, by default it is set to 1.
+             *              Set to 0 to mock the response infinitely
+             */
+            bypassInterceptorResponse: (routeMatcher: IRouteMatcher, times?: number) => void;
             /**
              * Get an instance of Interceptor
              *
@@ -120,6 +131,11 @@ declare global {
     }
 }
 
+export interface BypassRequestStack {
+    routeMatcher: IRouteMatcher;
+    times?: number;
+}
+
 export interface CallStack {
     /**
      * Cross domain requests will have this property set to true
@@ -138,6 +154,10 @@ export interface CallStack {
      */
     isPending: boolean;
     /**
+     * An id in the queue
+     */
+    queueId: number;
+    /**
      * Resource type
      */
     resourceType: IResourceType;
@@ -145,6 +165,14 @@ export interface CallStack {
      * Request info
      */
     request: IRequest;
+    /**
+     * An error when request fail
+     */
+    requestError?: unknown;
+    /**
+     * Id of the request
+     */
+    requestId: string | undefined;
     /**
      * Response info
      */
@@ -242,6 +270,7 @@ export interface IDebug {
     /**
      * Type of the entry, sort by the sequence:
      *
+     * bypass       = item is bypassed
      * start        = the very beggining of the request
      * skipped      = the request is skipped and will not be processed due to
      *                not matching the resource types or cross domain option
@@ -249,7 +278,7 @@ export interface IDebug {
      * logged       = the request is logged and will be processed
      * logged-done  = the logged request is finished
      */
-    type: "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
+    type: "bypass" | "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
     /**
      * A full URL of the request with query string
      */
@@ -267,10 +296,11 @@ export interface IMockResponse {
     /**
      * Generate a body with the original response body, this option is preferred before option `body`
      *
+     * @param request An object with the request data (body, query, method, ...)
      * @param originalBody The original response body
      * @returns A response body, it can be anything
      */
-    generateBody?: (originalBody: unknown) => unknown;
+    generateBody?: (request: IRequest, originalBody: unknown) => unknown;
     /**
      * If provided, will be added to the original response headers
      */
@@ -404,6 +434,8 @@ export interface IThrottleRequestOptions {
     times?: number;
 }
 
+export type OnRequestError = (args: FetchXHRArgs, ev: FetchXHRReject) => void;
+
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
      * True by default. If true, a request matching the provided route matcher must be logged by Interceptor,
@@ -413,10 +445,10 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
      */
     enforceCheck?: boolean;
     /**
-     * Time to wait in ms. Default set to 500
+     * Time to wait in ms. Default set to 750
      *
      * There is needed to wait if there is a possible following request after the last one (because of the JS code
-     * and subsequent requests)
+     * and subsequent requests). Set to 0 to skip repetitive checking for requests.
      */
     waitForNextRequest?: number;
     /**
@@ -429,6 +461,7 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
 const DEFAULT_INTERVAL = 500;
 const DEFAULT_RESOURCE_TYPES: IResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_WAIT_FOR_NEXT_REQUEST = 750;
 
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
@@ -438,9 +471,9 @@ const defaultOptions: Required<InterceptorOptions> = {
 };
 
 export class Interceptor {
+    private _bypassRequestStack: BypassRequestStack[] = [];
+    private _bypassIdStack: { item: CallStack; routeMatcher: IRouteMatcher }[] = [];
     private _callStack: CallStack[] = [];
-    private _disableCacheByEnv = false;
-    private _debugByEnv = false;
     private _debugInfo: IDebug[] = [];
     private _mock: {
         id: number;
@@ -449,6 +482,7 @@ export class Interceptor {
         routeMatcher: IRouteMatcher;
     }[] = [];
     private _mockId = 0;
+    private _onRequestError: OnRequestError | undefined;
     private _options: Required<InterceptorOptions> = {
         ...defaultOptions
     };
@@ -461,14 +495,80 @@ export class Interceptor {
     }[] = [];
     private _throttleId = 0;
 
-    constructor() {
-        this._disableCacheByEnv = !!Cypress.env("INTERCEPTOR_DISABLE_CACHE");
-        this._debugByEnv = !!Cypress.env("INTERCEPTOR_DEBUG");
-
+    constructor(requestListener: RequestListener) {
         let queueCounter = 0;
+
+        requestListener.subscribe(
+            (args, ev, requestId) => {
+                const { method, url } = this.getInfoFromArgs(args);
+
+                const pendingRequest = this._callStack.find(
+                    (item) =>
+                        item.isPending &&
+                        item.requestId === requestId &&
+                        item.request.method === method &&
+                        item.urlQuery === url
+                );
+
+                if (this._onRequestError) {
+                    this._onRequestError(args, ev);
+                }
+
+                if (pendingRequest) {
+                    pendingRequest.isPending = false;
+                    pendingRequest.requestError = ev;
+                }
+            },
+            () => {
+                for (const request of this._callStack) {
+                    if (
+                        request.isPending &&
+                        (request.resourceType === "fetch" || request.resourceType === "xhr")
+                    ) {
+                        request.isPending = false;
+                        request.requestError = "Cancelled: window reloaded during the request";
+                    }
+                }
+            },
+            (args, requestId) => {
+                const { method, url } = this.getInfoFromArgs(args);
+
+                const request = this._bypassIdStack.find(
+                    (entry) =>
+                        entry.item.requestId === requestId &&
+                        entry.item.request.method === method &&
+                        entry.item.urlQuery === url
+                );
+
+                if (!request) {
+                    return;
+                }
+
+                request.item.isPending = false;
+
+                if (this.debugIsEnabled) {
+                    this._debugInfo.push({
+                        method: request.item.request.method,
+                        queueId: request.item.queueId,
+                        resourceType: request.item.resourceType,
+                        time: new Date(),
+                        type: "bypass",
+                        url: request.item.url
+                    });
+                }
+            }
+        );
 
         cy.intercept("**", (req) => {
             if (req.resourceType === "websocket") {
+                return;
+            }
+
+            const headers = new Headers(req.headers as HeadersInit);
+            const requestId = headers.get(__REQUEST_KEY) ?? undefined;
+
+            // skip requests called during unload
+            if (requestId === __SKIP_ID) {
                 return;
             }
 
@@ -478,8 +578,8 @@ export class Interceptor {
 
             if (this.debugIsEnabled) {
                 this._debugInfo.push({
-                    queueId,
                     method: req.method,
+                    queueId,
                     resourceType: req.resourceType,
                     request: {
                         body: req.body,
@@ -493,6 +593,23 @@ export class Interceptor {
                 });
             }
 
+            const item: CallStack = {
+                crossDomain,
+                isPending: true,
+                queueId,
+                request: {
+                    body: req.body,
+                    headers: req.headers,
+                    method: req.method,
+                    query: req.query
+                },
+                requestId,
+                resourceType: req.resourceType,
+                timeStart: new Date(),
+                url: req.url.replace(/\?(.*)/, ""),
+                urlQuery: req.url
+            };
+
             if (
                 !resourceType ||
                 (Array.isArray(this._options.resourceTypes)
@@ -503,8 +620,8 @@ export class Interceptor {
             ) {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
-                        queueId,
                         method: req.method,
+                        queueId,
                         resourceType,
                         time: new Date(),
                         type: "skipped",
@@ -512,11 +629,15 @@ export class Interceptor {
                     });
                 }
 
-                req.continue((res) => {
+                if (this.shouldBypassItem(item)) {
+                    return req.continue();
+                }
+
+                return req.continue((res) => {
                     if (this.debugIsEnabled) {
                         this._debugInfo.push({
-                            queueId,
                             method: req.method,
+                            queueId,
                             resourceType: req.resourceType,
                             response: {
                                 body: res.body,
@@ -532,16 +653,14 @@ export class Interceptor {
 
                     res.send(res.statusCode, res.body, this.disableCacheInResponse());
                 });
-
-                return;
             }
 
             const startTime = performance.now();
 
             if (this.debugIsEnabled) {
                 this._debugInfo.push({
-                    queueId,
                     method: req.method,
+                    queueId,
                     resourceType,
                     time: new Date(),
                     type: "logged",
@@ -549,28 +668,21 @@ export class Interceptor {
                 });
             }
 
-            const item: CallStack = {
-                crossDomain,
-                isPending: true,
-                request: {
-                    body: req.body,
-                    headers: req.headers,
-                    method: req.method,
-                    query: req.query
-                },
-                resourceType: req.resourceType,
-                timeStart: new Date(),
-                url: req.url.replace(/\?(.*)/, ""),
-                urlQuery: req.url
-            };
-
             this._callStack.push(item);
+
+            if (this.requestTimeoutByEnv) {
+                req.responseTimeout = this.requestTimeoutByEnv + 5000;
+            }
+
+            if (this.shouldBypassItem(item)) {
+                return req.continue();
+            }
 
             return req.continue((res) => {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
-                        queueId,
                         method: req.method,
+                        queueId,
                         resourceType: req.resourceType,
                         response: {
                             body: res.body,
@@ -591,10 +703,21 @@ export class Interceptor {
 
                 const mock = _mock ?? throttle.mockResponse;
 
-                const body = mock?.generateBody?.(res.body) ?? mock?.body ?? res.body;
+                const body =
+                    mock?.generateBody?.(
+                        {
+                            body: req.body,
+                            headers: req.headers,
+                            method: req.method,
+                            query: req.query
+                        },
+                        res.body
+                    ) ??
+                    mock?.body ??
+                    res.body;
 
                 const headers = {
-                    ...res.headers,
+                    ...Object.fromEntries(new Headers(res.headers as HeadersInit).entries()),
                     ...mock?.headers
                 };
 
@@ -636,6 +759,18 @@ export class Interceptor {
         });
     }
 
+    get debugByEnv() {
+        return !!Cypress.env("INTERCEPTOR_DEBUG");
+    }
+
+    get disableCacheByEnv() {
+        return !!Cypress.env("INTERCEPTOR_DISABLE_CACHE");
+    }
+
+    get requestTimeoutByEnv() {
+        return Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+    }
+
     /**
      * Return a copy of all logged requests since the Interceptor has been created
      * (the Interceptor is created in `beforeEach`)
@@ -659,12 +794,24 @@ export class Interceptor {
      * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
      */
     public get debugIsEnabled() {
-        return this._options.debug ?? this._debugByEnv;
+        return this._options.debug ?? this.debugByEnv;
+    }
+
+    /**
+     * Bypass a request response. It will not hit Cypress intercept response callback and not to
+     * store response data in the Interceptor stack, useful for big data responses
+     *
+     * @param routeMatcher A route matcher
+     * @param times How many times the response should be mocked, by default it is set to 1.
+     *              Set to 0 to mock the response infinitely
+     */
+    public bypassRequest(routeMatcher: IRouteMatcher, times?: number) {
+        this._bypassRequestStack.push({ routeMatcher, times });
     }
 
     private disableCacheInResponse(headers: IHeadersNormalized = {}) {
         if (
-            (this._disableCacheByEnv && this._options.disableCache !== false) ||
+            (this.disableCacheByEnv && this._options.disableCache !== false) ||
             this._options.disableCache
         ) {
             return {
@@ -753,6 +900,28 @@ export class Interceptor {
 
             return matches === mustMatch;
         };
+    }
+
+    private getInfoFromArgs(args: FetchXHRArgs) {
+        let method: string = "GET";
+        let url: string | undefined;
+        const [input, initOrMethod] = args;
+
+        if (input instanceof URL) {
+            url = input.toString();
+        } else if (typeof input === "string") {
+            url = input;
+        } else if (typeof input === "object") {
+            url = input.url;
+        }
+
+        if (typeof initOrMethod === "string") {
+            method = initOrMethod;
+        } else {
+            method = initOrMethod?.method ?? "GET";
+        }
+
+        return { method, url };
     }
 
     private getMock(item: CallStack) {
@@ -866,6 +1035,15 @@ export class Interceptor {
     }
 
     /**
+     * Function called when a request is cancelled or fails
+     *
+     * @param func A function called on error/cancel
+     */
+    public onRequestError(func: OnRequestError) {
+        this._onRequestError = func;
+    }
+
+    /**
      * Remove a mock entry by id
      *
      * @param id A unique id received from `mockResponse` or `cy.mockInterceptorResponse`
@@ -926,6 +1104,29 @@ export class Interceptor {
         return deepCopy(this._options);
     }
 
+    private shouldBypassItem(item: CallStack) {
+        const bypassRequest = [...this._bypassRequestStack]
+            .reverse()
+            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
+
+        if (!bypassRequest) {
+            return false;
+        }
+
+        if (bypassRequest.times === undefined || bypassRequest.times === 1) {
+            this._bypassRequestStack.splice(this._bypassRequestStack.indexOf(bypassRequest), 1);
+        } else if (bypassRequest.times !== undefined && bypassRequest.times > 1) {
+            bypassRequest.times--;
+        }
+
+        this._bypassIdStack.push({
+            item,
+            routeMatcher: bypassRequest.routeMatcher
+        });
+
+        return true;
+    }
+
     /**
      * Throttle requests matching the provided route matcher by setting a delay. By default it
      * throttles the first matching request, then the throttle is removed. Set `times`
@@ -984,11 +1185,10 @@ export class Interceptor {
             stringMatcherOrOptions = { url: stringMatcherOrOptions };
         }
 
-        const timeout =
-            (stringMatcherOrOptions.waitTimeout ??
-                Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ??
-                DEFAULT_TIMEOUT) -
-            (performance.now() - startTime);
+        const totalTimeout =
+            stringMatcherOrOptions.waitTimeout ?? this.requestTimeoutByEnv ?? DEFAULT_TIMEOUT;
+
+        const timeout = totalTimeout - (performance.now() - startTime);
 
         return waitTill(
             () =>
@@ -999,22 +1199,32 @@ export class Interceptor {
             {
                 errorMessage,
                 interval: DEFAULT_INTERVAL,
-                timeout
+                timeout,
+                totalTimeout
             }
         ).then(() => {
+            const waitForNextRequestTime =
+                stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_WAIT_FOR_NEXT_REQUEST;
+
             // check with a delay if there is an another request after the last one
-            return cy
-                .wait(stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_INTERVAL, {
-                    log: false
-                })
-                .then(() =>
-                    this.isThereRequestPending(
-                        stringMatcherOrOptions,
-                        stringMatcherOrOptions.enforceCheck
-                    )
-                        ? this.waitUntilRequestIsDone_withWait(stringMatcherOrOptions, startTime)
-                        : cy.wrap(this)
-                );
+            return waitForNextRequestTime > 0
+                ? cy
+                      .wait(waitForNextRequestTime, {
+                          log: false
+                      })
+                      .then(() =>
+                          this.isThereRequestPending(
+                              stringMatcherOrOptions,
+                              stringMatcherOrOptions.enforceCheck
+                          )
+                              ? this.waitUntilRequestIsDone_withWait(
+                                    stringMatcherOrOptions,
+                                    startTime,
+                                    errorMessage
+                                )
+                              : cy.wrap(this)
+                      )
+                : cy.wrap(this);
         });
     }
 

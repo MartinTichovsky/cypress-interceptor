@@ -26,18 +26,19 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 })
             );
 
-            on("task", {
-                log(message) {
-                    console.log(message);
-                    return null;
-                }
-            });
+            // on("task", {
+            //     log(message) {
+            //         console.log(message);
+            //         return null;
+            //     }
+            // });
 
             return config;
         },
         specPattern: ["cypress/e2e/**/*.cy.ts"]
     },
     experimentalInteractiveRunEvents: true,
+    experimentalMemoryManagement: true,
     fixturesFolder: false,
     video: false
 });

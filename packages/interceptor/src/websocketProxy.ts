@@ -14,8 +14,16 @@ const getQueryObjectFromString = (url: string) => {
 };
 
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
-    const listener = (win: Cypress.AUTWindow) => {
-        class WebSocketProxy extends WebSocket {
+    const listener = (
+        win: Cypress.AUTWindow & {
+            originWebSocket: typeof WebSocket;
+        }
+    ) => {
+        if (win.originWebSocket === undefined) {
+            win.originWebSocket = win.WebSocket;
+        }
+
+        class WebSocketProxy extends win.originWebSocket {
             private _URL: {
                 query: Record<string, string | number>;
                 url: string;
@@ -141,8 +149,6 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
         }
 
         win.WebSocket = WebSocketProxy;
-
-        Cypress.removeListener("window:before:load", listener);
     };
 
     return listener;

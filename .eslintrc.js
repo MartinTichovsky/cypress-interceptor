@@ -62,7 +62,8 @@ module.exports = {
                     }
                 ],
                 "@typescript-eslint/semi": ["warn", "always"],
-                "@typescript-eslint/type-annotation-spacing": "warn"
+                "@typescript-eslint/type-annotation-spacing": "warn",
+                "@typescript-eslint/unbound-method": "off"
             }
         }
     ],

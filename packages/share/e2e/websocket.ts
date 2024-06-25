@@ -221,9 +221,10 @@ describe("Websocket", () => {
 
     describe("Expected fail", () => {
         const errMessage = "<EXPECTED WS ERROR>";
+        let expectedErrorMessage = errMessage;
 
         const listener = (error: Error) => {
-            if (error.message === errMessage) {
+            if (error.message === expectedErrorMessage) {
                 return;
             }
 
@@ -270,6 +271,8 @@ describe("Websocket", () => {
                 ])
             );
 
+            expectedErrorMessage = `${errMessage} (${delay / 2}ms)`;
+
             cy.waitUntilWebsocketAction(
                 { data: responseData, type: "onmessage" },
                 { waitTimeout: delay / 2 },
@@ -285,6 +288,8 @@ describe("Websocket", () => {
         it("Enforce check", () => {
             cy.visit(getDynamicUrl([]));
 
+            expectedErrorMessage = `${errMessage} (5000ms)`;
+
             cy.waitUntilWebsocketAction({ waitTimeout: 5000 }, errMessage);
 
             /* istanbul ignore next */
@@ -297,6 +302,21 @@ describe("Websocket", () => {
             Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
 
             cy.visit(getDynamicUrl([]));
+
+            expectedErrorMessage = `${errMessage} (10000ms)`;
+
+            cy.waitUntilWebsocketAction({ url: "some-url" }, errMessage);
+
+            /* istanbul ignore next */
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
+            });
+        });
+
+        it("Env timeout", () => {
+            cy.visit(getDynamicUrl([]));
+
+            expectedErrorMessage = `${errMessage} (20000ms)`;
 
             cy.waitUntilWebsocketAction({ url: "some-url" }, errMessage);
 

@@ -12,7 +12,8 @@
   "keywords": [
     "cypress",
     "intercept",
-    "testing"
+    "testing",
+    "requests"
   ],
   "license": "MIT",
   "main": "lib/index.js",

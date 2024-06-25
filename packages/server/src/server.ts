@@ -4,6 +4,7 @@ import * as expressWs from "express-ws";
 import * as path from "path";
 import { WebSocket } from "ws";
 
+import { bigDataGenerator } from "./bigDataGenerator";
 import { getExampleResponse } from "./exampleResponse";
 import { WSMessage } from "./types";
 
@@ -18,6 +19,7 @@ app.use("/public", express.static(path.join(__dirname, "../public"), { redirect:
 
 interface TestingEndpointRequest {
     enableCache?: boolean;
+    bigData?: boolean;
     duration?: string;
     /**
      * Should be unique for every request
@@ -123,7 +125,9 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
                 res.setHeader("Cache-Control", "public, max-age=3600");
             }
 
-            if (responseType === XHRContentType) {
+            if (req.query.bigData) {
+                res.json(bigDataGenerator());
+            } else if (responseType === XHRContentType) {
                 res.json(getResponseBody(req));
             } else if (req.query.responseBody) {
                 res.send(req.query.responseBody);

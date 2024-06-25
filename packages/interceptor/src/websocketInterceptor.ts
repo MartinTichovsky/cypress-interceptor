@@ -451,14 +451,16 @@ export class WebsocketInterceptor {
         startTime: number,
         errorMessage?: string
     ): Cypress.Chainable<this> {
-        const timeout =
-            (options.waitTimeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT) -
-            (performance.now() - startTime);
+        const totalTimeout =
+            options.waitTimeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
+
+        const timeout = totalTimeout - (performance.now() - startTime);
 
         return waitTill(() => !this.isThereActionMatch(matcher, options.countMatch), {
             errorMessage,
             interval: DEFAULT_INTERVAL,
-            timeout
+            timeout,
+            totalTimeout
         }).then(() => cy.wrap(this));
     }
 

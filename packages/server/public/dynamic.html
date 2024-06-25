@@ -104,11 +104,12 @@
 
                 const params = {
                     ...(typeof entry.query === "object" ? entry.query : undefined),
+                    ...(entry.bigData ? { bigData: true } : undefined),
                     duration: entry.duration,
                     enableCache: entry.enableCache,
                     path,
                     responseBody: entry.responseBody
-                        ? type === "fetch"
+                        ? type === "fetch" || type === "xhr"
                             ? JSON.stringify(entry.responseBody)
                             : entry.responseBody
                         : undefined,
@@ -116,6 +117,7 @@
                 };
 
                 const body = entry.body;
+                const cancelIn = entry.cancelIn;
                 const headers = entry.headers;
                 const method = entry.method;
                 const requests = entry.requests;
@@ -142,6 +144,7 @@
                     wrapInSection(path, img);
                 } else if (type === "fetch") {
                     const startTime = performance.now();
+                    const controller = new AbortController();
 
                     fetch(getSrc(path, params), {
                         body: body && method === "POST" ? JSON.stringify(body) : undefined,
@@ -149,48 +152,133 @@
                             "Content-Type": "application/json",
                             ...(headers ? headers : {})
                         },
-                        method: method ?? "GET"
-                    }).then(async (response) => {
-                        const duration = performance.now() - startTime;
+                        method: method ?? "GET",
+                        signal: controller.signal
+                    })
+                        .then(async (response) => {
+                            const duration = performance.now() - startTime;
 
-                        try {
-                            const div = document.createElement("div");
+                            try {
+                                const div = document.createElement("div");
 
-                            const divResponse = document.createElement("div");
-                            divResponse.setAttribute("data-response-type", "body");
-                            divResponse.innerHTML = JSON.stringify(await response.json());
+                                if (!entry.bigData) {
+                                    const divResponse = document.createElement("div");
+                                    divResponse.setAttribute("data-response-type", "body");
+                                    divResponse.innerHTML = JSON.stringify(await response.json());
 
-                            div.appendChild(divResponse);
+                                    div.appendChild(divResponse);
+                                }
 
-                            const divStatusCode = document.createElement("div");
-                            divStatusCode.setAttribute("data-response-type", "status-code");
-                            divStatusCode.innerHTML = response.status;
+                                const divStatusCode = document.createElement("div");
+                                divStatusCode.setAttribute("data-response-type", "status-code");
+                                divStatusCode.innerHTML = response.status;
 
-                            div.appendChild(divStatusCode);
+                                div.appendChild(divStatusCode);
 
-                            const divHeaders = document.createElement("div");
-                            divHeaders.setAttribute("data-response-type", "headers");
-                            divHeaders.innerHTML = JSON.stringify([...response.headers.entries()]);
+                                const divHeaders = document.createElement("div");
+                                divHeaders.setAttribute("data-response-type", "headers");
+                                divHeaders.innerHTML = JSON.stringify([
+                                    ...response.headers.entries()
+                                ]);
 
-                            div.appendChild(divHeaders);
+                                div.appendChild(divHeaders);
 
-                            const divDuration = document.createElement("div");
-                            divDuration.setAttribute("data-response-type", "duration");
-                            divDuration.innerHTML = duration;
+                                const divDuration = document.createElement("div");
+                                divDuration.setAttribute("data-response-type", "duration");
+                                divDuration.innerHTML = duration;
 
-                            div.appendChild(divDuration);
+                                div.appendChild(divDuration);
 
-                            wrapInSection(`${path}_loaded`, div);
-                        } catch {
-                            //
+                                wrapInSection(`${path}_loaded`, div);
+                            } catch (e) {
+                                console.error(e);
+                            }
+
+                            try {
+                                processRequests(requests);
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        })
+                        .catch((e) => {
+                            console.error(e);
+                        });
+
+                    if (cancelIn !== undefined) {
+                        setTimeout(() => {
+                            controller.abort();
+                        }, cancelIn);
+                    }
+                } else if (type === "xhr") {
+                    const startTime = performance.now();
+                    const request = new XMLHttpRequest();
+
+                    const sendHeaders = {
+                        "Content-Type": "application/json",
+                        ...(headers ? headers : {})
+                    };
+
+                    request.onreadystatechange = () => {
+                        if (request.readyState === XMLHttpRequest.DONE) {
+                            const duration = performance.now() - startTime;
+
+                            try {
+                                const div = document.createElement("div");
+
+                                if (!entry.bigData) {
+                                    const divResponse = document.createElement("div");
+                                    divResponse.setAttribute("data-response-type", "body");
+                                    divResponse.innerHTML = request.response;
+
+                                    div.appendChild(divResponse);
+                                }
+
+                                const divStatusCode = document.createElement("div");
+                                divStatusCode.setAttribute("data-response-type", "status-code");
+                                divStatusCode.innerHTML = request.status;
+
+                                div.appendChild(divStatusCode);
+
+                                const divHeaders = document.createElement("div");
+                                divHeaders.setAttribute("data-response-type", "headers");
+                                divHeaders.innerHTML = request.getAllResponseHeaders();
+
+                                div.appendChild(divHeaders);
+
+                                const divDuration = document.createElement("div");
+                                divDuration.setAttribute("data-response-type", "duration");
+                                divDuration.innerHTML = duration;
+
+                                div.appendChild(divDuration);
+
+                                wrapInSection(`${path}_loaded`, div);
+                            } catch (e) {
+                                console.error(e);
+                            }
+
+                            try {
+                                processRequests(requests);
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }
+                    };
 
-                        try {
-                            processRequests(requests);
-                        } catch {
-                            //
-                        }
-                    });
+                    request.open(method ?? "GET", getSrc(path, params));
+
+                    for (const key in sendHeaders) {
+                        request.setRequestHeader(key, sendHeaders[key]);
+                    }
+
+                    request.send(body && method === "POST" ? JSON.stringify(body) : undefined);
+
+                    // when multiple XHR requested at once, the Abort function can be called
+                    // before the request really begins
+                    if (cancelIn !== undefined) {
+                        setTimeout(() => {
+                            request.abort();
+                        }, cancelIn);
+                    }
                 } else if (type === "websocket") {
                     const params = {
                         ...entry.query,

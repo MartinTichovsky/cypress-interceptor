@@ -1510,13 +1510,13 @@ describe("Mock Respose", () => {
         });
     });
 
-    it("Generate body", () => {
+    it("Generate body from response", () => {
         const mockResponseStatusCode = 201;
 
         cy.mockInterceptorResponse(
             { resourceType: "fetch" },
             {
-                generateBody: (body) => {
+                generateBody: (_req, body) => {
                     expect(body).to.deep.eq(responseBody1);
 
                     return mockResponseBody;
@@ -1533,6 +1533,70 @@ describe("Mock Respose", () => {
                     method: "POST",
                     path: testPath_Fetch1,
                     responseBody: responseBody1,
+                    status: 200,
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorLastRequest({ url: `**/${testPath_Fetch1}` }).then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.response).not.to.be.undefined;
+            expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+            expect(stats!.response!.body_origin).to.deep.eq(responseBody1);
+            expect(checkHeaders(stats!.response!.headers, mockResponseHeaders)).to.be.true;
+            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+            expect(stats!.response!.statusCode_origin).to.eq(200);
+        });
+
+        getResponseBody(testPath_Fetch1).should("deep.equal", mockResponseBody);
+        checkResponseHeaders(testPath_Fetch1, mockResponseHeaders).should("be.true");
+        getResponseStatus(testPath_Fetch1).should("eq", mockResponseStatusCode);
+    });
+
+    it("Generate body from request", () => {
+        const body = { page: 1, next: false, obj: { a: [0, 2, 4] } };
+        const mockResponseStatusCode = 202;
+        const query = { silent: "true" };
+
+        const customHeaderKey = "custom-header";
+        const customHeaderValue = "custom-value";
+
+        cy.mockInterceptorResponse(
+            { resourceType: "fetch" },
+            {
+                generateBody: (req) => {
+                    expect(req.body).to.deep.eq(body);
+                    expect(req.query).to.deep.eq({
+                        ...query,
+                        path: testPath_Fetch1,
+                        responseBody: JSON.stringify(responseBody1),
+                        status: "200"
+                    });
+                    expect(req.method).to.eq("POST");
+                    expect(req.headers[customHeaderKey]).to.eq(customHeaderValue);
+
+                    return mockResponseBody;
+                },
+                headers: mockResponseHeaders,
+                statusCode: mockResponseStatusCode
+            }
+        );
+
+        cy.visit(
+            getDynamicUrl([
+                {
+                    body,
+                    delay: 100,
+                    headers: {
+                        [customHeaderKey]: customHeaderValue
+                    },
+                    method: "POST",
+                    path: testPath_Fetch1,
+                    responseBody: responseBody1,
+                    query,
                     status: 200,
                     type: "fetch"
                 }

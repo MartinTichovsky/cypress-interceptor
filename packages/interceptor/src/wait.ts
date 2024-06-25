@@ -4,6 +4,7 @@ interface Options {
     errorMessage?: string;
     interval: number;
     timeout: number;
+    totalTimeout: number;
 }
 
 export const waitTill = (checkFunction: Checker, options: Options): Cypress.Chainable<null> => {
@@ -21,9 +22,11 @@ export const waitTill = (checkFunction: Checker, options: Options): Cypress.Chai
 
         if (Date.now() >= endTime) {
             throw new Error(
-                options.errorMessage
-                    ? options.errorMessage
-                    : "A wait timed out when wating for requests to be done"
+                `${
+                    options.errorMessage
+                        ? options.errorMessage
+                        : "A wait timed out when wating for requests to be done"
+                } (${options.totalTimeout}ms)`
             );
         }
 

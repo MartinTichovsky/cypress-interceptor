@@ -1,10 +1,31 @@
 import { Interceptor } from "./interceptor";
+import { RequestListener } from "./requestListener";
+import { createRequestProxy } from "./requestProxy";
 
-beforeEach(() => {
-    const interceptor = new Interceptor();
+const createCommands = () => {
     let timeStart: number | undefined = undefined;
     let timeStop: number | undefined = undefined;
 
+    const requestListener = new RequestListener();
+    const interceptor = new Interceptor(requestListener);
+
+    cy.on("window:before:load", createRequestProxy(requestListener));
+
+    cy.on("window:before:unload", () => {
+        requestListener.setCurrentState("window:before:unload");
+    });
+
+    cy.on("window:unload", () => {
+        requestListener.setCurrentState("window:unload");
+    });
+
+    cy.on("window:load", () => {
+        requestListener.setCurrentState("window:load");
+    });
+
+    Cypress.Commands.add("bypassInterceptorResponse", (routeMatcher, times) =>
+        interceptor.bypassRequest(routeMatcher, times)
+    );
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
@@ -38,6 +59,10 @@ beforeEach(() => {
     Cypress.Commands.add("waitUntilRequestIsDone", (stringMatcherOrOptions, errorMessage) =>
         interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
     );
+};
+
+beforeEach(() => {
+    createCommands();
 });
 
 // FOR DEBUG
