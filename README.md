@@ -19,6 +19,7 @@ __There are some limits while using this package:__
 
 ## Whats new
 
+- added a possibility to filter and map stats when a test fail
 - added a possibility to bypass the response
 - work with canceled and aborted request
 - work with XHR requests
@@ -391,6 +392,7 @@ Set Interceptor options. Best to call at the beggining of the test, in `before` 
 ```ts
 disableCache: undefined,
 debug: undefined,
+doNotLogResponseBody: false,
 ingoreCrossDomain: true,
 resourceTypes: ["document", "fetch", "script", "xhr"]
 ```
@@ -745,8 +747,11 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 ## writeDebugToLog
 
 ```ts
-writeDebugToLog(outputDir: string, fileName?: string): void;
+writeDebugToLog(outputDir: string, options?: WriteDebugOptions): void;
 ```
+
+_References:_
+  - [`WriteDebugOptions`](#writedebugoptions)
 
 Write the debug information to a file (debug must be enabled). The file will contain JSON.stringify of [`debugInfo`](#debuginfo).
 
@@ -758,7 +763,11 @@ afterAll(() => {
         // example output will be "./out/test.cy.ts (Description - It).debug.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
         interceptor.writeDebugToLog("./out");
         // example output will be "./out/file_name.debug.json"
-        interceptor.writeDebugToLog("./out", "file_name");
+        interceptor.writeDebugToLog("./out", { fileName: "file_name" });
+        // filter output
+        interceptor.writeDebugToLog("./out", { filter: (entry) => entry.method === "POST" });
+        // map output
+        interceptor.writeDebugToLog("./out", { mapper: (entry) => ({ type: entry.type, url: entry.url }) });
     });
 });
 ```
@@ -766,11 +775,11 @@ afterAll(() => {
 ## writeStatsToLog
 
 ```ts
-public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string): void;
+public writeStatsToLog(outputDir: string, options?: WriteStatsOptions): void;
 ```
 
 _References:_
-  - [`IRouteMatcher`](#iroutematcher)
+  - [`WriteStatsOptions`](#writestatsoptions)
 
 Write the logged requests' (or filtered by the provided route matcher) information to a file. The file will contain JSON.stringify of [`callStack`](#callstack).
 
@@ -782,9 +791,13 @@ afterAll(() => {
         // example output will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
         interceptor.writeStatsToLog("./out");
         // example output will be "./out/file_name.stats.json"
-        interceptor.writeStatsToLog("./out", undefined, "file_name");
+        interceptor.writeStatsToLog("./out", { fileName: "file_name" });
         // write only "fetch" requests
-        interceptor.writeStatsToLog("./out", { resourceType: "fetch" });
+        interceptor.writeStatsToLog("./out", { routeMatcher: { resourceType: "fetch" }});
+        // filter output
+        interceptor.writeStatsToLog("./out", { filter: (entry) => entry.method === "POST" });
+        // map output
+        interceptor.writeStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) });
     });
 });
 ```
@@ -811,6 +824,10 @@ interface InterceptorOptions {
      * When it is true, calling `debugInfo` will return an array with all catched requests
      */
     debug?: boolean;
+    /**
+     * When true, response body will not be logged due to performance issues
+     */
+    doNotLogResponseBody?: boolean;
     /**
      * Ignore request outside the domain, default: true
      */
@@ -966,6 +983,68 @@ interface WaitUntilRequestOptions extends IRouteMatcherObject {
      * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
      */
     waitTimeout?: number;
+}
+```
+
+### WriteDebugOptions
+
+```ts
+interface WriteDebugOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param debugInfo A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (debugInfo: IDebug) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (debugInfo: IDebug) => unknown;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+}
+```
+
+### WriteStatsOptions
+
+```ts
+interface WriteStatsOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (callStack: CallStack) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (callStack: CallStack) => unknown;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+    /**
+     * A route matcher
+     */
+    routeMatcher?: IRouteMatcher;
 }
 ```
 
@@ -1309,11 +1388,11 @@ Same as [`cy.waitUntilWebsocketAction`](#cywaituntilwebsocketaction).
 ## writeStatsToLog
 
 ```ts
-writeStatsToLog(outputDir: string, matcher?: IWSMatcher, fileName?: string): void;
+writeStatsToLog(outputDir: string, options?: WriteStatsOptions): void;
 ```
 
 _References:_
-  - [`IWSMatcher`](#iwsmatcher)
+  - [`WriteStatsOptions`](#writestatsoptions-1)
 
 Write the logged requests' (or filtered by the provided matcher) information to a file. The file will contain JSON.stringify of [`callStack`](#callstack-1).
 
@@ -1325,9 +1404,13 @@ afterAll(() => {
         // example output will be "./out/test.cy.ts (Description - It).ws.stats.json" (the name of the file `test.cy.ts (Description - It)` will be composed from the running test)
         interceptor.writeStatsToLog("./out");
         // example output will be "./out/file_name.ws.stats.json"
-        interceptor.writeStatsToLog("./out", undefined, "file_name");
+        interceptor.writeStatsToLog("./out", { fileName: "file_name" });
         // write only stats for a specific URL
-        interceptor.writeStatsToLog("./out", { url: "**/some-url" });
+        interceptor.writeStatsToLog("./out", { matcher: { url: "**/some-url" } });
+        // filter output
+        interceptor.writeStatsToLog("./out", { filter: (entry) => entry.type === "onmessage" });
+        // map output
+        interceptor.writeStatsToLog("./out", { mapper: (entry) => ({ type: entry.type, url: entry.url }) });
     });
 });
 ```
@@ -1379,4 +1462,37 @@ type IWSMatcher = {
           type: "send";
       }
 );
+```
+
+## WriteStatsOptions
+
+```ts
+interface WriteStatsOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (callStack: CallStackWebsocket) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (callStack: CallStackWebsocket) => unknown;
+    /**
+     * A matcher
+     */
+    matcher?: IWSMatcher;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+}
 ```

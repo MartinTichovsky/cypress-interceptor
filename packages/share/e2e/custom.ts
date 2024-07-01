@@ -7,6 +7,7 @@ describe("Custom", () => {
             expect(options).to.deep.eq({
                 disableCache: undefined,
                 debug: undefined,
+                doNotLogResponseBody: false,
                 ingoreCrossDomain: true,
                 resourceTypes: ["document", "fetch", "script", "xhr"]
             });
@@ -45,8 +46,11 @@ describe("Custom", () => {
         });
     });
 
-    it("Debug to file - strict name", () => {
+    it("Debug to file - strict name, filter, mapper", () => {
         const testPath_Fetch1 = "dev/fetch-1";
+        const testPath_Fetch2 = "dev/fetch-2";
+        const testPath_Script1 = "dev/script-1";
+        const testPath_Script2 = "dev/script-2";
         const fileName = "FILE_NAME_DEBUG";
         const outDir = "_logs";
 
@@ -59,6 +63,22 @@ describe("Custom", () => {
                     method: "POST",
                     path: testPath_Fetch1,
                     type: "fetch"
+                },
+                {
+                    delay: 100,
+                    method: "GET",
+                    path: testPath_Fetch2,
+                    type: "fetch"
+                },
+                {
+                    delay: 100,
+                    path: testPath_Script1,
+                    type: "script"
+                },
+                {
+                    delay: 100,
+                    path: testPath_Script2,
+                    type: "script"
                 }
             ])
         );
@@ -66,12 +86,39 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then((intereptor) => {
-            intereptor.writeDebugToLog(outDir, fileName);
+            intereptor.writeDebugToLog(outDir, { fileName });
 
             cy.readFile(`${outDir}/${fileName}.debug.json`).then((debugInfo: IDebug[]) => {
                 expect(debugInfo.length > 0).to.be.true;
                 expect(debugInfo.find((entry) => entry.url.includes(testPath_Fetch1))).not.to.be
                     .undefined;
+            });
+
+            intereptor.writeDebugToLog(outDir, {
+                fileName,
+                filter: (debugInfo) => debugInfo.url.includes(testPath_Fetch2)
+            });
+
+            cy.readFile(`${outDir}/${fileName}.debug.json`).then((debugInfo: IDebug[]) => {
+                expect(debugInfo.length > 0).to.be.true;
+                expect(debugInfo.every((entry) => entry.url === debugInfo[0].url)).to.be.true;
+            });
+
+            intereptor.writeDebugToLog(outDir, {
+                fileName,
+                mapper: (debugInfo) => ({ type: debugInfo.type, url: debugInfo.url })
+            });
+
+            cy.readFile(`${outDir}/${fileName}.debug.json`).then((debugInfo: IDebug[]) => {
+                expect(debugInfo.length > 0).to.be.true;
+                expect(
+                    debugInfo.every(
+                        (entry) =>
+                            entry.type !== undefined &&
+                            entry.url !== undefined &&
+                            Object.keys(entry).length === 2
+                    )
+                ).to.be.true;
             });
         });
     });
@@ -125,7 +172,7 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then((intereptor) => {
-            intereptor.writeStatsToLog(outDir, undefined, fileName);
+            intereptor.writeStatsToLog(outDir, { fileName });
 
             cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
                 expect(stats.length > 0).to.be.true;
@@ -135,7 +182,7 @@ describe("Custom", () => {
         });
     });
 
-    it("Stats to file - matcher", () => {
+    it("Stats to file - matcher, filter, mapper", () => {
         const testPath_Fetch1 = "stats/fetch-1";
         const testPath_Fetch2 = "stats/fetch-2";
         const testPath_Script1 = "stats/script-1";
@@ -173,29 +220,70 @@ describe("Custom", () => {
         cy.waitUntilRequestIsDone();
 
         cy.interceptor().then((intereptor) => {
-            intereptor.writeStatsToLog(outDir, { resourceType: "fetch" }, fileName);
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                prettyOutput: true
+            });
+
+            cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(5);
+            });
+
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                routeMatcher: { resourceType: "fetch" }
+            });
 
             cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
                 expect(stats.length).to.eq(2);
                 expect(stats.every((entry) => entry.resourceType === "fetch")).to.be.true;
             });
 
-            intereptor.writeStatsToLog(outDir, { resourceType: "script" }, fileName);
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                routeMatcher: { resourceType: "script" }
+            });
 
             cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
                 expect(stats.length).to.eq(2);
                 expect(stats.every((entry) => entry.resourceType === "script")).to.be.true;
             });
 
-            intereptor.writeStatsToLog(
-                outDir,
-                { method: "GET", resourceType: ["fetch", "script"] },
-                fileName
-            );
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                routeMatcher: { method: "GET", resourceType: ["fetch", "script"] }
+            });
 
             cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
                 expect(stats.length).to.eq(3);
                 expect(stats.every((entry) => entry.request.method === "GET")).to.be.true;
+            });
+
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                filter: (callStack) => callStack.url.endsWith(testPath_Fetch1)
+            });
+
+            cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(1);
+                expect(stats[0].url.endsWith(testPath_Fetch1)).to.be.true;
+            });
+
+            intereptor.writeStatsToLog(outDir, {
+                fileName,
+                mapper: (callStack) => ({ isPending: callStack.isPending, url: callStack.url })
+            });
+
+            cy.readFile(`${outDir}/${fileName}.stats.json`).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(5);
+                expect(
+                    stats.every(
+                        (entry) =>
+                            entry.isPending === false &&
+                            entry.url !== undefined &&
+                            Object.keys(entry).length === 2
+                    )
+                ).to.be.true;
             });
         });
     });

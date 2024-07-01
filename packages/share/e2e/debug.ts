@@ -112,4 +112,36 @@ describe("Debug", () => {
             expect(debugInfo.length > 0).to.be.false;
         });
     });
+
+    it("Debug - without response", () => {
+        cy.interceptorOptions({ debug: true, doNotLogResponseBody: true, resourceTypes: "fetch" });
+
+        cy.visit(getDynamicUrl(config));
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.debugIsEnabled).to.be.true;
+
+            const debugInfo = interceptor.debugInfo;
+
+            expect(debugInfo.length > 0).to.be.true;
+            expect(
+                debugInfo.filter(
+                    (entry) =>
+                        (entry.resourceType === "fetch" || entry.resourceType === "script") &&
+                        (entry.type === "logged-done" || entry.type === "skipped-done")
+                ).length
+            ).to.eq(3);
+            expect(
+                debugInfo
+                    .filter(
+                        (entry) => entry.type === "logged-done" || entry.type === "skipped-done"
+                    )
+                    .every(
+                        (entry) => entry.response !== undefined && entry.response.body === undefined
+                    )
+            ).to.be.true;
+        });
+    });
 });

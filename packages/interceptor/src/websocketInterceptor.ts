@@ -162,6 +162,35 @@ export interface WebsocketInterceptorOptions {
     debug?: boolean;
 }
 
+interface WriteStatsOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (callStack: CallStackWebsocket) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (callStack: CallStackWebsocket) => unknown;
+    /**
+     * A matcher
+     */
+    matcher?: IWSMatcher;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+}
+
 const DEFAULT_INTERVAL = 500;
 const DEFAULT_TIMEOUT = 10000;
 
@@ -470,17 +499,28 @@ export class WebsocketInterceptor {
      * Write the logged requests' (or filtered by the provided matcher) information to a file,
      * example: in `afterEach`
      *      => wsInterceptor.writeStatsToLog("./out") => example output will be "./out/Description - It.stats.json"
-     *      => wsInterceptor.writeStatsToLog("./out", undefined, "file_name") => example output will be "./out/file_name.stats.json"
-     *      => wsInterceptor.writeStatsToLog("./out", { resourceType: "fetch" }) => write only fetch requests to the output file
+     *      => wsInterceptor.writeStatsToLog("./out", { fileName: "file_name" }) => example output will be "./out/file_name.stats.json"
+     *      => wsInterceptor.writeStatsToLog("./out", { matcher: { resourceType: "fetch" }}) => write only fetch requests to the output file
      *
      * @param outputDir A path for the output directory
-     * @param matcher A matcher
-     * @param currentTest A name of the file, if undefined, it will be composed from the running test
+     * @param options Options
      */
-    public writeStatsToLog(outputDir: string, matcher?: IWSMatcher, fileName?: string) {
+    public writeStatsToLog(outputDir: string, options?: WriteStatsOptions) {
+        let callStack = options?.matcher
+            ? this.callStack.filter(this.filterItemsByMatcher(options?.matcher))
+            : this.callStack;
+
+        if (options?.filter) {
+            callStack = callStack.filter(options.filter);
+        }
+
         cy.writeFile(
-            getFilePath(fileName, outputDir, "ws.stats"),
-            JSON.stringify(this.callStack.filter(this.filterItemsByMatcher(matcher)), replacer, 4)
+            getFilePath(options?.fileName, outputDir, "ws.stats"),
+            JSON.stringify(
+                options?.mapper ? callStack.map(options.mapper) : callStack,
+                replacer,
+                options?.prettyOutput ? 4 : undefined
+            )
         );
     }
 }

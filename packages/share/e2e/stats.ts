@@ -9,6 +9,21 @@ describe("Stats", () => {
 
     const duration = 2000;
 
+    const responseBodyFetch = {
+        arr: [0, "h", "g", 9, -9, true],
+        bool: false,
+        obj: {
+            arr: [-1, 1, "s", false],
+            b: true,
+            e: 5,
+            s: ""
+        },
+        num: -159,
+        str: "string"
+    };
+
+    const responseBodyScript = "if (true){ }";
+
     describe("Simple", () => {
         it("Fetch", () => {
             const body = {
@@ -19,19 +34,6 @@ describe("Stats", () => {
 
             const query = {
                 custom: "custom"
-            };
-
-            const responseBody = {
-                arr: [0, "h", "g", 9, -9, true],
-                bool: false,
-                obj: {
-                    arr: [-1, 1, "s", false],
-                    b: true,
-                    e: 5,
-                    s: ""
-                },
-                num: -159,
-                str: "string"
             };
 
             const customHeaderKey = "custom-header";
@@ -53,7 +55,7 @@ describe("Stats", () => {
                         },
                         method: "POST",
                         path: testPath_Fetch1,
-                        responseBody,
+                        responseBody: responseBodyFetch,
                         query,
                         type: "fetch"
                     }
@@ -76,13 +78,13 @@ describe("Stats", () => {
                     ...query,
                     duration: duration.toString(),
                     path: testPath_Fetch1,
-                    responseBody: JSON.stringify(responseBody)
+                    responseBody: JSON.stringify(responseBodyFetch)
                 });
                 expect(stats.request.method).to.eq("POST");
                 expect(new Date(stats.timeStart).getTime()).to.be.gt(timeStart);
                 expect(stats.resourceType).to.eq("fetch");
                 expect(stats.response).not.to.be.undefined;
-                expect(stats.response!.body).to.deep.eq(responseBody);
+                expect(stats.response!.body).to.deep.eq(responseBodyFetch);
                 expect(stats.response!.statusCode).to.eq(200);
                 expect(stats.response!.statusMessage).to.eq("OK");
                 expect(stats.response!.timeEnd).not.to.be.undefined;
@@ -102,8 +104,6 @@ describe("Stats", () => {
         });
 
         it("Script", () => {
-            const responseBody = "if (true){ }";
-
             let timeEnd: number;
             let timeStart: number;
 
@@ -115,7 +115,7 @@ describe("Stats", () => {
                         delay: 100,
                         duration,
                         path: testPath_Script1,
-                        responseBody,
+                        responseBody: responseBodyScript,
                         type: "script"
                     }
                 ])
@@ -135,13 +135,13 @@ describe("Stats", () => {
                 expect(stats.request.query).to.deep.eq({
                     duration: duration.toString(),
                     path: testPath_Script1,
-                    responseBody: responseBody
+                    responseBody: responseBodyScript
                 });
                 expect(stats.request.method).to.eq("GET");
                 expect(new Date(stats.timeStart).getTime()).to.be.gt(timeStart);
                 expect(stats.resourceType).to.eq("script");
                 expect(stats.response).not.to.be.undefined;
-                expect(stats.response!.body).to.eq(responseBody);
+                expect(stats.response!.body).to.eq(responseBodyScript);
                 expect(stats.response!.statusCode).to.eq(200);
                 expect(stats.response!.statusMessage).to.eq("OK");
                 expect(stats.response!.timeEnd).not.to.be.undefined;
@@ -157,6 +157,43 @@ describe("Stats", () => {
             cy.interceptorLastRequest({ resourceType: "script" }).then((stats) => {
                 expect(stats).not.to.be.undefined;
                 testStats(stats!);
+            });
+        });
+
+        it("Do not store the response body", () => {
+            cy.interceptorOptions({ doNotLogResponseBody: true });
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: testPath_Fetch1,
+                        responseBody: responseBodyFetch,
+                        type: "fetch"
+                    },
+                    {
+                        delay: 100,
+                        duration,
+                        path: testPath_Script1,
+                        responseBody: responseBodyScript,
+                        type: "script"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone();
+
+            cy.interceptorStats().then((stats) => {
+                expect(
+                    stats.every(
+                        (entry) =>
+                            entry.response !== undefined &&
+                            entry.response?.body === undefined &&
+                            entry.response.body_origin === undefined
+                    )
+                ).to.be.true;
             });
         });
     });

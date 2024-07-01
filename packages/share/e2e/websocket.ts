@@ -401,7 +401,7 @@ describe("Websocket", () => {
             });
 
             cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outDir, undefined, fileName);
+                intereptor.writeStatsToLog(outDir, { fileName });
 
                 cy.readFile(`${outDir}/${fileName}.ws.stats.json`).then(
                     (stats: CallStackWebsocket[]) => {
@@ -421,7 +421,7 @@ describe("Websocket", () => {
             });
         });
 
-        it("Stats to file - matcher", () => {
+        it("Stats to file - matcher, filter, mapper", () => {
             const fileName = "FILE_NAME_WS_STATS_MATCH";
             const outDir = "_logs";
 
@@ -462,7 +462,13 @@ describe("Websocket", () => {
             const filePath = `${outDir}/${fileName}.ws.stats.json`;
 
             cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outDir, { protocols: "soap" }, fileName);
+                intereptor.writeStatsToLog(outDir, { fileName, prettyOutput: true });
+
+                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                    expect(stats.length).to.eq(12);
+                });
+
+                intereptor.writeStatsToLog(outDir, { fileName, matcher: { protocols: "soap" } });
 
                 cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(6);
@@ -477,11 +483,10 @@ describe("Websocket", () => {
                     expect(stats[5].type).to.eq("onmessage");
                 });
 
-                intereptor.writeStatsToLog(
-                    outDir,
-                    { type: "onmessage", url: `**/${path1}` },
-                    fileName
-                );
+                intereptor.writeStatsToLog(outDir, {
+                    fileName,
+                    matcher: { type: "onmessage", url: `**/${path1}` }
+                });
 
                 cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(2);
@@ -489,6 +494,33 @@ describe("Websocket", () => {
                     expect(stats[0].type).to.eq("onmessage");
                     expect(stats[1].data).to.haveOwnProperty("data", responseData12);
                     expect(stats[1].type).to.eq("onmessage");
+                });
+
+                intereptor.writeStatsToLog(outDir, {
+                    fileName,
+                    filter: (callStack) => callStack.url.endsWith(path2)
+                });
+
+                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                    expect(stats.length).to.eq(6);
+                    expect(stats.every((entry) => entry.url.endsWith(path2)));
+                });
+
+                intereptor.writeStatsToLog(outDir, {
+                    fileName,
+                    mapper: (callStack) => ({ type: callStack.type, url: callStack.url })
+                });
+
+                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                    expect(stats.length).to.eq(12);
+                    expect(
+                        stats.every(
+                            (entry) =>
+                                entry.type !== undefined &&
+                                entry.url !== undefined &&
+                                Object.keys(entry).length === 2
+                        )
+                    ).to.be.true;
                 });
             });
         });

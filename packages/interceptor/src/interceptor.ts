@@ -214,6 +214,10 @@ export interface InterceptorOptions {
      */
     debug?: boolean;
     /**
+     * When true, response body will not be logged due to performance issues
+     */
+    doNotLogResponseBody?: boolean;
+    /**
      * Ignore request outside the domain, default: true
      */
     ingoreCrossDomain?: boolean;
@@ -458,6 +462,60 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     waitTimeout?: number;
 }
 
+interface WriteDebugOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param debugInfo A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (debugInfo: IDebug) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (debugInfo: IDebug) => unknown;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+}
+
+interface WriteStatsOptions {
+    /**
+     * A name of the file, if undefined, it will be composed from the running test
+     */
+    fileName?: string;
+    /**
+     * A possibility to filter the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns false if the item should be skipped
+     */
+    filter?: (callStack: CallStack) => boolean;
+    /**
+     * A possibility to map the logged items
+     *
+     * @param callStack A call info stored in the stack
+     * @returns Any object you want to log
+     */
+    mapper?: (callStack: CallStack) => unknown;
+    /**
+     * When true, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+    /**
+     * A route matcher
+     */
+    routeMatcher?: IRouteMatcher;
+}
+
 const DEFAULT_INTERVAL = 500;
 const DEFAULT_RESOURCE_TYPES: IResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
@@ -466,6 +524,7 @@ const DEFAULT_WAIT_FOR_NEXT_REQUEST = 750;
 const defaultOptions: Required<InterceptorOptions> = {
     disableCache: undefined!,
     debug: undefined!,
+    doNotLogResponseBody: false,
     ingoreCrossDomain: true,
     resourceTypes: DEFAULT_RESOURCE_TYPES
 };
@@ -640,7 +699,7 @@ export class Interceptor {
                             queueId,
                             resourceType: req.resourceType,
                             response: {
-                                body: res.body,
+                                body: this._options.doNotLogResponseBody ? undefined : res.body,
                                 headers: res.headers,
                                 statusCode: res.statusCode,
                                 statusMessage: res.statusMessage
@@ -685,7 +744,7 @@ export class Interceptor {
                         queueId,
                         resourceType: req.resourceType,
                         response: {
-                            body: res.body,
+                            body: this._options.doNotLogResponseBody ? undefined : res.body,
                             headers: res.headers,
                             statusCode: res.statusCode,
                             statusMessage: res.statusMessage
@@ -724,8 +783,8 @@ export class Interceptor {
                 const statusCode = mock?.statusCode ?? res.statusCode;
 
                 item.response = {
-                    body,
-                    body_origin: res.body,
+                    body: this._options.doNotLogResponseBody ? undefined : body,
+                    body_origin: this._options.doNotLogResponseBody ? undefined : res.body,
                     headers,
                     statusCode,
                     statusCode_origin: res.statusCode,
@@ -1234,15 +1293,25 @@ export class Interceptor {
      * Write the debug information to a file (debug must be enabled),
      * example: in `afterEach`
      *      => interceptor.writeDebugToLog("./out") => example output will be "./out/Description - It.debug.json"
-     *      => interceptor.writeDebugToLog("./out", "file_name") => example output will be "./out/file_name.debug.json"
+     *      => interceptor.writeDebugToLog("./out", { fileName: "file_name" }) => example output will be "./out/file_name.debug.json"
      *
      * @param outputDir A path for the output directory
-     * @param currentTest A name of the file, if undefined, it will be composed from the running test
+     * @param options Options
      */
-    public writeDebugToLog(outputDir: string, fileName?: string) {
+    public writeDebugToLog(outputDir: string, options?: WriteDebugOptions) {
+        let debugInfo = this.debugInfo;
+
+        if (options?.filter) {
+            debugInfo = debugInfo.filter(options.filter);
+        }
+
         cy.writeFile(
-            getFilePath(fileName, outputDir, "debug"),
-            JSON.stringify(this.debugInfo, replacer, 4)
+            getFilePath(options?.fileName, outputDir, "debug"),
+            JSON.stringify(
+                options?.mapper ? debugInfo.map(options.mapper) : debugInfo,
+                replacer,
+                options?.prettyOutput ? 4 : undefined
+            )
         );
     }
 
@@ -1250,20 +1319,27 @@ export class Interceptor {
      * Write the logged requests' (or filtered by the provided route matcher) information to a file
      * example: in `afterEach`
      *      => interceptor.writeStatsToLog("./out") => example output will be "./out/Description - It.stats.json"
-     *      => interceptor.writeStatsToLog("./out", undefined, "file_name") => example output will be "./out/file_name.stats.json"
-     *      => interceptor.writeStatsToLog("./out", { type: "onmessage" }) => write only "onmessage" requests to the output file
+     *      => interceptor.writeStatsToLog("./out", { fileName: "file_name" }) => example output will be "./out/file_name.stats.json"
+     *      => interceptor.writeStatsToLog("./out", { routeMatcher: { type: "onmessage" } }) => write only "onmessage" requests to the output file
      *
      * @param outputDir A path for the output directory
-     * @param routeMatcher A route matcher
-     * @param currentTest A name of the file, if undefined, it will be composed from the running test
+     * @param options Options
      */
-    public writeStatsToLog(outputDir: string, routeMatcher?: IRouteMatcher, fileName?: string) {
+    public writeStatsToLog(outputDir: string, options?: WriteStatsOptions) {
+        let callStack = options?.routeMatcher
+            ? this.callStack.filter(this.filterItemsByMatcher(options?.routeMatcher))
+            : this.callStack;
+
+        if (options?.filter) {
+            callStack = callStack.filter(options.filter);
+        }
+
         cy.writeFile(
-            getFilePath(fileName, outputDir, "stats"),
+            getFilePath(options?.fileName, outputDir, "stats"),
             JSON.stringify(
-                this.callStack.filter(this.filterItemsByMatcher(routeMatcher)),
+                options?.mapper ? callStack.map(options.mapper) : callStack,
                 replacer,
-                4
+                options?.prettyOutput ? 4 : undefined
             )
         );
     }
