@@ -1,6 +1,6 @@
 {
   "name": "cypress-interceptor",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A helper for better Cypress testing; mocking, throttling and waiting for requests with advanced statistics",
   "devDependencies": {
     "cypress": "13.8.1"
