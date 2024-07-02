@@ -31,26 +31,30 @@ export const deepCopy = <T>(value: T) => {
 
 export const getFileNameFromCurrentTest = () => {
     const currentTest = Cypress.currentTest;
-    const filePath = Cypress.spec.relative
-        .replace(/^(cypress\\(\w+)\\)|(cypress\/(\w+)\/)/i, "")
-        .replace(/(\/|\\)/gi, "-");
+    const filePath = Cypress.spec.relative.replace(/^(cypress\\(\w+)\\)|(cypress\/(\w+)\/)/i, "");
 
-    return `${filePath} (${
+    return `${normalizeFileName(filePath)} (${normalizeFileName(
         currentTest
             ? currentTest.titlePath.length
                 ? currentTest.titlePath.join(" - ")
                 : currentTest.title
             : "unknown"
-    })`;
+    )})`;
 };
 
 export const getFilePath = (fileName: string | undefined, outputDir: string, type: string) =>
-    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${(fileName ? fileName : getFileNameFromCurrentTest()).replace(/(\/|\\)/gi, "|")}.${type}.json`;
+    `${outputDir}${outputDir.endsWith("/") ? "" : "/"}${fileName ? fileName : getFileNameFromCurrentTest()}.${type}.json`;
 
 export const isNonNullableObject = (
     object: unknown
 ): object is Record<string | symbol | number, unknown> =>
     typeof object === "object" && object !== null;
+
+export const normalizeFileName = (fileName: string) =>
+    fileName
+        .replace(/[^a-zA-Z0-9_\-. ]/gi, "-")
+        .replace(/(-)+/g, "-")
+        .replace(/( )+/g, " ");
 
 export const replacer = (_key: string, value: unknown) =>
     typeof value === "undefined" ? null : value;

@@ -18,7 +18,7 @@ __There are some limits while using this package:__
 2. When you expecting a large response (aprox. more than 30MB), you must [bypass](#cybypassinterceptorresponse) the response because there is an issue in Cypress intercept and the request is never done in the web browser but finished in Cypress.
 
 ## Whats new
-
+- added [watchTheConsole](#watchtheconsole)
 - added a possibility to filter and map stats when a test fail
 - added a possibility to bypass the response
 - work with canceled and aborted request
@@ -54,6 +54,8 @@ __There are some limits while using this package:__
         - [writeStatsToLog](#writestatstolog)
     - [Interfaces](#interfaces)
     - [Useful tips](#useful-tips)
+        - [Log on fail](#log-on-fail)
+        - [Clean videos for successful tests](#clean-videos-for-successful-tests)
 - [Websocket Interceptor](#websocket-interceptor)
     - [Getting started](#getting-started-1)
     - [Websocket Interceptor Cypress commands](#websocket-interceptor-cypress-commands)
@@ -69,6 +71,7 @@ __There are some limits while using this package:__
         - [debugIsEnabled](#debugisenabled-1)
         - [writeStatsToLog](#writestatstolog-1)
     - [Interfaces](#interfaces-1)
+- [watchTheConsole](#watchtheconsole)
 
 ## Why to use?
 
@@ -1075,6 +1078,35 @@ interceptor.writeStatsToLog("./mochawesome-report/_interceptor", { resourceType:
 
 See the methods you can use: [`writeStatsToLog`](#writestatstolog) or [`writeDebugToLog`](#writedebugtolog)
 
+## Clean videos for successful tests
+
+If you have a reporter and you send the report somewhere, you maybe want only videos for failed tests. If so, you can do it like this:
+
+```ts
+// in `cypress/support/e2e.js` or `cypress/support/e2e.ts`
+import { defineConfig } from 'cypress';
+import * as fs from 'fs';
+
+export default defineConfig({
+    e2e: {
+        setupNodeEvents(on, config) {
+            // clean videos for successful tests
+            on('after:run', results => {
+                if (!('runs' in results)) {
+                    return;
+                }
+
+                for (const run of results.runs) {
+                    if (run.stats.failures === 0 && run.video && fs.existsSync(run.video)) {
+                        fs.unlinkSync(run.video);
+                    }
+                }
+            });
+        }
+    }
+});
+```
+
 # Websocket Interceptor
 
 ## Getting started
@@ -1495,4 +1527,34 @@ interface WriteStatsOptions {
      */
     prettyOutput?: boolean;
 }
+```
+
+# watchTheConsole
+
+A helper function for logging console of the browser to a file. After a test fail it creates a file in the output folder with all console entries.
+
+## Using
+
+In your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
+
+```ts
+import { watchTheConsole } from "cypress-interceptor/lib/console";
+
+// catch all console entries like log, info, warn, error, ...
+watchTheConsole("output_dir");
+```
+
+Or you can customize it (there is a difference between console.error and regular JS error):
+
+```ts
+import { ConsoleLogType, watchTheConsole } from "cypress-interceptor/lib/console";
+
+watchTheConsole("output_dir", {
+    // also log to a different folder any JS error in successful tests
+    customLogs: [
+        { outputDir: './_jsError', types: [ConsoleLogType.Error] }
+    ],
+    // log to the file only errors and warnings on fail
+    logOnlyType: [ConsoleLogType.ConsoleError, ConsoleLogType.ConsoleWarn, ConsoleLogType.Error],
+});
 ```
