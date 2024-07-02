@@ -692,7 +692,7 @@ export class Interceptor {
                     return req.continue();
                 }
 
-                return req.continue((res) => {
+                req.on("response", (res) => {
                     if (this.debugIsEnabled) {
                         this._debugInfo.push({
                             method: req.method,
@@ -712,6 +712,8 @@ export class Interceptor {
 
                     res.send(res.statusCode, res.body, this.disableCacheInResponse());
                 });
+
+                return req.continue();
             }
 
             const startTime = performance.now();
@@ -737,7 +739,7 @@ export class Interceptor {
                 return req.continue();
             }
 
-            return req.continue((res) => {
+            req.on("response", (res) => {
                 if (this.debugIsEnabled) {
                     this._debugInfo.push({
                         method: req.method,
@@ -815,6 +817,8 @@ export class Interceptor {
                     (item.delay ?? 0) + DEFAULT_INTERVAL
                 );
             });
+
+            return req.continue();
         });
     }
 
