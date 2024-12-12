@@ -10,7 +10,7 @@
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {
-    "cypress": "13.11.0"
+    "cypress": "13.16.1"
   },
   "private": true
 }
