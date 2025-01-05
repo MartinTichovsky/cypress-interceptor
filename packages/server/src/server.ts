@@ -1,7 +1,9 @@
 import * as cors from "cors";
 import * as express from "express";
 import * as expressWs from "express-ws";
+import * as fs from "fs";
 import * as path from "path";
+import * as ts from "typescript";
 import { WebSocket } from "ws";
 
 import { bigDataGenerator } from "./bigDataGenerator";
@@ -15,6 +17,7 @@ const wait = async (timeout: number) => new Promise((executor) => setTimeout(exe
 
 app.use(cors());
 app.use(express.json());
+
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
 
 interface TestingEndpointRequest {
@@ -100,6 +103,24 @@ app.ws("/*", (ws, req) => {
     }
 });
 
+const resourcesPath = "/public/resources/";
+
+app.get(`${resourcesPath}*`, (req, res) => {
+    const scriptPath = `${req.url.replace(resourcesPath, "").replace(".js", "")}.ts`;
+    const tsFilePath = path.join(__dirname, "resources", ...scriptPath.split("/"));
+    const tsContent = fs.readFileSync(tsFilePath, "utf8");
+
+    const compiled = ts.transpileModule(tsContent, {
+        compilerOptions: {
+            module: ts.ModuleKind.ES2020,
+            target: ts.ScriptTarget.ES2020
+        }
+    });
+
+    res.type("application/javascript");
+    res.send(compiled.outputText);
+});
+
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
     wait(getNumberFomString(req.query.duration))
         .then(() => {
@@ -111,7 +132,7 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
             const responseType =
                 contentType === XHRContentType
                     ? XHRContentType
-                    : match?.[1] ?? accepts?.[0]?.toLowerCase() ?? XHRContentType;
+                    : (match?.[1] ?? accepts?.[0]?.toLowerCase() ?? XHRContentType);
 
             res.type(responseType);
 

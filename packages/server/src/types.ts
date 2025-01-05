@@ -10,6 +10,9 @@ export interface WSCommunication {
     sendDelay?: number;
 }
 
+export type BodyFormatFetch = "blob" | "formdata" | "json" | "urlencoded";
+export type BodyFormatXHR = BodyFormatFetch | "arraybuffer" | "document" | "typedarray";
+
 export type DynamicRequest = {
     /**
      * If true, a click will be required to fire the request
@@ -32,6 +35,7 @@ export type DynamicRequest = {
           delay?: number;
           /**
            * Duration of the request
+           * (when mock body or generateBody is provided, the duration is not executed because the request never hits the back-end)
            */
           duration?: number;
           /**
@@ -50,38 +54,37 @@ export type DynamicRequest = {
            * Custom response status
            */
           status?: number;
-      } & (
-          | {
-                /**
-                 * The response
-                 */
-                responseBody?: string;
-                type: "image" | "script" | "stylesheet";
-            }
-          | {
-                /**
-                 * Body sent by fetch
-                 */
-                body?: unknown;
-                /**
-                 * A time when the request is canceled. Must be lower then duration
-                 */
-                cancelIn?: number;
-                /**
-                 * Headers sent by fetch
-                 */
-                headers?: Record<string, string>;
-                /**
-                 * The response
-                 */
-                responseBody?: Record<string, unknown>;
-                /**
-                 * The request method
-                 */
-                method: "GET" | "POST";
-                type: "fetch" | "xhr";
-            }
-      ))
+      } & {
+          /**
+           * Body sent by fetch
+           */
+          body?: Record<string, unknown>;
+          /**
+           *
+           */
+          bodyFormat?: BodyFormatFetch | BodyFormatXHR;
+          /**
+           * A time when the request is canceled. Must be lower then duration
+           */
+          cancelIn?: number;
+          /**
+           * Headers sent by fetch
+           */
+          headers?: Record<string, string>;
+          /**
+           * The response
+           */
+          responseBody?: Record<string, unknown>;
+          /**
+           *
+           */
+          responseCatchType?: ResponseCatchType;
+          /**
+           * The request method
+           */
+          method: "GET" | "POST";
+          type: "fetch" | "xhr";
+      })
     | {
           /**
            * A data send to the server when create for getting custom responses
@@ -128,3 +131,5 @@ export type DynamicRequest = {
           type: "websocket";
       }
 );
+
+export type ResponseCatchType = "addEventListener" | "onload" | "onreadystatechange";

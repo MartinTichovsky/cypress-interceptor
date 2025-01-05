@@ -3,10 +3,9 @@ import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 import { fireRequest } from "../src/utils";
 
 describe("Using it in before each - first", () => {
-    const testPath_Fetch1 = "test/fetch-1";
-    const testPath_Fetch2 = "api/fetch-2";
-
-    const testPath_Script1 = "sources/script-1.js";
+    const testPath_api_1 = "test/api-1";
+    const testPath_api_2 = "test/api-2";
+    const testPath_api_3 = "test/api-3";
     const duration = 2500;
 
     beforeEach(() => {
@@ -18,13 +17,13 @@ describe("Using it in before each - first", () => {
                     delay: 150,
                     duration,
                     method: "POST",
-                    path: testPath_Fetch1,
+                    path: testPath_api_1,
                     requests: [
                         {
-                            method: "POST",
                             duration,
                             fireOnClick: true,
-                            path: testPath_Fetch2,
+                            method: "POST",
+                            path: testPath_api_2,
                             type: "fetch"
                         }
                     ],
@@ -33,8 +32,9 @@ describe("Using it in before each - first", () => {
                 {
                     delay: 150,
                     duration,
-                    path: testPath_Script1,
-                    type: "script"
+                    method: "GET",
+                    path: testPath_api_3,
+                    type: "xhr"
                 }
             ])
         );
@@ -66,10 +66,9 @@ describe("Using it in before each - first", () => {
 });
 
 describe("Using it in before each - second", () => {
-    const testPath_Fetch1 = "test/fetch-1";
-    const testPath_Fetch2 = "api/fetch-2";
-
-    const testPath_Script1 = "sources/script-1.js";
+    const testPath_api_1 = "test/api-1";
+    const testPath_api_2 = "test/api-2";
+    const testPath_api_3 = "test/api-3";
 
     const duration = 2500;
 
@@ -82,13 +81,13 @@ describe("Using it in before each - second", () => {
                     delay: 150,
                     duration,
                     method: "POST",
-                    path: testPath_Fetch1,
+                    path: testPath_api_1,
                     requests: [
                         {
-                            method: "POST",
                             duration,
                             fireOnClick: true,
-                            path: testPath_Fetch2,
+                            method: "POST",
+                            path: testPath_api_2,
                             type: "fetch"
                         }
                     ],
@@ -97,8 +96,9 @@ describe("Using it in before each - second", () => {
                 {
                     delay: 150,
                     duration,
-                    path: testPath_Script1,
-                    type: "script"
+                    method: "GET",
+                    path: testPath_api_3,
+                    type: "xhr"
                 }
             ])
         );

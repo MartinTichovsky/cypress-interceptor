@@ -1,6 +1,6 @@
-import { WebsocketInterceptor } from "./websocketInterceptor";
+import { createWebsocketProxy } from "./createWebsocketProxy";
+import { WebsocketInterceptor } from "./WebsocketInterceptor";
 import { WebsocketListener } from "./websocketListener";
-import { createWebsocketProxy } from "./websocketProxy";
 
 const createCommands = () => {
     const websocketListener = new WebsocketListener();

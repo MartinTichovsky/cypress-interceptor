@@ -1,6 +1,8 @@
 /* istanbul ignore file */
 import { getFilePath } from "./utils";
 
+// TODO: change the initialization and providing the path to the folder by default
+
 export enum ConsoleLogType {
     ConsoleInfo = "console.info",
     ConsoleError = "console.error",

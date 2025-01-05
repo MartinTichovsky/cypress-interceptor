@@ -1,22 +1,30 @@
-import { ResourceType, RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
+import { StringMatcher } from "cypress/types/net-stubbing";
 
-import { __SKIP_ID, FetchXHRArgs, FetchXHRReject, RequestListener } from "./requestListener";
-import { __REQUEST_KEY } from "./requestProxy";
-import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
+import {
+    CallStack,
+    IMockResponse,
+    IMockResponseOptions,
+    InterceptorOptions,
+    IRouteMatcher,
+    IThrottleRequestOptions,
+    OnRequestError,
+    WaitUntilRequestOptions,
+    WriteStatsOptions
+} from "./Interceptor.types";
+import { RequestProxy } from "./RequestProxy";
+import {
+    convertToString,
+    deepCopy,
+    getFilePath,
+    removeUndefinedFromObject,
+    replacer,
+    testUrlMatch
+} from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
     namespace Cypress {
         interface Chainable {
-            /**
-             * Bypass a request response. It will not hit Cypress intercept response callback and not to
-             * store response data in the Interceptor stack, useful for big data responses
-             *
-             * @param routeMatcher A route matcher
-             * @param times How many times the response should be mocked, by default it is set to 1.
-             *              Set to 0 to mock the response infinitely
-             */
-            bypassInterceptorResponse: (routeMatcher: IRouteMatcher, times?: number) => void;
             /**
              * Get an instance of Interceptor
              *
@@ -81,7 +89,7 @@ declare global {
              * know which one of the `api/getUser` calls we want to wait for. By calling this
              * method we set the exact point we want to check the next requests from.
              */
-            resetInterceptorWatch: () => void;
+            resetInterceptorWatch: VoidFunction;
             /**
              * Start time measuring (a helper function)
              *
@@ -113,7 +121,7 @@ declare global {
             ): Chainable<number>;
             /**
              * The method will wait until all requests matching the provided route
-             * matcher finish or the maximum time of waiting is reached (`waitTimeout` in options).
+             * matcher finish or the maximum time of waiting is reached (`timeout` in options).
              *
              * By default there must be at least one match. Otherwise it waits until
              * there is a request matching the provided route matcher OR the maximum time of waiting
@@ -131,409 +139,33 @@ declare global {
     }
 }
 
-export interface BypassRequestStack {
-    routeMatcher: IRouteMatcher;
-    times?: number;
-}
-
-export interface CallStack {
-    /**
-     * Cross domain requests will have this property set to true
-     */
-    crossDomain: boolean;
-    /**
-     * A throttle delay of the request set by calling `throttleRequest` or `cy.throttleInterceptorRequest`
-     */
-    delay?: number;
-    /**
-     * The real total duration of the request in ms (not including delay)
-     */
-    duration?: number;
-    /**
-     * true if the request is still in progress
-     */
-    isPending: boolean;
-    /**
-     * An id in the queue
-     */
-    queueId: number;
-    /**
-     * Resource type
-     */
-    resourceType: IResourceType;
-    /**
-     * Request info
-     */
-    request: IRequest;
-    /**
-     * An error when request fail
-     */
-    requestError?: unknown;
-    /**
-     * Id of the request
-     */
-    requestId: string | undefined;
-    /**
-     * Response info
-     */
-    response?: IResponse;
-    /**
-     * Time when the request started
-     */
-    timeStart: Date;
-    /**
-     * URL of the request without query string
-     */
-    url: string;
-    /**
-     * The full URL of the request with query string
-     */
-    urlQuery: string;
-}
-
-export type RequestMethod =
-    | "CONNECT"
-    | "DELETE"
-    | "GET"
-    | "HEAD"
-    | "OPTIONS"
-    | "PATCH"
-    | "POST"
-    | "PUT"
-    | "TRACE";
-
-export interface InterceptorOptions {
-    /**
-     * By default the web browser is caching the requests. Caching can be disabled by Cypress.env
-     * `INTERCEPTOR_DISABLE_CACHE` or by this option. This option has the highest priority. If it is
-     * set to false, the cache is always enabled no matter to value of Cypress.env("INTERCEPTOR_DISABLE_CACHE")
-     */
-    disableCache?: boolean;
-    /**
-     * When it is true, calling `debugInfo` will return an array with all catched requests
-     */
-    debug?: boolean;
-    /**
-     * When true, response body will not be logged due to performance issues
-     */
-    doNotLogResponseBody?: boolean;
-    /**
-     * Ignore request outside the domain, default: true
-     */
-    ingoreCrossDomain?: boolean;
-    /**
-     * Which resource types should be processed, default: ["document", "fetch", "script", "xhr"],
-     *
-     * Provide "all" for processing all requests no matter to the resource type
-     */
-    resourceTypes?: IResourceType | IResourceType[] | "all";
-}
-
-export interface IDebug {
-    /**
-     * An id for the queued item. Important to track down the sequence of the same requests
-     */
-    queueId: number;
-    /**
-     * Request method (GET, POST, ...)
-     */
-    method: string;
-    /**
-     * Request info
-     */
-    request?: IRequest;
-    /**
-     * Resource type
-     */
-    resourceType?: string;
-    /**
-     * Response
-     */
-    response?: {
-        /**
-         * The response body
-         */
-        body: unknown;
-        /**
-         * Headers of the response
-         */
-        headers: IHeaders;
-        /**
-         * The response status code
-         */
-        statusCode: number;
-        /**
-         * The HTTP status message
-         */
-        statusMessage: string;
-    };
-    /**
-     * Time when this entry is created
-     */
-    time: Date;
-    /**
-     * Type of the entry, sort by the sequence:
-     *
-     * bypass       = item is bypassed
-     * start        = the very beggining of the request
-     * skipped      = the request is skipped and will not be processed due to
-     *                not matching the resource types or cross domain option
-     * skipped-done = the skipped request is finished
-     * logged       = the request is logged and will be processed
-     * logged-done  = the logged request is finished
-     */
-    type: "bypass" | "logged" | "logged-done" | "skipped" | "skipped-done" | "start";
-    /**
-     * A full URL of the request with query string
-     */
-    url: string;
-}
-
-export type IHeaders = { [key: string]: string | string[] };
-export type IHeadersNormalized = { [key: string]: string };
-
-export interface IMockResponse {
-    /**
-     * A response body, it can be anything
-     */
-    body?: unknown;
-    /**
-     * Generate a body with the original response body, this option is preferred before option `body`
-     *
-     * @param request An object with the request data (body, query, method, ...)
-     * @param originalBody The original response body
-     * @returns A response body, it can be anything
-     */
-    generateBody?: (request: IRequest, originalBody: unknown) => unknown;
-    /**
-     * If provided, will be added to the original response headers
-     */
-    headers?: IHeadersNormalized;
-    /**
-     * Response status code
-     */
-    statusCode?: number;
-}
-
-export interface IMockResponseOptions {
-    /**
-     * How many times the response should be mocked, by default it is set to 1.
-     * Set to 0 to mock the response infinitely
-     */
-    times?: number;
-}
-
-export interface IRequest {
-    /**
-     * The request body, it can be anything
-     */
-    body: unknown;
-    /**
-     * The request headers
-     */
-    headers: IHeaders;
-    /**
-     * Request method (GET, POST, ...)
-     */
-    method: string;
-    /**
-     * URL query string as object
-     */
-    query: Record<string, string | number>;
-}
-
-export type IResourceType = Exclude<ResourceType, "websocket">;
-
-export interface IResponse {
-    /**
-     * The response body, it can be anything (replaced by mock if provided)
-     */
-    body: unknown;
-    /**
-     * The origin response body (not including mock)
-     */
-    body_origin: unknown;
-    /**
-     * Headers of the response (with mock if provided)
-     */
-    headers: IHeaders;
-    /**
-     * The response status code (replaced by mock if provided)
-     */
-    statusCode: number;
-    /**
-     * The origin response status code (not including mock)
-     */
-    statusCode_origin: number;
-    /**
-     * The HTTP status message
-     */
-    statusMessage: string;
-    /**
-     * Time when the request ended (it does not include a delay when the request
-     * is throttled, it contains the real time when the request finished in cy.intercept)
-     */
-    timeEnd: Date;
-}
-
-/**
- * String comparison is case insensitive. Provide RegExp without case sensitive flag if needed.
- */
-export type IRouteMatcher = StringMatcher | IRouteMatcherObject;
-
-export type IRouteMatcherObject = {
-    /**
-     * A matcher for request body
-     *
-     * @param body The request body
-     * @returns True if matches
-     */
-    bodyMatcher?: (body: unknown) => boolean;
-    /**
-     * If true, only cross domain requests match
-     */
-    crossDomain?: boolean;
-    /**
-     * A matcher for headers
-     *
-     * @param headers The request headers
-     * @returns True if matches
-     */
-    headersMatcher?: (headers: IHeaders) => boolean;
-    /**
-     * If true, only HTTPS requests match
-     */
-    https?: RouteMatcherOptions["https"];
-    /**
-     * Request method (GET, POST, ...)
-     */
-    method?: RequestMethod;
-    /**
-     * A matcher for query string
-     *
-     * @param query The URL query string
-     * @returns True if matches
-     */
-    queryMatcher?: (query: Record<string, string | number>) => boolean;
-    /**
-     * Resource type (document, script, fetch, ....)
-     */
-    resourceType?: IResourceType | IResourceType[] | "all";
-    /**
-     * A URL matcher, use * or ** to match any word in string ("**\/api/call", "**\/script.js", ...)
-     */
-    url?: StringMatcher;
-};
-
-export interface IThrottleRequestOptions {
-    /**
-     * Mock a response for the provided route matcher. If provided together with
-     * `mockResponse` or `cy.mockInterceptorResponse` it has lesser priority
-     */
-    mockResponse?: IMockResponse;
-    /**
-     * How many times the request should be throttled, by default it is set to 1.
-     * Set to 0 to throttle the request infinitely
-     */
-    times?: number;
-}
-
-export type OnRequestError = (args: FetchXHRArgs, ev: FetchXHRReject) => void;
-
-export interface WaitUntilRequestOptions extends IRouteMatcherObject {
-    /**
-     * True by default. If true, a request matching the provided route matcher must be logged by Interceptor,
-     * otherwise it waits until the url is logged and finished or it fails if the time of waiting runs out. If
-     * set to false, it checks if there is a request matching the provided route matcher. If yes, it waits until
-     * the request is done. If no, it does not fail and end successfully.
-     */
-    enforceCheck?: boolean;
-    /**
-     * Time to wait in ms. Default set to 750
-     *
-     * There is needed to wait if there is a possible following request after the last one (because of the JS code
-     * and subsequent requests). Set to 0 to skip repetitive checking for requests.
-     */
-    waitForNextRequest?: number;
-    /**
-     * Time of how long Cypress will be waiting for the pending requests.
-     * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
-     */
-    waitTimeout?: number;
-}
-
-interface WriteDebugOptions {
-    /**
-     * A name of the file, if undefined, it will be composed from the running test
-     */
-    fileName?: string;
-    /**
-     * A possibility to filter the logged items
-     *
-     * @param debugInfo A call info stored in the stack
-     * @returns false if the item should be skipped
-     */
-    filter?: (debugInfo: IDebug) => boolean;
-    /**
-     * A possibility to map the logged items
-     *
-     * @param callStack A call info stored in the stack
-     * @returns Any object you want to log
-     */
-    mapper?: (debugInfo: IDebug) => unknown;
-    /**
-     * When true, the output JSON will be formatted with tabs
-     */
-    prettyOutput?: boolean;
-}
-
-interface WriteStatsOptions {
-    /**
-     * A name of the file, if undefined, it will be composed from the running test
-     */
-    fileName?: string;
-    /**
-     * A possibility to filter the logged items
-     *
-     * @param callStack A call info stored in the stack
-     * @returns false if the item should be skipped
-     */
-    filter?: (callStack: CallStack) => boolean;
-    /**
-     * A possibility to map the logged items
-     *
-     * @param callStack A call info stored in the stack
-     * @returns Any object you want to log
-     */
-    mapper?: (callStack: CallStack) => unknown;
-    /**
-     * When true, the output JSON will be formatted with tabs
-     */
-    prettyOutput?: boolean;
-    /**
-     * A route matcher
-     */
-    routeMatcher?: IRouteMatcher;
-}
-
 const DEFAULT_INTERVAL = 500;
-const DEFAULT_RESOURCE_TYPES: IResourceType[] = ["document", "fetch", "script", "xhr"];
 const DEFAULT_TIMEOUT = 10000;
 const DEFAULT_WAIT_FOR_NEXT_REQUEST = 750;
 
 const defaultOptions: Required<InterceptorOptions> = {
-    disableCache: undefined!,
-    debug: undefined!,
-    doNotLogResponseBody: false,
-    ingoreCrossDomain: true,
-    resourceTypes: DEFAULT_RESOURCE_TYPES
+    ingoreCrossDomain: false
 };
 
+const parseResponseHeaders = (headersString: string) => {
+    const headers: Record<string, string> = {};
+
+    const headerLines = headersString.trim().split(/[\r\n]+/);
+
+    headerLines.forEach((line) => {
+        const [key, value] = line.split(": ", 2);
+        if (key && value !== undefined) {
+            headers[key.toLowerCase()] = value;
+        }
+    });
+
+    return headers;
+};
+
+const wait = async (timeout: number) => new Promise((executor) => setTimeout(executor, timeout));
+
 export class Interceptor {
-    private _bypassRequestStack: BypassRequestStack[] = [];
-    private _bypassIdStack: { item: CallStack; routeMatcher: IRouteMatcher }[] = [];
     private _callStack: CallStack[] = [];
-    private _debugInfo: IDebug[] = [];
     private _mock: {
         id: number;
         mock: IMockResponse;
@@ -554,280 +186,122 @@ export class Interceptor {
     }[] = [];
     private _throttleId = 0;
 
-    constructor(requestListener: RequestListener) {
-        let queueCounter = 0;
-
-        requestListener.subscribe(
-            (args, ev, requestId) => {
-                const { method, url } = this.getInfoFromArgs(args);
-
-                const pendingRequest = this._callStack.find(
-                    (item) =>
-                        item.isPending &&
-                        item.requestId === requestId &&
-                        item.request.method === method &&
-                        item.urlQuery === url
-                );
-
-                if (this._onRequestError) {
-                    this._onRequestError(args, ev);
-                }
-
-                if (pendingRequest) {
-                    pendingRequest.isPending = false;
-                    pendingRequest.requestError = ev;
-                }
-            },
-            () => {
-                for (const request of this._callStack) {
-                    if (
-                        request.isPending &&
-                        (request.resourceType === "fetch" || request.resourceType === "xhr")
-                    ) {
-                        request.isPending = false;
-                        request.requestError = "Cancelled: window reloaded during the request";
-                    }
-                }
-            },
-            (args, requestId) => {
-                const { method, url } = this.getInfoFromArgs(args);
-
-                const request = this._bypassIdStack.find(
-                    (entry) =>
-                        entry.item.requestId === requestId &&
-                        entry.item.request.method === method &&
-                        entry.item.urlQuery === url
-                );
-
-                if (!request) {
-                    return;
-                }
-
-                request.item.isPending = false;
-
-                if (this.debugIsEnabled) {
-                    this._debugInfo.push({
-                        method: request.item.request.method,
-                        queueId: request.item.queueId,
-                        resourceType: request.item.resourceType,
-                        time: new Date(),
-                        type: "bypass",
-                        url: request.item.url
-                    });
+    constructor(requestProxy: RequestProxy) {
+        requestProxy.onCreate = () => {
+            for (const request of this._callStack) {
+                if (
+                    request.isPending &&
+                    (request.resourceType === "fetch" || request.resourceType === "xhr")
+                ) {
+                    request.isPending = false;
+                    request.requestError = "Cancelled: window reloaded during the request";
                 }
             }
-        );
+        };
 
-        cy.intercept("**", (req) => {
-            if (req.resourceType === "websocket") {
-                return;
-            }
-
-            const headers = new Headers(req.headers as HeadersInit);
-            const requestId = headers.get(__REQUEST_KEY) ?? undefined;
-
-            // skip requests called during unload
-            if (requestId === __SKIP_ID) {
-                return;
-            }
-
-            const queueId = ++queueCounter;
-            const crossDomain = req.headers["host"] !== document.location.host;
-            const resourceType = req.resourceType;
-
-            if (this.debugIsEnabled) {
-                this._debugInfo.push({
-                    method: req.method,
-                    queueId,
-                    resourceType: req.resourceType,
-                    request: {
-                        body: req.body,
-                        headers: req.headers,
-                        method: req.method,
-                        query: req.query
-                    },
-                    time: new Date(),
-                    type: "start",
-                    url: req.url
-                });
-            }
+        requestProxy.requestProxyFunction = async (request, win, resourceType) => {
+            const crossDomain = request.url.host !== document.location.host;
+            const ignoreItem = this._options.ingoreCrossDomain && crossDomain;
+            const query = Object.fromEntries(request.url.searchParams);
 
             const item: CallStack = {
                 crossDomain,
-                isPending: true,
-                queueId,
+                isPending: !ignoreItem,
                 request: {
-                    body: req.body,
-                    headers: req.headers,
-                    method: req.method,
-                    query: req.query
+                    body: await convertToString(request.body, win),
+                    headers: deepCopy(request.headers),
+                    method: request.method,
+                    query: deepCopy(query)
                 },
-                requestId,
-                resourceType: req.resourceType,
+                resourceType,
                 timeStart: new Date(),
-                url: req.url.replace(/\?(.*)/, ""),
-                urlQuery: req.url
+                url: request.url
             };
-
-            if (
-                !resourceType ||
-                (Array.isArray(this._options.resourceTypes)
-                    ? !this._options.resourceTypes.includes(resourceType)
-                    : this._options.resourceTypes !== "all" &&
-                      this._options.resourceTypes !== resourceType) ||
-                (this._options.ingoreCrossDomain && crossDomain)
-            ) {
-                if (this.debugIsEnabled) {
-                    this._debugInfo.push({
-                        method: req.method,
-                        queueId,
-                        resourceType,
-                        time: new Date(),
-                        type: "skipped",
-                        url: req.url
-                    });
-                }
-
-                if (this.shouldBypassItem(item)) {
-                    return req.continue();
-                }
-
-                req.on("response", (res) => {
-                    if (this.debugIsEnabled) {
-                        this._debugInfo.push({
-                            method: req.method,
-                            queueId,
-                            resourceType: req.resourceType,
-                            response: {
-                                body: this._options.doNotLogResponseBody ? undefined : res.body,
-                                headers: res.headers,
-                                statusCode: res.statusCode,
-                                statusMessage: res.statusMessage
-                            },
-                            time: new Date(),
-                            type: "skipped-done",
-                            url: req.url
-                        });
-                    }
-
-                    res.send(res.statusCode, res.body, this.disableCacheInResponse());
-                });
-
-                return req.continue();
-            }
-
-            const startTime = performance.now();
-
-            if (this.debugIsEnabled) {
-                this._debugInfo.push({
-                    method: req.method,
-                    queueId,
-                    resourceType,
-                    time: new Date(),
-                    type: "logged",
-                    url: req.url
-                });
-            }
 
             this._callStack.push(item);
 
-            if (this.requestTimeoutByEnv) {
-                req.responseTimeout = this.requestTimeoutByEnv + 5000;
-            }
+            const throttle = ignoreItem ? undefined : this.getThrottle(item);
+            const mock = ignoreItem ? undefined : (this.getMock(item) ?? throttle?.mockResponse);
+            const startTime = performance.now();
 
-            if (this.shouldBypassItem(item)) {
-                return req.continue();
-            }
+            item.delay = throttle?.delay;
 
-            req.on("response", (res) => {
-                if (this.debugIsEnabled) {
-                    this._debugInfo.push({
-                        method: req.method,
-                        queueId,
-                        resourceType: req.resourceType,
-                        response: {
-                            body: this._options.doNotLogResponseBody ? undefined : res.body,
-                            headers: res.headers,
-                            statusCode: res.statusCode,
-                            statusMessage: res.statusMessage
-                        },
-                        time: new Date(),
-                        type: "logged-done",
-                        url: req.url
-                    });
+            const onRequestDone = async (response: XMLHttpRequest | Response, isMock = false) => {
+                try {
+                    item.duration = performance.now() - startTime;
+
+                    let body = "";
+
+                    // store the response body for possible logging
+                    if ("clone" in response) {
+                        const responseClone = response.clone();
+
+                        try {
+                            body = await responseClone.text();
+                        } catch {
+                            //
+                        }
+                    } else if ("responseText" in response) {
+                        body =
+                            response.responseType === "json"
+                                ? JSON.stringify(response.response)
+                                : response.responseText;
+                    }
+
+                    item.response = {
+                        body,
+                        headers: Object.fromEntries(
+                            new Headers(
+                                response instanceof win.XMLHttpRequest
+                                    ? parseResponseHeaders(response.getAllResponseHeaders())
+                                    : (response.headers as HeadersInit)
+                            ).entries()
+                        ),
+                        isMock,
+                        statusCode: response.status,
+                        statusText: response.statusText,
+                        timeEnd: new Date()
+                    };
+                } catch (e) {
+                    console.error(e);
                 }
+            };
 
-                item.duration = performance.now() - startTime;
+            return {
+                done: (response, resolve, isMock) => {
+                    // to avoid multiple calls when using different response catch methods (in XMLHttpRequest)
+                    void (async () => {
+                        if (item.response === undefined) {
+                            await onRequestDone(response, isMock);
+                        }
 
-                const _mock = this.getMock(item);
-                const throttle = this.getThrottle(item);
+                        if (throttle?.delay) {
+                            await wait(throttle.delay);
+                        }
 
-                const mock = _mock ?? throttle.mockResponse;
+                        resolve();
 
-                const body =
-                    mock?.generateBody?.(
-                        {
-                            body: req.body,
-                            headers: req.headers,
-                            method: req.method,
-                            query: req.query
-                        },
-                        res.body
-                    ) ??
-                    mock?.body ??
-                    res.body;
+                        // set isPending with a delay to let JavaScript finish processing the reponse
+                        setTimeout(() => {
+                            item.isPending = false;
+                        }, 100);
+                    })();
+                },
+                error: (error) => {
+                    item.isPending = false;
+                    item.requestError = error;
 
-                const headers = {
-                    ...Object.fromEntries(new Headers(res.headers as HeadersInit).entries()),
-                    ...mock?.headers
-                };
-
-                const statusCode = mock?.statusCode ?? res.statusCode;
-
-                item.response = {
-                    body: this._options.doNotLogResponseBody ? undefined : body,
-                    body_origin: this._options.doNotLogResponseBody ? undefined : res.body,
-                    headers,
-                    statusCode,
-                    statusCode_origin: res.statusCode,
-                    statusMessage: res.statusMessage,
-                    timeEnd: new Date()
-                };
-
-                item.delay = throttle.delay;
-
-                if (item.delay) {
-                    res.setDelay(item.delay);
-                }
-
-                res.send(statusCode, body, this.disableCacheInResponse(mock?.headers));
-
-                /**
-                 * Set the request as finished with a delay. It is crucial for the browser to let the response process,
-                 * it takes aprox. 40ms from here to the consumer's response function.
-                 *
-                 * NOTE: if you throttle the network in Chrome, it will not work because the delay/throttle is controlled
-                 * by Chrome after this line. So it means that the request takes usual time, but from here to the consumer's
-                 * response function it can last several seconds (depends on your throttling settings in the browser)
-                 */
-                setTimeout(
-                    () => {
-                        item.isPending = false;
-                    },
-                    (item.delay ?? 0) + DEFAULT_INTERVAL
-                );
-            });
-
-            return req.continue();
-        });
+                    if (this._onRequestError) {
+                        this._onRequestError(request, error);
+                    }
+                },
+                mock
+            };
+        };
     }
 
     get debugByEnv() {
         return !!Cypress.env("INTERCEPTOR_DEBUG");
-    }
-
-    get disableCacheByEnv() {
-        return !!Cypress.env("INTERCEPTOR_DISABLE_CACHE");
     }
 
     get requestTimeoutByEnv() {
@@ -842,50 +316,6 @@ export class Interceptor {
         return deepCopy(this._callStack);
     }
 
-    /**
-     * Get an array with all logged/skiped calls to track down a possible issue.
-     *
-     * @returns An array with debug information
-     */
-    public get debugInfo() {
-        return deepCopy(this._debugInfo);
-    }
-
-    /**
-     * Returns true if debug is enabled by Interceptor options or Cypress environment
-     * variable `INTERCEPTOR_DEBUG`. The Interceptor `debug` option has the highest
-     * priority so if the option is undefined (by default), it returns `Cypress.env("INTERCEPTOR_DEBUG")`
-     */
-    public get debugIsEnabled() {
-        return this._options.debug ?? this.debugByEnv;
-    }
-
-    /**
-     * Bypass a request response. It will not hit Cypress intercept response callback and not to
-     * store response data in the Interceptor stack, useful for big data responses
-     *
-     * @param routeMatcher A route matcher
-     * @param times How many times the response should be mocked, by default it is set to 1.
-     *              Set to 0 to mock the response infinitely
-     */
-    public bypassRequest(routeMatcher: IRouteMatcher, times?: number) {
-        this._bypassRequestStack.push({ routeMatcher, times });
-    }
-
-    private disableCacheInResponse(headers: IHeadersNormalized = {}) {
-        if (
-            (this.disableCacheByEnv && this._options.disableCache !== false) ||
-            this._options.disableCache
-        ) {
-            return {
-                ...headers,
-                "cache-control": "no-store"
-            };
-        }
-
-        return headers;
-    }
-
     private filterItemsByMatcher(routeMatcher?: IRouteMatcher) {
         return (item: CallStack) => {
             if (!routeMatcher) {
@@ -893,7 +323,7 @@ export class Interceptor {
             }
 
             if (routeMatcher instanceof RegExp || typeof routeMatcher === "string") {
-                return testUrlMatch(routeMatcher, item.url);
+                return testUrlMatch(routeMatcher, item.url.origin + item.url.pathname);
             }
 
             let matches = 0;
@@ -925,8 +355,8 @@ export class Interceptor {
                 mustMatch++;
 
                 matches +=
-                    (routeMatcher.https && item.url.match(/^https:/i)) ||
-                    (!routeMatcher.https && item.url.match(/^http:/i))
+                    (routeMatcher.https && item.url.protocol === "https:") ||
+                    (!routeMatcher.https && item.url.protocol === "http:")
                         ? 1
                         : 0;
             }
@@ -958,34 +388,36 @@ export class Interceptor {
             if (routeMatcher.url) {
                 mustMatch++;
 
-                matches += testUrlMatch(routeMatcher.url, item.url) ? 1 : 0;
+                matches += testUrlMatch(routeMatcher.url, item.url.origin + item.url.pathname)
+                    ? 1
+                    : 0;
             }
 
             return matches === mustMatch;
         };
     }
 
-    private getInfoFromArgs(args: FetchXHRArgs) {
-        let method: string = "GET";
-        let url: string | undefined;
-        const [input, initOrMethod] = args;
+    // private getInfoFromArgs(args: FetchXHRArgs) {
+    //     let method: string = "GET";
+    //     let url: string | undefined;
+    //     const [input, initOrMethod] = args;
 
-        if (input instanceof URL) {
-            url = input.toString();
-        } else if (typeof input === "string") {
-            url = input;
-        } else if (typeof input === "object") {
-            url = input.url;
-        }
+    //     if (input instanceof URL) {
+    //         url = input.toString();
+    //     } else if (typeof input === "string") {
+    //         url = input;
+    //     } else if (typeof input === "object") {
+    //         url = input.url;
+    //     }
 
-        if (typeof initOrMethod === "string") {
-            method = initOrMethod;
-        } else {
-            method = initOrMethod?.method ?? "GET";
-        }
+    //     if (typeof initOrMethod === "string") {
+    //         method = initOrMethod;
+    //     } else {
+    //         method = initOrMethod?.method ?? "GET";
+    //     }
 
-        return { method, url };
-    }
+    //     return { method, url };
+    // }
 
     private getMock(item: CallStack) {
         const mockItem = [...this._mock]
@@ -1159,35 +591,10 @@ export class Interceptor {
     public setOptions(options: InterceptorOptions = this._options): InterceptorOptions {
         this._options = {
             ...this._options,
-            ...removeUndefinedFromObject(options),
-            // only one option allowed to be undefined
-            debug: options.debug!
+            ...removeUndefinedFromObject(options)
         };
 
         return deepCopy(this._options);
-    }
-
-    private shouldBypassItem(item: CallStack) {
-        const bypassRequest = [...this._bypassRequestStack]
-            .reverse()
-            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
-
-        if (!bypassRequest) {
-            return false;
-        }
-
-        if (bypassRequest.times === undefined || bypassRequest.times === 1) {
-            this._bypassRequestStack.splice(this._bypassRequestStack.indexOf(bypassRequest), 1);
-        } else if (bypassRequest.times !== undefined && bypassRequest.times > 1) {
-            bypassRequest.times--;
-        }
-
-        this._bypassIdStack.push({
-            item,
-            routeMatcher: bypassRequest.routeMatcher
-        });
-
-        return true;
     }
 
     /**
@@ -1214,7 +621,7 @@ export class Interceptor {
 
     /**
      * The method will wait until all requests matching the provided route
-     * matcher finish or the maximum time of waiting is reached (`waitTimeout` in options).
+     * matcher finish or the maximum time of waiting is reached (`timeout` in options).
      *
      * By default there must be at least one match. Otherwise it waits until
      * there is a request matching the provided route matcher OR the maximum time of waiting
@@ -1249,7 +656,7 @@ export class Interceptor {
         }
 
         const totalTimeout =
-            stringMatcherOrOptions.waitTimeout ?? this.requestTimeoutByEnv ?? DEFAULT_TIMEOUT;
+            stringMatcherOrOptions.timeout ?? this.requestTimeoutByEnv ?? DEFAULT_TIMEOUT;
 
         const timeout = totalTimeout - (performance.now() - startTime);
 
@@ -1289,34 +696,6 @@ export class Interceptor {
                       )
                 : cy.wrap(this);
         });
-    }
-
-    // DEBUG TOOLS
-
-    /**
-     * Write the debug information to a file (debug must be enabled),
-     * example: in `afterEach`
-     *      => interceptor.writeDebugToLog("./out") => example output will be "./out/Description - It.debug.json"
-     *      => interceptor.writeDebugToLog("./out", { fileName: "file_name" }) => example output will be "./out/file_name.debug.json"
-     *
-     * @param outputDir A path for the output directory
-     * @param options Options
-     */
-    public writeDebugToLog(outputDir: string, options?: WriteDebugOptions) {
-        let debugInfo = this.debugInfo;
-
-        if (options?.filter) {
-            debugInfo = debugInfo.filter(options.filter);
-        }
-
-        cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "debug"),
-            JSON.stringify(
-                options?.mapper ? debugInfo.map(options.mapper) : debugInfo,
-                replacer,
-                options?.prettyOutput ? 4 : undefined
-            )
-        );
     }
 
     /**

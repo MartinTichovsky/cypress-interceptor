@@ -1,4 +1,4 @@
-import { CallStackWebsocket } from "cypress-interceptor/src/websocketInterceptor";
+import { CallStackWebsocket } from "cypress-interceptor/src/WebsocketInterceptor";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
@@ -187,7 +187,7 @@ describe("Websocket", () => {
             cy.visit(getDynamicUrl(config));
 
             // just for testing that it passes
-            cy.waitUntilWebsocketAction({ waitTimeout: 5000 });
+            cy.waitUntilWebsocketAction({ timeout: 5000 });
         });
 
         it("Default options - will not wait to the first action", () => {
@@ -275,7 +275,7 @@ describe("Websocket", () => {
 
             cy.waitUntilWebsocketAction(
                 { data: responseData, type: "onmessage" },
-                { waitTimeout: delay / 2 },
+                { timeout: delay / 2 },
                 errMessage
             );
 
@@ -290,7 +290,7 @@ describe("Websocket", () => {
 
             expectedErrorMessage = `${errMessage} (5000ms)`;
 
-            cy.waitUntilWebsocketAction({ waitTimeout: 5000 }, errMessage);
+            cy.waitUntilWebsocketAction({ timeout: 5000 }, errMessage);
 
             /* istanbul ignore next */
             cy.wrap(null).then(() => {

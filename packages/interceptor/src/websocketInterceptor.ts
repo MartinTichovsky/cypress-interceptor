@@ -49,7 +49,7 @@ declare global {
             /**
              * Reset the watch of Websocket Interceptor
              */
-            wsResetInterceptorWatch: () => void;
+            wsResetInterceptorWatch: VoidFunction;
             /**
              * Wait until a websocket action occur
              *
@@ -152,7 +152,7 @@ export interface WaitUntilActionOptions {
      * Time of how long Cypress will be waiting for the action.
      * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
      */
-    waitTimeout?: number;
+    timeout?: number;
 }
 
 export interface WebsocketInterceptorOptions {
@@ -470,7 +470,7 @@ export class WebsocketInterceptor {
     ): options is WaitUntilActionOptions {
         return (
             isNonNullableObject(options) &&
-            ("countMatch" in options || "enforceCheck" in options || "waitTimeout" in options)
+            ("countMatch" in options || "enforceCheck" in options || "timeout" in options)
         );
     }
 
@@ -481,7 +481,7 @@ export class WebsocketInterceptor {
         errorMessage?: string
     ): Cypress.Chainable<this> {
         const totalTimeout =
-            options.waitTimeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
+            options.timeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
 
         const timeout = totalTimeout - (performance.now() - startTime);
 
