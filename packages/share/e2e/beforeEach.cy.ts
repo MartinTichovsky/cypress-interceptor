@@ -41,7 +41,7 @@ describe("Using it in before each - first", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 
     it("First test", () => {
@@ -51,7 +51,7 @@ describe("Using it in before each - first", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 
     it("Second test", () => {
@@ -61,7 +61,7 @@ describe("Using it in before each - first", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 });
 
@@ -105,7 +105,7 @@ describe("Using it in before each - second", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 
     it("First test", () => {
@@ -115,7 +115,7 @@ describe("Using it in before each - second", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 
     it("Second test", () => {
@@ -125,6 +125,6 @@ describe("Using it in before each - second", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 });

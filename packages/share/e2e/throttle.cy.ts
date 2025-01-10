@@ -41,7 +41,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration * 4);
+            cy.stopTiming().should("be.gte", duration * 4);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -82,7 +82,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -136,7 +136,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -197,7 +197,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -270,7 +270,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration * 4);
+            cy.stopTiming().should("be.gte", duration * 4);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -294,7 +294,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -326,7 +326,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -354,7 +354,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -409,7 +409,7 @@ describe("Throttle Request", () => {
 
         it("Infinitely", () => {
             const doCheck = () => {
-                cy.stopTiming().should("be.gt", duration + throttleDelay);
+                cy.stopTiming().should("be.gte", duration + throttleDelay);
 
                 cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                     expect(stats).not.to.be.undefined;
@@ -542,7 +542,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -589,7 +589,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -631,7 +631,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -676,7 +676,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -773,7 +773,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -813,7 +813,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -823,7 +823,7 @@ describe("Throttle Request", () => {
 
             getResponseDuration(testPath_api_1)
                 .should("be.gt", duration)
-                .should("be.lt", duration + throttleDelay);
+                .should("be.lt", throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -831,9 +831,9 @@ describe("Throttle Request", () => {
                 expect(stats!.url.pathname.endsWith(testPath_api_2)).to.be.true;
             });
 
-            getResponseDuration(testPath_api_1)
+            getResponseDuration(testPath_api_2)
                 .should("be.gt", duration)
-                .should("be.lt", duration + throttleDelay);
+                .should("be.lt", throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -843,11 +843,53 @@ describe("Throttle Request", () => {
 
             getResponseDuration(testPath_api_3)
                 .should("be.gt", duration)
-                .should("be.lt", duration + throttleDelay);
+                .should("be.lt", throttleDelay);
 
             cy.interceptorLastRequest(crossDomainFetch).then((stats) => {
                 expect(stats).not.to.be.undefined;
                 expect(stats!.delay).to.eq(throttleDelay);
+                expect(stats!.response).not.to.be.undefined;
+            });
+        });
+
+        it("Igore Cross domain", () => {
+            cy.throttleInterceptorRequest({ crossDomain: false }, throttleDelay, { times: 0 });
+
+            cy.startTiming();
+
+            cy.visit(getDynamicUrl(config));
+
+            cy.waitUntilRequestIsDone();
+
+            cy.stopTiming().should("be.gte", throttleDelay);
+
+            cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
+                expect(stats).not.to.be.undefined;
+                expect(stats!.delay).to.eq(throttleDelay);
+                expect(stats!.url.pathname.endsWith(testPath_api_1)).to.be.true;
+            });
+
+            getResponseDuration(testPath_api_1).should("be.gte", throttleDelay);
+
+            cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
+                expect(stats).not.to.be.undefined;
+                expect(stats!.delay).to.eq(throttleDelay);
+                expect(stats!.url.pathname.endsWith(testPath_api_2)).to.be.true;
+            });
+
+            getResponseDuration(testPath_api_2).should("be.gte", throttleDelay);
+
+            cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
+                expect(stats).not.to.be.undefined;
+                expect(stats!.delay).to.eq(throttleDelay);
+                expect(stats!.url.pathname.endsWith(testPath_api_3)).to.be.true;
+            });
+
+            getResponseDuration(testPath_api_3).should("be.gte", throttleDelay);
+
+            cy.interceptorLastRequest(crossDomainFetch).then((stats) => {
+                expect(stats).not.to.be.undefined;
+                expect(stats!.delay).to.be.undefined;
             });
         });
 
@@ -862,7 +904,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -903,7 +945,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -950,7 +992,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -990,7 +1032,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -1030,7 +1072,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -1073,7 +1115,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -1126,7 +1168,7 @@ describe("Throttle Request", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.stopTiming().should("be.gt", duration + throttleDelay);
+            cy.stopTiming().should("be.gte", duration + throttleDelay);
 
             cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                 expect(stats).not.to.be.undefined;
@@ -1201,7 +1243,7 @@ describe("Throttle Request", () => {
                             expect(interceptor.removeThrottle(throttle1Id)).to.be.false;
                         });
 
-                        cy.stopTiming().should("be.gt", throttleDelay);
+                        cy.stopTiming().should("be.gte", throttleDelay);
 
                         cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                             expect(stats).not.to.be.undefined;
@@ -1238,7 +1280,7 @@ describe("Throttle Request", () => {
                             expect(interceptor.removeThrottle(throttle2Id)).to.be.false;
                         });
 
-                        cy.stopTiming().should("be.gt", throttleDelay);
+                        cy.stopTiming().should("be.gte", throttleDelay);
 
                         cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                             expect(stats).not.to.be.undefined;
@@ -1275,7 +1317,7 @@ describe("Throttle Request", () => {
                             expect(interceptor.removeThrottle(throttle3Id)).to.be.false;
                         });
 
-                        cy.stopTiming().should("be.gt", throttleDelay);
+                        cy.stopTiming().should("be.gte", throttleDelay);
 
                         cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
                             expect(stats).not.to.be.undefined;

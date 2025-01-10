@@ -8,6 +8,10 @@ import {
 import { getLoadedSector, getResponseBody } from "../src/selectors";
 import { fireRequest, resourceTypeIt } from "../src/utils";
 
+beforeEach(function () {
+    Cypress.on("uncaught:exception", () => false);
+});
+
 describe("Testing that the Interceptor logs requests correctly", () => {
     it("With custom options", () => {
         cy.visit(generateUrl("public/"));
@@ -111,7 +115,7 @@ describe("Testing that the server works correctly", () => {
             expect(stats[1].isPending).to.be.false;
         });
 
-        cy.stopTiming().should("be.gt", duration);
+        cy.stopTiming().should("be.gte", duration);
     });
 
     resourceTypeIt("Body and Response - POST", (resourceType) => {

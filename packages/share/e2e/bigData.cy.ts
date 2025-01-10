@@ -2,7 +2,7 @@ import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 /**
  * Cypress.intercept has problems with big data and the response never
- * hits the caller's code when req.continue provided with a custom function.
+ * hits the caller's code when req.on("response") provided with a custom function.
  */
 describe("Big Data", () => {
     const testPath_api_1 = "test/api-1";

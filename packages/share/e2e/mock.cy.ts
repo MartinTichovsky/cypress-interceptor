@@ -8,20 +8,18 @@ import {
     getResponseHeaders,
     getResponseStatus
 } from "../src/selectors";
-import { convertToRequestBody, createMatcher, isObject, testCaseDescribe } from "../src/utils";
+import {
+    convertToRequestBody,
+    createMatcher,
+    isObject,
+    objectIncludes,
+    testCaseDescribe
+} from "../src/utils";
 
 describe("Mock Respose", () => {
     const testPath_api_1 = "test/api-1";
     const testPath_api_2 = "api/api-2";
     const testPath_api_3 = "test/api-3";
-
-    const objectIncludes = (
-        object1: Record<string, unknown> | undefined,
-        object2: Record<string, unknown>
-    ) =>
-        Object.keys(object2).every(
-            (key) => object1 && key in object1 && object1[key] === object2[key]
-        );
 
     const checkResponseHeaders = (id: string, mockHeaders: { [key: string]: string }) =>
         getResponseHeaders(id).then((headers: [[string, string]] | undefined) =>

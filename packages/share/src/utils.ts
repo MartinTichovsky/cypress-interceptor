@@ -28,6 +28,12 @@ export const isObject = (val: unknown): val is Record<string, unknown> =>
 
 export const fireRequest = () => cy.get("#fire_request").click();
 
+export const objectIncludes = (
+    object1: Record<string, unknown> | undefined,
+    object2: Record<string, unknown>
+) =>
+    Object.keys(object2).every((key) => object1 && key in object1 && object1[key] === object2[key]);
+
 export const objectToFormData = (data: Record<string, unknown>) => {
     const formData = new FormData();
 

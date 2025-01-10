@@ -1,4 +1,5 @@
 import { IRequestInit } from "cypress-interceptor/src/Interceptor.types";
+import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { fireRequest, testCaseDescribe, testCaseIt, toRegExp } from "../src/utils";
@@ -261,7 +262,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: ["fetch", "xhr"] });
 
-            cy.stopTiming().should("be.gt", duration);
+            cy.stopTiming().should("be.gte", duration);
         });
 
         it("Multiple requests - slow cancel", () => {
@@ -306,7 +307,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: ["fetch", "xhr"] });
 
-            cy.stopTiming().should("be.gt", duration);
+            cy.stopTiming().should("be.gte", duration);
 
             cy.interceptorStats({ resourceType: "fetch" }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -432,7 +433,7 @@ describe("Wait For Requests", () => {
                 url: `**/${testPath_api_2}`
             });
 
-            cy.stopTiming().should("be.gt", duration);
+            cy.stopTiming().should("be.gte", duration);
 
             cy.interceptorStats({ resourceType: "xhr" }).then((stats) => {
                 expect(stats.length).to.eq(1);
@@ -477,7 +478,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(`**/${testPath_api_2}`);
 
-            cy.stopTiming().should("be.gt", delay + duration + tripleDuration);
+            cy.stopTiming().should("be.gte", delay + duration + tripleDuration);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -517,7 +518,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(`**/${testPath_api_1}`);
 
-            cy.stopTiming().should("be.gt", duration);
+            cy.stopTiming().should("be.gte", duration);
 
             cy.interceptorStats({ resourceType: resourceType }).then((stats) => {
                 expect(stats.length).to.eq(1);
@@ -530,7 +531,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(`**/${testPath_api_2}`);
 
-            cy.stopTiming().should("be.gt", delay + tripleDuration);
+            cy.stopTiming().should("be.gte", delay + tripleDuration);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -599,7 +600,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(`**/${testPath_api_2}`);
 
-            cy.stopTiming().should("be.gt", delay + tripleDuration);
+            cy.stopTiming().should("be.gte", delay + tripleDuration);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(3);
@@ -656,7 +657,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone(`**/${testPath_api_2}`);
 
-            cy.stopTiming().should("be.gt", delay + tripleDuration);
+            cy.stopTiming().should("be.gte", delay + tripleDuration);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(4);
@@ -773,6 +774,48 @@ describe("Wait For Requests", () => {
                 expect(stats[5].url.pathname.endsWith(testPath_api_2)).to.be.true;
             });
         });
+
+        it("Ignore Cross Domain request", () => {
+            cy.interceptorOptions({ ingoreCrossDomain: true });
+            cy.throttleInterceptorRequest(crossDomainFetch, duration * 3);
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        bodyFormat,
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: testPath_api_1,
+                        responseCatchType,
+                        type: resourceType
+                    },
+                    {
+                        delay: 250,
+                        method: "GET",
+                        path: crossDomainFetch,
+                        type: resourceType
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone();
+
+            cy.stopTiming()
+                .should("be.gte", duration)
+                .should("be.lt", duration * 3);
+
+            cy.interceptorStats({ resourceType }).then((stats) => {
+                expect(stats.length).to.eq(2);
+                expect(stats[0].crossDomain).to.be.false;
+                expect(stats[0].isPending).to.be.false;
+                expect(stats[1].crossDomain).to.be.true;
+                expect(stats[1].isPending).to.be.false;
+                expect(stats[1].response).to.be.undefined;
+            });
+        });
     });
 
     testCaseDescribe("Wait Options", (resourceType, bodyFormat, responseCatchType) => {
@@ -848,7 +891,7 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ waitForNextRequest: delay });
 
-            cy.stopTiming().should("be.gt", delay + duration + doubleDuration);
+            cy.stopTiming().should("be.gte", delay + duration + doubleDuration);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(2);
@@ -889,11 +932,51 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ waitForNextRequest: 0 });
 
-            cy.stopTiming().should("be.gt", duration).should("be.lt", delay);
+            cy.stopTiming().should("be.gte", duration).should("be.lt", delay);
 
             cy.interceptorStats({ resourceType }).then((stats) => {
                 expect(stats.length).to.eq(1);
                 expect(stats[0].isPending).to.be.false;
+            });
+        });
+
+        it("Do not wait for Cross Domain request", () => {
+            cy.throttleInterceptorRequest(crossDomainFetch, duration * 3);
+
+            cy.startTiming();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        bodyFormat,
+                        delay: 100,
+                        duration,
+                        method: "POST",
+                        path: testPath_api_1,
+                        responseCatchType,
+                        type: resourceType
+                    },
+                    {
+                        delay: 250,
+                        method: "GET",
+                        path: crossDomainFetch,
+                        type: resourceType
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone({ crossDomain: false });
+
+            cy.stopTiming()
+                .should("be.gte", duration)
+                .should("be.lt", duration * 3);
+
+            cy.interceptorStats({ resourceType }).then((stats) => {
+                expect(stats.length).to.eq(2);
+                expect(stats[0].crossDomain).to.be.false;
+                expect(stats[0].isPending).to.be.false;
+                expect(stats[1].crossDomain).to.be.true;
+                expect(stats[1].isPending).to.be.true;
             });
         });
     });

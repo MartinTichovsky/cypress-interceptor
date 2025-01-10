@@ -1,5 +1,6 @@
 import * as webpackPreprocessor from "@cypress/webpack-preprocessor";
 import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
+import * as fs from "fs";
 
 export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     chromeWebSecurity: false,
@@ -7,8 +8,6 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     e2e: {
         baseUrl: "http://localhost:3000/",
         env: {
-            INTERCEPTOR_DEBUG: true,
-            INTERCEPTOR_DISABLE_CACHE: true,
             INTERCEPTOR_REQUEST_TIMEOUT: 20000
         },
         experimentalRunAllSpecs: true,
@@ -32,6 +31,21 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
             //         return null;
             //     }
             // });
+
+            on("task", {
+                clearLogs(logDirs: string[]) {
+                    logDirs.forEach((dir) => {
+                        if (fs.existsSync(dir)) {
+                            fs.rmdirSync(dir, { recursive: true });
+                        }
+                    });
+
+                    return null;
+                },
+                doesFileExist(filePath) {
+                    return fs.existsSync(filePath);
+                }
+            });
 
             return config;
         },
