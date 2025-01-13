@@ -1,5 +1,5 @@
 import { getFilePath } from "cypress-interceptor/src/utils";
-import { CallStackWebsocket } from "cypress-interceptor/src/WebsocketInterceptor";
+import { CallStackWebsocket } from "cypress-interceptor/src/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
@@ -840,29 +840,6 @@ describe("Websocket", () => {
             expect(stats.length).to.eq(4);
             expect(stats[stats.length - 2].data).to.eq(sendData1);
             expect(stats[stats.length - 1].data).to.eq(sendData2);
-        });
-    });
-
-    it("Set options", () => {
-        cy.visit(
-            getDynamicUrl([
-                {
-                    path: "some-path",
-                    type: "websocket"
-                }
-            ])
-        );
-
-        cy.wsInterceptor().then((interceptor) => {
-            expect(interceptor.debugIsEnabled).to.be.true;
-        });
-
-        cy.wsInterceptorOptions({ debug: false }).then((options) => {
-            expect(options).to.haveOwnProperty("debug", false);
-        });
-
-        cy.wsInterceptor().then((interceptor) => {
-            expect(interceptor.debugIsEnabled).to.be.false;
         });
     });
 });

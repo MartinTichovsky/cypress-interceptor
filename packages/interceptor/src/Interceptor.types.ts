@@ -2,43 +2,44 @@ import { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
 export interface CallStack {
     /**
-     * Cross domain requests will have this property set to true
+     * Cross-domain requests will have this property set to `true`.
      */
     crossDomain: boolean;
     /**
-     * A throttle delay of the request set by calling `throttleRequest` or `cy.throttleInterceptorRequest`
+     * The throttle delay of the request is set by calling `throttleRequest` or `cy.throttleInterceptorRequest`.
+     * If the request is not throttled, this property is `undefined`.
      */
     delay?: number;
     /**
-     * The real total duration of the request in ms (not including delay)
+     * The actual total duration of the request in milliseconds (excluding any delay).
      */
     duration?: number;
     /**
-     * true if the request is still in progress
+     * Is `true` if the request is still in progress
      */
     isPending: boolean;
     /**
-     * Resource type
+     * The resource type
      */
     resourceType: IResourceType;
     /**
-     * Request info
+     * The request info
      */
     request: IRequest;
     /**
-     * An error when request fail
+     * An error that occurs when the request fails
      */
     requestError?: unknown;
     /**
-     * Response info
+     * The response info
      */
     response?: IResponse;
     /**
-     * Time when the request started
+     * The time when the request started
      */
     timeStart: Date;
     /**
-     * URL of the request
+     * The URL of the request
      */
     url: URL;
 }
@@ -58,51 +59,51 @@ export type IHeadersNormalized = { [key: string]: string };
 
 export interface InterceptorOptions {
     /**
-     * Ignore request outside the domain, default: true
+     * Ignore requests outside the domain (default: `false`)
      */
-    ingoreCrossDomain?: boolean;
+    ignoreCrossDomain?: boolean;
 }
 
 export type IHeaders = { [key: string]: string | string[] };
 
 export interface IMockResponse {
     /**
-     * A response body, it can be anything
+     * The response body, it can be anything
      */
     body?: unknown;
     /**
-     * Generate a body with the original response body, this option is preferred before option `body`
+     * Generate a body with the original response body. This option has higher priority
+     * than the `body` option.
      *
      * @param request An object with the request data (body, query, method, ...)
-     * @param originalResponseBody The original response body
-     * @returns A response body, it can be anything
+     * @returns The response body, it can be anything
      */
     generateBody?: (request: IRequest) => unknown;
     /**
-     * If provided, will be added to the original response headers
+     * If provided, this will be added to the original response headers.
      */
     headers?: IHeadersNormalized;
     /**
-     * Response status code
+     * The response status code
      */
     statusCode?: number;
     /**
-     * Response status text
+     * The response status text
      */
     statusText?: string;
 }
 
 export interface IMockResponseOptions {
     /**
-     * How many times the response should be mocked, by default it is set to 1.
-     * Set to 0 to mock the response infinitely
+     * The number of times the response should be mocked. By default, it is set to 1.
+     * Set it to Number.POSITIVE_INFINITY to mock the response indefinitely.
      */
     times?: number;
 }
 
 export interface IRequest {
     /**
-     * The request body, it can be anything
+     * The request body, it is the body in string format, JSON.stringify() is used
      */
     body: string;
     /**
@@ -114,20 +115,39 @@ export interface IRequest {
      */
     method: string;
     /**
-     * URL query string as object
+     * The URL search params as an object
      */
     query: Record<string, string | number>;
+}
+
+export interface IRequestInit {
+    /**
+     * The request body, it can be anything
+     */
+    body: Document | BodyInit | null | undefined;
+    /**
+     * The request headers
+     */
+    headers: IHeaders;
+    /**
+     * The request method (GET, POST, ...)
+     */
+    method: string;
+    /**
+     * The full request url
+     */
+    url: URL;
 }
 
 export type IResourceType = "fetch" | "xhr";
 
 export interface IResponse {
     /**
-     * The response body
+     * The response body, it is the body in string format
      */
     body: string;
     /**
-     * Headers of the response
+     * The headers of the response
      */
     headers: IHeaders;
     /**
@@ -143,138 +163,125 @@ export interface IResponse {
      */
     statusText: string;
     /**
-     * Time when the request ended (it does not include a delay when the request
-     * is throttled, it contains the real time when the request finished in cy.intercept)
+     * The time when the request ended. This does not include any delay from throttling
+     * and reflects the actual time the request finished.
      */
     timeEnd: Date;
 }
 
 /**
- * String comparison is case insensitive. Provide RegExp without case sensitive flag if needed.
+ * String comparison is case-insensitive. Provide a RegExp without the case-sensitive flag if needed.
  */
 export type IRouteMatcher = StringMatcher | IRouteMatcherObject;
 
 export type IRouteMatcherObject = {
     /**
-     * A matcher for request body
+     * A matcher for the request body
      *
-     * @param body The request body
-     * @returns True if matches
+     * @param requestBody The request body in string format
+     * @returns `true` if matches
      */
-    bodyMatcher?: (body: string) => boolean;
+    bodyMatcher?: (requestBody: string) => boolean;
     /**
-     * If true, only cross domain requests match
+     * If set to `true`, only cross-domain requests will match
      */
     crossDomain?: boolean;
     /**
-     * A matcher for headers
+     * A matcher for the request headers
      *
-     * @param headers The request headers
-     * @returns True if matches
+     * @param requestHeaders The request headers
+     * @returns `true` if matches
      */
-    headersMatcher?: (headers: IHeaders) => boolean;
+    headersMatcher?: (requestHeaders: IHeaders) => boolean;
     /**
-     * If true, only HTTPS requests match
+     * If set to `true`, only HTTPS requests will match
      */
     https?: RouteMatcherOptions["https"];
     /**
-     * Request method (GET, POST, ...)
+     * The request method (GET, POST, ...)
      */
     method?: RequestMethod;
     /**
-     * A matcher for query string
+     * A matcher for the query string (URL search params)
      *
-     * @param query The URL query string
-     * @returns True if matches
+     * @param query The URL qearch params as an object
+     * @returns `true` if matches
      */
     queryMatcher?: (query: Record<string, string | number>) => boolean;
     /**
-     * Resource type (document, script, fetch, ....)
+     * The resource type
      */
     resourceType?: IResourceType | IResourceType[] | "all";
     /**
-     * A URL matcher, use * or ** to match any word in string ("**\/api/call", "**\/script.js", ...)
+     * A URL matcher, use * or ** to match any word in string
+     *
+     * @example "**\/api/call" will match "http://any.com/api/call", "http://any.com/test/api/call", "http://any.com/test/api/call?page=99", ...
+     * @example "*\api\*" will match "http://any.com/api/call", "http://any.com/api/list", "http://any.com/api/call-2?page=99&filter=1",
+     * @example "**" will match any URL
      */
     url?: StringMatcher;
 };
 
 export interface IThrottleRequestOptions {
     /**
-     * Mock a response for the provided route matcher. If provided together with
-     * `mockResponse` or `cy.mockInterceptorResponse` it has lesser priority
+     * Mock a response for the provided route matcher. If used together with `mockResponse`
+     * or `cy.mockInterceptorResponse`, it has lower priority.
      */
     mockResponse?: IMockResponse;
     /**
-     * How many times the request should be throttled, by default it is set to 1.
-     * Set to 0 to throttle the request infinitely
+     * The number of times the request should be throttled. By default, it is set to 1.
+     * Set it to Number.POSITIVE_INFINITY to throttle the request indefinitely.
      */
     times?: number;
 }
 
 export type OnRequestError = (request: IRequestInit, error: Error) => void;
 
-export interface IRequestInit {
-    /**
-     * The request body, it can be anything
-     */
-    body: Document | BodyInit | null | undefined;
-    /**
-     * The request headers
-     */
-    headers: IHeaders;
-    /**
-     * Request method (GET, POST, ...)
-     */
-    method: string;
-    /**
-     * The full request url
-     */
-    url: URL;
-}
-
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
-     * True by default. If true, a request matching the provided route matcher must be logged by Interceptor,
-     * otherwise it waits until the url is logged and finished or it fails if the time of waiting runs out. If
-     * set to false, it checks if there is a request matching the provided route matcher. If yes, it waits until
-     * the request is done. If no, it does not fail and end successfully.
+     * The value is `true` by default. If set to `true`, a request matching the provided
+     * route matcher must be logged by the Interceptor; otherwise, it waits until the
+     * URL is logged and finished or fails if the waiting time runs out. If set to `false`,
+     * it checks for a request matching the provided route matcher. If one exists, it
+     * waits until the request is complete. If not, it does not fail and ends successfully.
      */
     enforceCheck?: boolean;
     /**
-     * Time of how long Cypress will be waiting for the pending requests.
-     * Default set to 10000 or environment variable `INTERCEPTOR_REQUEST_TIMEOUT` if set
+     * The duration Interceptor will wait for pending requests. The default is set to 10,000
+     * or the value of the `INTERCEPTOR_REQUEST_TIMEOUT` environment variable if specified.
      */
     timeout?: number;
     /**
-     * Time to wait in ms. Default set to 750
+     * Time to wait in milliseconds. The default is set to 750.
      *
-     * There is needed to wait if there is a possible following request after the last one (because of the JS code
-     * and subsequent requests). Set to 0 to skip repetitive checking for requests.
+     * It is necessary to wait if there might be a following request after the last one
+     * (due to JavaScript code and subsequent requests). Set it to 0 to skip repeated
+     * checking for requests.
      */
     waitForNextRequest?: number;
 }
 
 export interface WriteStatsOptions {
     /**
-     * A name of the file, if undefined, it will be composed from the running test
+     * The name of the file. If `undefined`, it will be generated from the running test.
      */
     fileName?: string;
     /**
-     * A possibility to filter the logged items
+     * An option to filter the logged items
      *
-     * @param callStack A call info stored in the stack
-     * @returns false if the item should be skipped
+     * @param callStack Call information stored in the stack
+     * @returns `false` if the item should be skipped
      */
     filter?: (callStack: CallStack) => boolean;
     /**
-     * A possibility to map the logged items
+     * An option to map the logged items
      *
-     * @param callStack A call info stored in the stack
+     * @param callStack Call information stored in the stack
      * @returns Any object you want to log
      */
     mapper?: (callStack: CallStack) => unknown;
     /**
-     * When true, the output JSON will be formatted with tabs
+     * When set to `true`, the output JSON will be formatted with tabs
      */
     prettyOutput?: boolean;
     /**

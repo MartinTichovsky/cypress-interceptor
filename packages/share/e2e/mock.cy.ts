@@ -255,7 +255,7 @@ describe("Mock Respose", () => {
                     headers: mockResponseHeaders,
                     statusCode: mockResponseStatusCode
                 },
-                { times: 0 }
+                { times: Number.POSITIVE_INFINITY }
             );
 
             cy.visit(
@@ -2087,7 +2087,7 @@ describe("Mock Respose", () => {
                     headers: mockResponseHeaders,
                     statusCode: mockResponseStatusCode
                 },
-                times: 0
+                times: Number.POSITIVE_INFINITY
             });
 
             cy.startTiming();
@@ -2218,241 +2218,217 @@ describe("Mock Respose", () => {
             statusCode: mockResponseStatusCode
         };
 
-        cy.mockInterceptorResponse({ url: `**/${testPath_api_1}` }, mock, { times: 0 }).then(
-            (mock1Id) => {
-                cy.mockInterceptorResponse({ url: `**/${testPath_api_2}` }, mock, {
-                    times: 0
-                }).then((mock2Id) => {
-                    cy.mockInterceptorResponse({ url: `**/${testPath_api_3}` }, mock, {
-                        times: 0
-                    }).then((mock3Id) => {
-                        // first load
+        cy.mockInterceptorResponse({ url: `**/${testPath_api_1}` }, mock, {
+            times: Number.POSITIVE_INFINITY
+        }).then((mock1Id) => {
+            cy.mockInterceptorResponse({ url: `**/${testPath_api_2}` }, mock, {
+                times: Number.POSITIVE_INFINITY
+            }).then((mock2Id) => {
+                cy.mockInterceptorResponse({ url: `**/${testPath_api_3}` }, mock, {
+                    times: Number.POSITIVE_INFINITY
+                }).then((mock3Id) => {
+                    // first load
 
-                        cy.visit(getDynamicUrl(config));
+                    cy.visit(getDynamicUrl(config));
 
-                        cy.waitUntilRequestIsDone().then((interceptor) => {
-                            expect(interceptor.removeMock(mock1Id)).to.be.true;
-                            expect(interceptor.removeMock(mock1Id)).to.be.false;
-                        });
-
-                        cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_1).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_1).should("eq", mockResponseStatusCode);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_2).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_2).should("eq", mockResponseStatusCode);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
-
-                        // second load
-
-                        cy.visit(getDynamicUrl(config));
-
-                        cy.waitUntilRequestIsDone().then((interceptor) => {
-                            expect(interceptor.removeMock(mock2Id)).to.be.true;
-                            expect(interceptor.removeMock(mock2Id)).to.be.false;
-                        });
-
-                        cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
-                        checkResponseHeaders(testPath_api_1, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_1).should("eq", 200);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_2).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_2).should("eq", mockResponseStatusCode);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
-
-                        // third load
-
-                        cy.visit(getDynamicUrl(config));
-
-                        cy.waitUntilRequestIsDone().then((interceptor) => {
-                            expect(interceptor.removeMock(mock3Id)).to.be.true;
-                            expect(interceptor.removeMock(mock3Id)).to.be.false;
-                        });
-
-                        cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
-                        checkResponseHeaders(testPath_api_1, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_1).should("eq", 200);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_2).should("deep.equal", responseBody2);
-                        checkResponseHeaders(testPath_api_2, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_2).should("eq", 200);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(
-                                JSON.stringify(mockResponseBody)
-                            );
-                            expect(stats!.response!.isMock).to.be.true;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.true;
-                            expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
-                        });
-
-                        getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
-                        checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
-                        getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
-
-                        // fourth load
-
-                        cy.visit(getDynamicUrl(config));
-
-                        cy.waitUntilRequestIsDone();
-
-                        cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
-                        checkResponseHeaders(testPath_api_1, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_1).should("eq", 200);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_2).should("deep.equal", responseBody2);
-                        checkResponseHeaders(testPath_api_2, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_2).should("eq", 200);
-
-                        cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
-                            expect(stats).not.to.be.undefined;
-                            expect(stats!.response).not.to.be.undefined;
-                            expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody3));
-                            expect(stats!.response!.isMock).to.be.false;
-                            expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to
-                                .be.false;
-                            expect(stats!.response!.statusCode).to.eq(200);
-                        });
-
-                        getResponseBody(testPath_api_3).should("deep.equal", responseBody3);
-                        checkResponseHeaders(testPath_api_3, mockResponseHeaders).should(
-                            "be.false"
-                        );
-                        getResponseStatus(testPath_api_3).should("eq", 200);
+                    cy.waitUntilRequestIsDone().then((interceptor) => {
+                        expect(interceptor.removeMock(mock1Id)).to.be.true;
+                        expect(interceptor.removeMock(mock1Id)).to.be.false;
                     });
+
+                    cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_1).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_1).should("eq", mockResponseStatusCode);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_2).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_2).should("eq", mockResponseStatusCode);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
+
+                    // second load
+
+                    cy.visit(getDynamicUrl(config));
+
+                    cy.waitUntilRequestIsDone().then((interceptor) => {
+                        expect(interceptor.removeMock(mock2Id)).to.be.true;
+                        expect(interceptor.removeMock(mock2Id)).to.be.false;
+                    });
+
+                    cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
+                    checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_1).should("eq", 200);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_2).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_2).should("eq", mockResponseStatusCode);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
+
+                    // third load
+
+                    cy.visit(getDynamicUrl(config));
+
+                    cy.waitUntilRequestIsDone().then((interceptor) => {
+                        expect(interceptor.removeMock(mock3Id)).to.be.true;
+                        expect(interceptor.removeMock(mock3Id)).to.be.false;
+                    });
+
+                    cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
+                    checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_1).should("eq", 200);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_2).should("deep.equal", responseBody2);
+                    checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_2).should("eq", 200);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(mockResponseBody));
+                        expect(stats!.response!.isMock).to.be.true;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .true;
+                        expect(stats!.response!.statusCode).to.eq(mockResponseStatusCode);
+                    });
+
+                    getResponseBody(testPath_api_3).should("deep.equal", mockResponseBody);
+                    checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.true");
+                    getResponseStatus(testPath_api_3).should("eq", mockResponseStatusCode);
+
+                    // fourth load
+
+                    cy.visit(getDynamicUrl(config));
+
+                    cy.waitUntilRequestIsDone();
+
+                    cy.interceptorLastRequest(`**/${testPath_api_1}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_1).should("deep.equal", responseBody1);
+                    checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_1).should("eq", 200);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_2}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_2).should("deep.equal", responseBody2);
+                    checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_2).should("eq", 200);
+
+                    cy.interceptorLastRequest(`**/${testPath_api_3}`).then((stats) => {
+                        expect(stats).not.to.be.undefined;
+                        expect(stats!.response).not.to.be.undefined;
+                        expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody3));
+                        expect(stats!.response!.isMock).to.be.false;
+                        expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                            .false;
+                        expect(stats!.response!.statusCode).to.eq(200);
+                    });
+
+                    getResponseBody(testPath_api_3).should("deep.equal", responseBody3);
+                    checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.false");
+                    getResponseStatus(testPath_api_3).should("eq", 200);
                 });
-            }
-        );
+            });
+        });
     });
 });

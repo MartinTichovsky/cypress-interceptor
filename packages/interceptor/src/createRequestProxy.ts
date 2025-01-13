@@ -58,14 +58,15 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
 
                                         proxy.done(mockResponse, () => resolve(mockResponse), true);
                                     })
-                                    .catch(() => {
-                                        //
+                                    .catch((error) => {
+                                        proxy.error(error);
+                                        reject(error);
                                     });
                             } else {
                                 proxy.done(response, () => resolve(response));
                             }
                         })
-                        .catch((error: Error) => {
+                        .catch((error) => {
                             proxy.error(error);
                             reject(error);
                         });
@@ -108,6 +109,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                     })
                     .catch((error) => {
                         proxy.error(error);
+                        reject(error);
                     });
             });
         };
@@ -196,7 +198,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an aborted request
             set onabort(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onabort = (ev) => {
-                    this._proxy?.error(new Error(""));
+                    this._proxy?.error(new Error("AbortError"));
                     value.bind(this)(ev);
                 };
             }
@@ -225,7 +227,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an error of the request
             set onerror(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onerror = (ev) => {
-                    this._proxy?.error(new Error(""));
+                    this._proxy?.error(new Error("Error"));
                     value.bind(this)(ev);
                 };
             }
@@ -316,7 +318,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                                     );
                                 })
                                 .catch(() => {
-                                    //
+                                    this.onerror(new ProgressEvent("error"));
                                 });
                         } else {
                             super.send(body);

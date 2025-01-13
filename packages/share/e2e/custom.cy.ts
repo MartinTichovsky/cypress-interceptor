@@ -23,7 +23,7 @@ describe("Custom", () => {
     it("Interceptor options", () => {
         cy.interceptorOptions().then((options) => {
             expect(options).to.deep.eq({
-                ingoreCrossDomain: false
+                ignoreCrossDomain: false
             });
         });
     });

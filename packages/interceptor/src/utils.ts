@@ -98,6 +98,14 @@ export const normalizeFileName = (fileName: string) =>
         .replace(/(-)+/g, "-")
         .replace(/( )+/g, " ");
 
+export const removeUndefinedFromObject = <T, K extends keyof T>(object: CommonObject<T>) => {
+    const result = { ...object };
+
+    Object.keys(result).forEach((key) => result[key as K] === undefined && delete result[key as K]);
+
+    return result;
+};
+
 export const replacer = (_key: string, value: unknown) =>
     typeof value === "undefined" ? null : value;
 
@@ -107,12 +115,4 @@ export const testUrlMatch = (urlMatcher: string | RegExp, url: string) => {
     }
 
     return urlMatcher.test(url);
-};
-
-export const removeUndefinedFromObject = <T, K extends keyof T>(object: CommonObject<T>) => {
-    const result = { ...object };
-
-    Object.keys(result).forEach((key) => result[key as K] === undefined && delete result[key as K]);
-
-    return result;
 };

@@ -54,9 +54,6 @@ beforeEach(() => {
 
 // afterEach(function () {
 //     cy.interceptor().then((interceptor) => {
-//         if (interceptor.debugIsEnabled) {
-//             interceptor.writeDebugToLog("./_logs");
-//         }
 //         // interceptor.writeStatsToLog("./_stats");
 //     });
 // });

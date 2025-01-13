@@ -1,4 +1,4 @@
-import { createWebsocketProxy } from "./createWebsocketProxy";
+import { createWebsocketProxy } from "../src/createWebsocketProxy";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
 import { WebsocketListener } from "./websocketListener";
 
@@ -12,9 +12,6 @@ const createCommands = () => {
     Cypress.Commands.add("wsInterceptor", () => cy.wrap(websocketInterceptor));
     Cypress.Commands.add("wsInterceptorLastRequest", (matcher) =>
         cy.wrap(websocketInterceptor.getLastRequest(matcher))
-    );
-    Cypress.Commands.add("wsInterceptorOptions", (options) =>
-        cy.wrap(websocketInterceptor.setOptions(options))
     );
     Cypress.Commands.add("wsInterceptorStats", (matcher) =>
         cy.wrap(websocketInterceptor.getStats(matcher))

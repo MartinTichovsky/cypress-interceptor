@@ -776,7 +776,7 @@ describe("Wait For Requests", () => {
         });
 
         it("Ignore Cross Domain request", () => {
-            cy.interceptorOptions({ ingoreCrossDomain: true });
+            cy.interceptorOptions({ ignoreCrossDomain: true });
             cy.throttleInterceptorRequest(crossDomainFetch, duration * 3);
 
             cy.startTiming();

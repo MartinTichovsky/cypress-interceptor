@@ -25,7 +25,7 @@ export const waitTill = (checkFunction: Checker, options: Options): Cypress.Chai
                 `${
                     options.errorMessage
                         ? options.errorMessage
-                        : "A wait timed out when wating for requests to be done"
+                        : "A wait timed out when waiting for requests to be done"
                 } (${options.totalTimeout}ms)`
             );
         }

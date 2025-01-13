@@ -7,6 +7,7 @@ export enum ConsoleLogType {
     ConsoleError = "console.error",
     ConsoleLog = "console.log",
     ConsoleWarn = "console.warn",
+    // this is equal to a unhandled JavaScript error
     Error = "error"
 }
 
@@ -28,16 +29,16 @@ interface CustomLog {
      */
     outputDir: string;
     /**
-     * If not provided, it logs all the console entries
+     * "If the type is not provided, it logs all console entries
      */
     types?: ConsoleLogType[];
 }
 
 /**
- * Watch the console output and save it to a file when a test fails
+ * Watch the console output and save it to a file if a test fails
  *
  * @param outputDir The output directory where the console logs will be saved
- * @param logOnlyType Log only some types of the console output, if not privided, it logs all the console entries
+ * @param logOnlyType Log only specific types of console output. If not provided, it logs all console entries.
  */
 export function watchTheConsole(outputDir: string, logOnlyType?: ConsoleLogType[]): void;
 /**
