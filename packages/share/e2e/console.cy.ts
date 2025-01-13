@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { ConsoleLog, ConsoleLogType, watchTheConsole } from "cypress-interceptor/src/console";
 import { getFilePath } from "cypress-interceptor/src/utils";
 import { generateUrl } from "cypress-interceptor-server/src/utils";

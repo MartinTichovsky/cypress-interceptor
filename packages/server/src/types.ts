@@ -68,9 +68,21 @@ export type DynamicRequest = {
            */
           cancelIn?: number;
           /**
+           * Initialize fetch with an object
+           */
+          fetchObjectInit?: boolean;
+          /**
+           * Expect JSON response, true by default
+           */
+          jsonResponse?: boolean;
+          /**
            * Headers sent by fetch
            */
           headers?: Record<string, string>;
+          /**
+           * The request method
+           */
+          method: "GET" | "POST";
           /**
            * The response
            */
@@ -79,10 +91,6 @@ export type DynamicRequest = {
            *
            */
           responseCatchType?: ResponseCatchType;
-          /**
-           * The request method
-           */
-          method: "GET" | "POST";
           type: "fetch" | "xhr";
       })
     | {

@@ -1,4 +1,4 @@
-import { RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
+import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
 import { convertToString } from "./utils";
 
 export const createRequestProxy = (requestProxy: RequestProxy) => {
@@ -15,10 +15,12 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
         }
 
         win.fetch = async (input: RequestInfo | URL, init: RequestInit | undefined = {}) => {
-            const inputUrl = input instanceof Request ? input.url : input;
-            const url = inputUrl instanceof URL ? inputUrl : new URL(inputUrl, win.location.href);
+            const inputUrl =
+                typeof input === "object" && !(input instanceof win.URL) ? input.url : input;
+            const url =
+                typeof inputUrl === "string" ? new win.URL(inputUrl, win.location.href) : inputUrl;
 
-            if (input instanceof Request) {
+            if (input instanceof win.Request) {
                 init.body = input.body;
                 init.method = input.method;
                 init.headers = input.headers;
@@ -76,12 +78,12 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                 convertToString(init.body, win)
                     .then((convertedBody) => {
                         const body =
-                            mock?.generateBody?.({
+                            mock.generateBody?.({
                                 body: convertedBody,
                                 headers,
                                 method: init.method ?? "GET",
                                 query: Object.fromEntries(url.searchParams)
-                            }) ?? mock?.body;
+                            }) ?? mock.body;
 
                         const isObject = typeof body === "object";
 
@@ -100,8 +102,8 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                             isObject ? JSON.stringify(body) : body?.toString(),
                             {
                                 headers: headersWithMock,
-                                status: mock?.statusCode ?? 200,
-                                statusText: mock?.statusText ?? "OK"
+                                status: mock.statusCode ?? 200,
+                                statusText: mock.statusText ?? "OK"
                             }
                         );
 
@@ -123,14 +125,18 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             private _headers: Record<string, string> = {};
             private _method: string = "GET";
             private _mockBody = false;
-            private _proxy?: RequestProxyFunctionResult;
+            private _proxy: RequestProxyFunctionResult = emptyProxy;
             private _url: URL = new URL("/", win.location.href);
 
             _getMockBody() {
-                if (this._proxy?.mock && "body" in this._proxy.mock) {
+                if (this._proxy.mock && "body" in this._proxy.mock) {
                     return this._proxy.mock.body;
-                } else if (this._proxy?.mock && "generateBody" in this._proxy.mock) {
-                    return this._proxy.mock.generateBody?.({
+                } else if (
+                    this._proxy.mock &&
+                    "generateBody" in this._proxy.mock &&
+                    this._proxy.mock.generateBody
+                ) {
+                    return this._proxy.mock.generateBody({
                         body: this._convertedBody,
                         headers: this._headers,
                         method: this._method ?? "GET",
@@ -149,9 +155,9 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         this,
                         callback,
                         Boolean(
-                            this._proxy?.mock?.headers ||
-                                this._proxy?.mock?.statusCode ||
-                                this._proxy?.mock?.statusText
+                            this._proxy.mock?.headers ||
+                                this._proxy.mock?.statusCode ||
+                                this._proxy.mock?.statusText
                         )
                     );
                 }
@@ -169,7 +175,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         ? this.responseType === "json"
                             ? mockBody
                             : JSON.stringify(mockBody)
-                        : (mockBody as string).toString()
+                        : String(mockBody)
                     : super.response;
             }
 
@@ -179,18 +185,18 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                 return mockBody
                     ? typeof mockBody === "object"
                         ? JSON.stringify(mockBody)
-                        : (mockBody as string).toString()
+                        : String(mockBody)
                     : super.responseText;
             }
 
             get status() {
-                const mock = this._proxy?.mock;
+                const mock = this._proxy.mock;
 
                 return mock?.statusCode ?? (mock && !super.status ? 200 : super.status);
             }
 
             get statusText() {
-                const mock = this._proxy?.mock;
+                const mock = this._proxy.mock;
 
                 return mock?.statusText ?? (mock && !super.statusText ? "OK" : super.statusText);
             }
@@ -198,7 +204,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an aborted request
             set onabort(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onabort = (ev) => {
-                    this._proxy?.error(new Error("AbortError"));
+                    this._proxy.error(new Error("AbortError"));
                     value.bind(this)(ev);
                 };
             }
@@ -227,7 +233,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an error of the request
             set onerror(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onerror = (ev) => {
-                    this._proxy?.error(new Error("Error"));
+                    this._proxy.error(new Error("Error"));
                     value.bind(this)(ev);
                 };
             }
@@ -269,7 +275,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             }
 
             getAllResponseHeaders() {
-                if (this._proxy?.mock?.headers) {
+                if (this._proxy.mock?.headers) {
                     return Object.entries(this._proxy.mock.headers)
                         .map(([key, value]) => `${key}: ${value}`)
                         .join("\r\n");
@@ -280,7 +286,8 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
 
             open(...args: [method: string, url: string | URL]): void {
                 this._method = args[0];
-                this._url = args[1] instanceof URL ? args[1] : new URL(args[1], win.location.href);
+                this._url =
+                    typeof args[1] === "string" ? new URL(args[1], win.location.href) : args[1];
 
                 return super.open(...args);
             }

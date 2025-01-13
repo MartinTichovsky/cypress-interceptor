@@ -580,6 +580,72 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_api_3).should("eq", 200);
         });
 
+        it("Only GenerateBody - Return a string", () => {
+            const mockResponseBody = "mockResponseBody string";
+
+            cy.mockInterceptorResponse(
+                { resourceType },
+                {
+                    generateBody: () => mockResponseBody
+                }
+            );
+
+            cy.visit(getDynamicUrl(config.map((entry) => ({ ...entry, jsonResponse: false }))));
+
+            cy.waitUntilRequestIsDone();
+
+            cy.interceptorLastRequest({ resourceType, url: `**/${testPath_api_1}` }).then(
+                (stats) => {
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(mockResponseBody);
+                    expect(stats!.response!.isMock).to.be.true;
+                    expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                        .false;
+                    expect(stats!.response!.statusCode).not.to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode).to.eq(200);
+                }
+            );
+
+            getResponseBody(testPath_api_1, true).should("deep.equal", mockResponseBody);
+            checkResponseHeaders(testPath_api_1, mockResponseHeaders).should("be.false");
+            getResponseStatus(testPath_api_1).should("not.eq", mockResponseStatusCode);
+
+            cy.interceptorLastRequest({ resourceType, url: `**/${testPath_api_2}` }).then(
+                (stats) => {
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
+                    expect(stats!.response!.isMock).to.be.false;
+                    expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                        .false;
+                    expect(stats!.response!.statusCode).not.to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode).to.eq(200);
+                }
+            );
+
+            getResponseBody(testPath_api_2).should("deep.equal", responseBody2);
+            checkResponseHeaders(testPath_api_2, mockResponseHeaders).should("be.false");
+            getResponseStatus(testPath_api_2).should("eq", 200);
+
+            cy.interceptorLastRequest({ resourceType, url: `**/${testPath_api_3}` }).then(
+                (stats) => {
+                    expect(stats).not.to.be.undefined;
+                    expect(stats!.response).not.to.be.undefined;
+                    expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody3));
+                    expect(stats!.response!.isMock).to.be.false;
+                    expect(objectIncludes(stats!.response!.headers, mockResponseHeaders)).to.be
+                        .false;
+                    expect(stats!.response!.statusCode).not.to.eq(mockResponseStatusCode);
+                    expect(stats!.response!.statusCode).to.eq(200);
+                }
+            );
+
+            getResponseBody(testPath_api_3).should("deep.equal", responseBody3);
+            checkResponseHeaders(testPath_api_3, mockResponseHeaders).should("be.false");
+            getResponseStatus(testPath_api_3).should("eq", 200);
+        });
+
         it("Only GenerateBody With Throttle", () => {
             cy.throttleInterceptorRequest({ resourceType }, throttleDelay, {
                 mockResponse: {

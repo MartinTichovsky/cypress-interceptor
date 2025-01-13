@@ -1,5 +1,6 @@
 import { CallStack } from "cypress-interceptor/src/Interceptor.types";
 import { getFilePath } from "cypress-interceptor/src/utils";
+import { convertToString } from "cypress-interceptor/src/utils";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { convertToRequestBody, testCaseIt } from "../src/utils";
@@ -277,5 +278,124 @@ describe("Custom", () => {
 
     it("stopTiming", () => {
         cy.stopTiming().should("be.undefined");
+    });
+
+    it("Catch error in mock 1 - fetch", () => {
+        cy.mockInterceptorResponse("**", {
+            headers: 123 as unknown as Record<string, string>,
+            statusCode: "ea" as unknown as number
+        });
+
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: testPath_Fetch_1,
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorLastRequest().then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.requestError).not.to.be.undefined;
+        });
+    });
+
+    it("Catch error in mock 2 - fetch", () => {
+        cy.mockInterceptorResponse("**", {
+            generateBody: () => {
+                throw "Error";
+            }
+        });
+
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: testPath_Fetch_1,
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorLastRequest().then((stats) => {
+            expect(stats).not.to.be.undefined;
+            expect(stats!.requestError).not.to.be.undefined;
+        });
+    });
+
+    describe("convertToString", () => {
+        const testObject = { key: "value" };
+        const xpectString = JSON.stringify(testObject);
+
+        let win: Cypress.AUTWindow;
+
+        before(() => {
+            cy.window().then((window) => {
+                win = window;
+            });
+        });
+
+        it("should convert Document to string", async () => {
+            const doc = new win.DOMParser().parseFromString(
+                "<root><child/></root>",
+                "application/xml"
+            );
+            const result = await convertToString(doc, win);
+            expect(result).to.equal("<root><child/></root>");
+        });
+
+        it("should return string as is", async () => {
+            const input = "test string";
+            const result = await convertToString(input, win);
+            expect(result).to.equal(input);
+        });
+
+        it("should convert Blob to string", async () => {
+            const blob = new win.Blob(["test blob"], { type: "text/plain" });
+            const result = await convertToString(blob, win);
+            expect(result).to.equal("test blob");
+        });
+
+        it("should convert FormData to JSON string", async () => {
+            const formData = new win.FormData();
+            formData.append("key", "value");
+            const result = await convertToString(formData, win);
+            expect(result).to.equal(xpectString);
+        });
+
+        it("should convert URLSearchParams to JSON string", async () => {
+            const params = new win.URLSearchParams(testObject);
+            const result = await convertToString(params, win);
+            expect(result).to.equal(xpectString);
+        });
+
+        it("should convert ArrayBuffer to string", async () => {
+            const buffer = new win.TextEncoder().encode("test buffer").buffer;
+            const result = await convertToString(buffer, win);
+            expect(result).to.equal("test buffer");
+        });
+
+        it("should convert object to JSON string", async () => {
+            const result = await convertToString(testObject as unknown as BodyInit, win);
+            expect(result).to.equal(xpectString);
+        });
+
+        it("should return empty string for null input", async () => {
+            const result = await convertToString(null, win);
+            expect(result).to.equal("");
+        });
+
+        it("should return empty string for undefined input", async () => {
+            const result = await convertToString(undefined, win);
+            expect(result).to.equal("");
+        });
     });
 });

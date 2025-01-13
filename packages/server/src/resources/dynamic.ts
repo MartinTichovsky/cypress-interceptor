@@ -221,6 +221,7 @@ const processEntry = (entry: DynamicRequest) => {
     const body = "body" in entry ? entry.body : undefined;
     const cancelIn = "cancelIn" in entry ? entry.cancelIn : undefined;
     const headers = "headers" in entry ? entry.headers : undefined;
+    const jsonResponse = ("jsonResponse" in entry ? entry.jsonResponse : undefined) ?? true;
     const method = "method" in entry ? entry.method : undefined;
     const requests = "requests" in entry ? entry.requests : undefined;
 
@@ -232,18 +233,24 @@ const processEntry = (entry: DynamicRequest) => {
         const startTime = performance.now();
         const controller = new AbortController();
 
-        fetch(url, {
+        const init = {
             body:
                 body && method === "POST"
                     ? createRequestBodyForFetch(body, entry.bodyFormat)
                     : undefined,
-            headers: {
-                "Content-Type": getContentType(isCrossDomainScriptFetch, entry.bodyFormat),
-                ...(headers ? headers : {})
-            },
+            headers: jsonResponse
+                ? {
+                      "Content-Type": getContentType(isCrossDomainScriptFetch, entry.bodyFormat),
+                      ...(headers ? headers : {})
+                  }
+                : {
+                      ...(headers ? headers : {})
+                  },
             method: method ?? "GET",
             signal: controller.signal
-        })
+        };
+        console.log(url);
+        (entry.fetchObjectInit ? fetch(new Request(new URL(url), init)) : fetch(url, init))
             .then(async (response) => {
                 const duration = performance.now() - startTime;
 
@@ -254,9 +261,10 @@ const processEntry = (entry: DynamicRequest) => {
                     divResponse.setAttribute("data-response-type", "body");
 
                     if (!entry.bigData) {
-                        divResponse.innerHTML = isCrossDomainScriptFetch
-                            ? await response.text()
-                            : JSON.stringify(await response.json());
+                        divResponse.innerHTML =
+                            isCrossDomainScriptFetch || !jsonResponse
+                                ? await response.text()
+                                : JSON.stringify(await response.json());
                     }
 
                     div.appendChild(divResponse);
@@ -318,9 +326,10 @@ const processEntry = (entry: DynamicRequest) => {
                 divResponse.setAttribute("data-response-type", "body");
 
                 if (!entry.bigData) {
-                    divResponse.innerHTML = isCrossDomainScriptFetch
-                        ? request.responseText
-                        : JSON.stringify(request.response);
+                    divResponse.innerHTML =
+                        isCrossDomainScriptFetch || !jsonResponse
+                            ? request.responseText
+                            : JSON.stringify(request.response);
                 }
 
                 div.appendChild(divResponse);
@@ -382,13 +391,17 @@ const processEntry = (entry: DynamicRequest) => {
                 break;
         }
 
+        request.onerror = (e) => {
+            console.error(e);
+        };
+
         request.open(method ?? "GET", url);
 
         Object.entries(sendHeaders).forEach(([key, value]) => {
             request.setRequestHeader(key, value);
         });
 
-        if (!isCrossDomainScriptFetch) {
+        if (!isCrossDomainScriptFetch && jsonResponse) {
             request.responseType = "json";
         }
 

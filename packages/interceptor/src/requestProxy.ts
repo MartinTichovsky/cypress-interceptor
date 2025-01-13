@@ -16,6 +16,12 @@ const emptyFunction = (..._args: unknown[]) => {
     //
 };
 
+export const emptyProxy = {
+    done: emptyFunction,
+    error: emptyFunction,
+    mock: undefined
+};
+
 export class RequestProxy {
     private _onCreate?: VoidFunction;
     private _requestProxyFunction?: RequestProxyFunction;
@@ -35,10 +41,6 @@ export class RequestProxy {
     async requestStart(request: IRequestInit, win: Cypress.AUTWindow, resourceType: IResourceType) {
         return this._requestProxyFunction
             ? await this._requestProxyFunction(request, win, resourceType)
-            : {
-                  done: emptyFunction,
-                  error: emptyFunction,
-                  mock: undefined
-              };
+            : emptyProxy;
     }
 }

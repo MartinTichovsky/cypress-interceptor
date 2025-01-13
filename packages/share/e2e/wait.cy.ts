@@ -162,6 +162,8 @@ describe("Wait For Requests", () => {
                 expect(stats[1].isPending).to.be.false;
                 expect(stats[1].requestError).to.be.undefined;
             });
+
+            cy.interceptorRequestCalls({ resourceType: "xhr" }).should("eq", 2);
         });
 
         it("Refresh during Fetch request", () => {
@@ -276,6 +278,8 @@ describe("Wait For Requests", () => {
                         cancelIn: duration / 2,
                         delay: 100,
                         duration,
+                        fetchObjectInit: true,
+                        jsonResponse: false,
                         method: "POST",
                         path: testPath_api_1,
                         type: "fetch"
@@ -283,6 +287,8 @@ describe("Wait For Requests", () => {
                     {
                         delay: 150,
                         duration,
+                        fetchObjectInit: true,
+                        jsonResponse: false,
                         method: "POST",
                         path: testPath_api_2,
                         type: "fetch"
@@ -291,6 +297,8 @@ describe("Wait For Requests", () => {
                         cancelIn: duration / 2,
                         delay: 100,
                         duration,
+                        fetchObjectInit: true,
+                        jsonResponse: false,
                         method: "POST",
                         path: testPath_api_3,
                         type: "xhr"
@@ -298,6 +306,8 @@ describe("Wait For Requests", () => {
                     {
                         delay: 150,
                         duration,
+                        fetchObjectInit: true,
+                        jsonResponse: false,
                         method: "POST",
                         path: testPath_api_4,
                         type: "xhr"
@@ -328,6 +338,10 @@ describe("Wait For Requests", () => {
                 expect(stats[1].requestError).to.be.undefined;
                 expect(stats[1].resourceType).to.eq("xhr");
             });
+
+            cy.interceptorRequestCalls({ resourceType: "fetch" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: "xhr" }).should("eq", 2);
+            cy.interceptorRequestCalls({ resourceType: ["fetch", "xhr"] }).should("eq", 4);
         });
     });
 
@@ -815,6 +829,9 @@ describe("Wait For Requests", () => {
                 expect(stats[1].isPending).to.be.false;
                 expect(stats[1].response).to.be.undefined;
             });
+
+            cy.interceptorRequestCalls({ method: "POST" }).should("eq", 1);
+            cy.interceptorRequestCalls({ method: "GET" }).should("eq", 1);
         });
     });
 

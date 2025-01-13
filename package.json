@@ -35,6 +35,7 @@
         "lint": "eslint .",
         "server": "npm run start -w cypress-interceptor-server",
         "test": "npm run cy:run -w cypress-interceptor-tests-latest",
+        "test:all": "npm run cy:run --workspaces --if-present",
         "tsc": "npm run tsc --workspaces"
     },
     "workspaces": [

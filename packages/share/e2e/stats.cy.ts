@@ -99,6 +99,8 @@ describe("Stats", () => {
                 expect(stats).not.to.be.undefined;
                 testStats(stats!);
             });
+
+            cy.interceptorRequestCalls({ resourceType }).should("eq", 1);
         });
     });
 });
