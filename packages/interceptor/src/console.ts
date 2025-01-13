@@ -1,40 +1,70 @@
-/* istanbul ignore file */
 import { getFilePath } from "./utils";
+
+/**
+ * The output log is a JSON.stringify of an array of the following type:
+ *
+ * - Console Type
+ * - The getTime() of the Date when the console was logged (for future investigation)
+ * - The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
+ * - The console output or the unhandled JavaScript error message
+ */
+export type ConsoleLog = [ConsoleLogType, DateTime, CurrentTime, unknown];
 
 export enum ConsoleLogType {
     ConsoleInfo = "console.info",
     ConsoleError = "console.error",
     ConsoleLog = "console.log",
     ConsoleWarn = "console.warn",
+    // this is equal to a unhandled JavaScript error
     Error = "error"
 }
 
-const getCurrentTime = () => {
+const getCurrentTime = (): [number, string] => {
     const currentTime = new Date();
 
-    return `${currentTime.toLocaleTimeString("en-GB", {
-        day: "numeric",
-        month: "numeric",
-        year: "numeric"
-    })}.${currentTime.getMilliseconds()}`;
+    return [
+        currentTime.getTime(),
+        `${currentTime.toLocaleTimeString("en-GB", {
+            day: "numeric",
+            month: "numeric",
+            year: "numeric"
+        })}.${currentTime.getMilliseconds()}`
+    ];
 };
 
 type CurrentTime = string;
 
-interface WatchTheConsole {
+interface CustomLog {
     /**
-     * Custom log for all successful tests
+     * The output directory where the console logs will be saved
      */
-    customLogs?: { outputDir: string; types: ConsoleLogType[] }[];
+    outputDir: string;
     /**
-     * Log only some types of the console output, if not privided, it
-     * logs all the console entries
+     * "If the type is not provided, it logs all console entries
      */
-    logOnlyType?: ConsoleLogType[];
+    types?: ConsoleLogType[];
 }
 
-export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) => {
-    let log: [ConsoleLogType, CurrentTime, string][] = [];
+type DateTime = number;
+
+/**
+ * Watch the console output and save it to a file if a test fails
+ *
+ * @param outputDir The output directory where the console logs will be saved
+ * @param logOnlyType Log only specific types of console output. If not provided, it logs all console entries.
+ */
+export function watchTheConsole(outputDir: string, logOnlyType?: ConsoleLogType[]): void;
+/**
+ * Watch the console output and save it to a file after the test
+ *
+ * @param options Log options
+ */
+export function watchTheConsole(options: CustomLog | CustomLog[]): void;
+export function watchTheConsole(
+    outputDirOrOptions: string | CustomLog | CustomLog[],
+    logOnlyType?: ConsoleLogType[]
+) {
+    let log: ConsoleLog[] = [];
 
     beforeEach(() => {
         cy.on(
@@ -53,13 +83,17 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
                 win._consoleLogRegistered = true;
 
                 win.addEventListener("error", (e: ErrorEvent) => {
-                    log.push([ConsoleLogType.Error, getCurrentTime(), e.error.stack]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.Error, dateTime, currentTime, e.error.stack]);
                 });
 
                 const originConsoleLog = win.console.log;
 
                 win.console.log = (...args) => {
-                    log.push([ConsoleLogType.ConsoleLog, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleLog, dateTime, currentTime, args.join(",")]);
 
                     originConsoleLog(...args);
                 };
@@ -67,7 +101,9 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
                 const originConsoleInfo = win.console.info;
 
                 win.console.info = (...args) => {
-                    log.push([ConsoleLogType.ConsoleInfo, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleInfo, dateTime, currentTime, args.join(",")]);
 
                     originConsoleInfo(...args);
                 };
@@ -75,7 +111,9 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
                 const originConsoleWarn = win.console.warn;
 
                 win.console.warn = (...args) => {
-                    log.push([ConsoleLogType.ConsoleWarn, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleWarn, dateTime, currentTime, args.join(",")]);
 
                     originConsoleWarn(...args);
                 };
@@ -83,7 +121,9 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
                 const originConsoleError = win.console.error;
 
                 win.console.error = (...args) => {
-                    log.push([ConsoleLogType.ConsoleError, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleError, dateTime, currentTime, args.join(",")]);
 
                     originConsoleError(...args);
                 };
@@ -91,14 +131,8 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
         );
     });
 
-    afterEach(function () {
-        if (this.currentTest?.state !== "failed") {
-            return;
-        }
-
-        const filteredLog = log.filter(
-            ([type]) => !options?.logOnlyType || options.logOnlyType.includes(type)
-        );
+    const writeFailed = (outputDir: string) => {
+        const filteredLog = log.filter(([type]) => !logOnlyType || logOnlyType.includes(type));
 
         if (filteredLog.length > 0) {
             cy.writeFile(
@@ -106,21 +140,37 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
                 JSON.stringify(filteredLog, undefined, 4)
             );
         }
-    });
-
-    const customLogs = options?.customLogs;
-
-    if (!customLogs) {
-        return;
-    }
+    };
 
     afterEach(function () {
-        for (const customLog of customLogs) {
-            if (log.some(([type]) => customLog.types.includes(type))) {
+        // the Cypress env is here to allow the test to fail for testing purposes
+        const testFailed =
+            this.currentTest?.state === "failed" || Cypress.env("__CONSOLE_FAIL_TEST__") === true;
+
+        if (testFailed && typeof outputDirOrOptions === "string") {
+            writeFailed(outputDirOrOptions);
+        }
+
+        if (typeof outputDirOrOptions === "string" || typeof outputDirOrOptions !== "object") {
+            return;
+        }
+
+        if (!Array.isArray(outputDirOrOptions)) {
+            outputDirOrOptions = [outputDirOrOptions];
+        }
+
+        for (const customLog of outputDirOrOptions) {
+            if (
+                log.some(([type]) =>
+                    customLog.types === undefined ? true : customLog.types.includes(type)
+                )
+            ) {
                 cy.writeFile(
                     getFilePath(undefined, customLog.outputDir, "console"),
                     JSON.stringify(
-                        log.filter(([type]) => customLog.types.includes(type)),
+                        log.filter(([type]) =>
+                            customLog.types === undefined ? true : customLog.types.includes(type)
+                        ),
                         undefined,
                         4
                     )
@@ -128,4 +178,4 @@ export const watchTheConsole = (outputDir: string, options?: WatchTheConsole) =>
             }
         }
     });
-};
+}

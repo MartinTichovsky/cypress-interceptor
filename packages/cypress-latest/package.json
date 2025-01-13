@@ -1,5 +1,5 @@
 {
-  "name": "cypress-interceptor-tests-13-latest",
+  "name": "cypress-interceptor-tests-latest",
   "version": "1.0.0",
   "scripts": {
     "cy:open": "cypress open --e2e --browser chrome",
@@ -10,7 +10,7 @@
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {
-    "cypress": "13.16.1"
+    "cypress": "13.17.0"
   },
   "private": true
 }

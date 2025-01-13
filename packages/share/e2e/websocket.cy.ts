@@ -1,8 +1,23 @@
-import { CallStackWebsocket } from "cypress-interceptor/src/websocketInterceptor";
+import { getFilePath } from "cypress-interceptor/src/utils";
+import { CallStackWebsocket } from "cypress-interceptor/src/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { createMatcher, fireRequest } from "../src/utils";
+
+function createOutputFileName(outputDir: string, fileName?: string) {
+    const type = "ws.stats";
+
+    return fileName
+        ? `${outputDir}/${fileName}.${type}.json`
+        : getFilePath(undefined, outputDir, type);
+}
+
+const outputDir = "_logs";
+
+before(() => {
+    cy.task("clearLogs", [outputDir]);
+});
 
 describe("Websocket", () => {
     describe("Match", () => {
@@ -187,7 +202,7 @@ describe("Websocket", () => {
             cy.visit(getDynamicUrl(config));
 
             // just for testing that it passes
-            cy.waitUntilWebsocketAction({ waitTimeout: 5000 });
+            cy.waitUntilWebsocketAction({ timeout: 5000 });
         });
 
         it("Default options - will not wait to the first action", () => {
@@ -275,7 +290,7 @@ describe("Websocket", () => {
 
             cy.waitUntilWebsocketAction(
                 { data: responseData, type: "onmessage" },
-                { waitTimeout: delay / 2 },
+                { timeout: delay / 2 },
                 errMessage
             );
 
@@ -290,7 +305,7 @@ describe("Websocket", () => {
 
             expectedErrorMessage = `${errMessage} (5000ms)`;
 
-            cy.waitUntilWebsocketAction({ waitTimeout: 5000 }, errMessage);
+            cy.waitUntilWebsocketAction({ timeout: 5000 }, errMessage);
 
             /* istanbul ignore next */
             cy.wrap(null).then(() => {
@@ -358,8 +373,6 @@ describe("Websocket", () => {
         ];
 
         it("Name auto generated", () => {
-            const outDir = "_logs/";
-
             cy.visit(getDynamicUrl(config));
 
             cy.waitUntilWebsocketAction({
@@ -369,11 +382,9 @@ describe("Websocket", () => {
             });
 
             cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outDir);
+                intereptor.writeStatsToLog(`${outputDir}/`);
 
-                cy.readFile(
-                    `${outDir}index.cy.ts (Websocket - Log stats to file - Name auto generated).ws.stats.json`
-                ).then((stats: CallStackWebsocket[]) => {
+                cy.readFile(createOutputFileName(outputDir)).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(6);
                     expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be.undefined;
                     expect(stats[2].data).not.to.be.empty;
@@ -390,7 +401,6 @@ describe("Websocket", () => {
 
         it("Strict name", () => {
             const fileName = "FILE_NAME_WS_STATS";
-            const outDir = "_logs";
 
             cy.visit(getDynamicUrl(config));
 
@@ -401,9 +411,9 @@ describe("Websocket", () => {
             });
 
             cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outDir, { fileName });
+                intereptor.writeStatsToLog(outputDir, { fileName });
 
-                cy.readFile(`${outDir}/${fileName}.ws.stats.json`).then(
+                cy.readFile(createOutputFileName(outputDir, fileName)).then(
                     (stats: CallStackWebsocket[]) => {
                         expect(stats.length).to.eq(6);
                         expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be
@@ -423,7 +433,6 @@ describe("Websocket", () => {
 
         it("Stats to file - matcher, filter, mapper", () => {
             const fileName = "FILE_NAME_WS_STATS_MATCH";
-            const outDir = "_logs";
 
             cy.visit(
                 getDynamicUrl([
@@ -459,16 +468,16 @@ describe("Websocket", () => {
                 }
             ]);
 
-            const filePath = `${outDir}/${fileName}.ws.stats.json`;
+            const filePath = createOutputFileName(outputDir, fileName);
 
             cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outDir, { fileName, prettyOutput: true });
+                intereptor.writeStatsToLog(outputDir, { fileName, prettyOutput: true });
 
                 cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(12);
                 });
 
-                intereptor.writeStatsToLog(outDir, { fileName, matcher: { protocols: "soap" } });
+                intereptor.writeStatsToLog(outputDir, { fileName, matcher: { protocols: "soap" } });
 
                 cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(6);
@@ -483,7 +492,7 @@ describe("Websocket", () => {
                     expect(stats[5].type).to.eq("onmessage");
                 });
 
-                intereptor.writeStatsToLog(outDir, {
+                intereptor.writeStatsToLog(outputDir, {
                     fileName,
                     matcher: { type: "onmessage", url: `**/${path1}` }
                 });
@@ -496,7 +505,7 @@ describe("Websocket", () => {
                     expect(stats[1].type).to.eq("onmessage");
                 });
 
-                intereptor.writeStatsToLog(outDir, {
+                intereptor.writeStatsToLog(outputDir, {
                     fileName,
                     filter: (callStack) => callStack.url.endsWith(path2)
                 });
@@ -506,7 +515,7 @@ describe("Websocket", () => {
                     expect(stats.every((entry) => entry.url.endsWith(path2)));
                 });
 
-                intereptor.writeStatsToLog(outDir, {
+                intereptor.writeStatsToLog(outputDir, {
                     fileName,
                     mapper: (callStack) => ({ type: callStack.type, url: callStack.url })
                 });
@@ -563,7 +572,7 @@ describe("Websocket", () => {
             }
         ]);
 
-        cy.stopTiming().should("be.gt", delay);
+        cy.stopTiming().should("be.gte", delay);
 
         cy.wsInterceptorLastRequest({ type: "close" }).then((entry) => {
             expect(entry).not.to.be.undefined;
@@ -610,7 +619,7 @@ describe("Websocket", () => {
             type: "onmessage"
         });
 
-        cy.stopTiming().should("be.gt", delay1 + delay2);
+        cy.stopTiming().should("be.gte", delay1 + delay2);
 
         cy.wsInterceptorStats().then((stats) => {
             expect(stats.length).to.eq(6);
@@ -657,7 +666,7 @@ describe("Websocket", () => {
             type: "onerror"
         });
 
-        cy.stopTiming().should("be.gt", delay);
+        cy.stopTiming().should("be.gte", delay);
 
         cy.wsInterceptorLastRequest({ type: "onerror" }).should("not.be.undefined");
     });
@@ -689,7 +698,7 @@ describe("Websocket", () => {
             type: "onmessage"
         });
 
-        cy.stopTiming().should("be.gt", delay1 + delay2);
+        cy.stopTiming().should("be.gte", delay1 + delay2);
 
         cy.wsInterceptorStats().then((stats) => {
             expect(stats.length).to.eq(4);
@@ -743,7 +752,7 @@ describe("Websocket", () => {
             type: "send"
         });
 
-        cy.stopTiming().should("be.gt", delay1 + delay2);
+        cy.stopTiming().should("be.gte", delay1 + delay2);
 
         cy.wsInterceptorStats().then((stats) => {
             expect(stats.length).to.eq(4);
@@ -825,35 +834,12 @@ describe("Websocket", () => {
             type: "send"
         });
 
-        cy.stopTiming().should("be.gt", delay1 + delay2);
+        cy.stopTiming().should("be.gte", delay1 + delay2);
 
         cy.wsInterceptorStats({ type: "send" }).then((stats) => {
             expect(stats.length).to.eq(4);
             expect(stats[stats.length - 2].data).to.eq(sendData1);
             expect(stats[stats.length - 1].data).to.eq(sendData2);
-        });
-    });
-
-    it("Set options", () => {
-        cy.visit(
-            getDynamicUrl([
-                {
-                    path: "some-path",
-                    type: "websocket"
-                }
-            ])
-        );
-
-        cy.wsInterceptor().then((interceptor) => {
-            expect(interceptor.debugIsEnabled).to.be.true;
-        });
-
-        cy.wsInterceptorOptions({ debug: false }).then((options) => {
-            expect(options).to.haveOwnProperty("debug", false);
-        });
-
-        cy.wsInterceptor().then((interceptor) => {
-            expect(interceptor.debugIsEnabled).to.be.false;
         });
     });
 });

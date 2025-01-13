@@ -4,6 +4,7 @@ node_modules
 **/cypress/screenshots
 **/cypress/videos
 lib
+_console*
 _logs
 _stats
 tsconfig.tsbuildinfo

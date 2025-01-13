@@ -1,1 +1,1 @@
-import "cypress-interceptor/src/interceptor";
+import "cypress-interceptor/src/Interceptor";

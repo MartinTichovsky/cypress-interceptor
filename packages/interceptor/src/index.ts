@@ -1,31 +1,16 @@
-import { Interceptor } from "./interceptor";
-import { RequestListener } from "./requestListener";
-import { createRequestProxy } from "./requestProxy";
+import { createRequestProxy } from "./createRequestProxy";
+import { Interceptor } from "./Interceptor";
+import { RequestProxy } from "./RequestProxy";
 
 const createCommands = () => {
     let timeStart: number | undefined = undefined;
     let timeStop: number | undefined = undefined;
 
-    const requestListener = new RequestListener();
-    const interceptor = new Interceptor(requestListener);
+    const requestProxy = new RequestProxy();
+    const interceptor = new Interceptor(requestProxy);
 
-    cy.on("window:before:load", createRequestProxy(requestListener));
+    cy.on("window:before:load", createRequestProxy(requestProxy));
 
-    cy.on("window:before:unload", () => {
-        requestListener.setCurrentState("window:before:unload");
-    });
-
-    cy.on("window:unload", () => {
-        requestListener.setCurrentState("window:unload");
-    });
-
-    cy.on("window:load", () => {
-        requestListener.setCurrentState("window:load");
-    });
-
-    Cypress.Commands.add("bypassInterceptorResponse", (routeMatcher, times) =>
-        interceptor.bypassRequest(routeMatcher, times)
-    );
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
@@ -69,9 +54,6 @@ beforeEach(() => {
 
 // afterEach(function () {
 //     cy.interceptor().then((interceptor) => {
-//         if (interceptor.debugIsEnabled) {
-//             interceptor.writeDebugToLog("./_logs");
-//         }
 //         // interceptor.writeStatsToLog("./_stats");
 //     });
 // });

@@ -3,7 +3,7 @@
   "version": "2.4.0",
   "description": "A helper for better Cypress testing; mocking, throttling and waiting for requests with advanced statistics",
   "devDependencies": {
-    "cypress": "13.16.1"
+    "cypress": "13.17.0"
   },
   "author": "Martin Tichovsky",
   "files": [
@@ -26,8 +26,5 @@
     "build:watch": "npm run build -- --watch",
     "tsc": "tsc --noEmit"
   },
-  "types": "lib/interceptor.d.ts",
-  "peerDependencies": {
-    "cypress": ">=13.0.0"
-  }
+  "types": "lib/interceptor.d.ts"
 }
