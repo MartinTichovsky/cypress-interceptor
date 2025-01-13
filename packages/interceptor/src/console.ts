@@ -1,6 +1,14 @@
 import { getFilePath } from "./utils";
 
-export type ConsoleLog = [ConsoleLogType, CurrentTime, string];
+/**
+ * The output log is a JSON.stringify of an array of the following type:
+ *
+ * - Console Type
+ * - The getTime() of the Date when the console was logged (for future investigation)
+ * - The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
+ * - The console output or the unhandled JavaScript error message
+ */
+export type ConsoleLog = [ConsoleLogType, DateTime, CurrentTime, unknown];
 
 export enum ConsoleLogType {
     ConsoleInfo = "console.info",
@@ -11,14 +19,17 @@ export enum ConsoleLogType {
     Error = "error"
 }
 
-const getCurrentTime = () => {
+const getCurrentTime = (): [number, string] => {
     const currentTime = new Date();
 
-    return `${currentTime.toLocaleTimeString("en-GB", {
-        day: "numeric",
-        month: "numeric",
-        year: "numeric"
-    })}.${currentTime.getMilliseconds()}`;
+    return [
+        currentTime.getTime(),
+        `${currentTime.toLocaleTimeString("en-GB", {
+            day: "numeric",
+            month: "numeric",
+            year: "numeric"
+        })}.${currentTime.getMilliseconds()}`
+    ];
 };
 
 type CurrentTime = string;
@@ -33,6 +44,8 @@ interface CustomLog {
      */
     types?: ConsoleLogType[];
 }
+
+type DateTime = number;
 
 /**
  * Watch the console output and save it to a file if a test fails
@@ -70,13 +83,17 @@ export function watchTheConsole(
                 win._consoleLogRegistered = true;
 
                 win.addEventListener("error", (e: ErrorEvent) => {
-                    log.push([ConsoleLogType.Error, getCurrentTime(), e.error.stack]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.Error, dateTime, currentTime, e.error.stack]);
                 });
 
                 const originConsoleLog = win.console.log;
 
                 win.console.log = (...args) => {
-                    log.push([ConsoleLogType.ConsoleLog, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleLog, dateTime, currentTime, args.join(",")]);
 
                     originConsoleLog(...args);
                 };
@@ -84,7 +101,9 @@ export function watchTheConsole(
                 const originConsoleInfo = win.console.info;
 
                 win.console.info = (...args) => {
-                    log.push([ConsoleLogType.ConsoleInfo, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleInfo, dateTime, currentTime, args.join(",")]);
 
                     originConsoleInfo(...args);
                 };
@@ -92,7 +111,9 @@ export function watchTheConsole(
                 const originConsoleWarn = win.console.warn;
 
                 win.console.warn = (...args) => {
-                    log.push([ConsoleLogType.ConsoleWarn, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleWarn, dateTime, currentTime, args.join(",")]);
 
                     originConsoleWarn(...args);
                 };
@@ -100,7 +121,9 @@ export function watchTheConsole(
                 const originConsoleError = win.console.error;
 
                 win.console.error = (...args) => {
-                    log.push([ConsoleLogType.ConsoleError, getCurrentTime(), args.join(",")]);
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push([ConsoleLogType.ConsoleError, dateTime, currentTime, args.join(",")]);
 
                     originConsoleError(...args);
                 };

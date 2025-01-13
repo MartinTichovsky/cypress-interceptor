@@ -1301,6 +1301,16 @@ function watchTheConsole(outputDir: string, logOnlyType?: ConsoleLogType[]): voi
  * @param options Log options
  */
 function watchTheConsole(options: CustomLog | CustomLog[]): void;
+
+/**
+ * The output log is a JSON.stringify of an array of the following type:
+ * 
+ * - Console Type
+ * - The getTime() of the Date when the console was logged (for future investigation)
+ * - The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
+ * - The console output or the unhandled JavaScript error message
+ */
+type ConsoleLog = [ConsoleLogType, DateTime, CurrentTime, unknown]
 ```
 
 ## Examples
