@@ -381,9 +381,7 @@ describe("Websocket", () => {
                 url: new RegExp(`${path1}$`, "i")
             });
 
-            cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(`${outputDir}/`);
-
+            cy.wsInterceptorStatsToLog(`${outputDir}/`).then(() => {
                 cy.readFile(createOutputFileName(outputDir)).then((stats: CallStackWebsocket[]) => {
                     expect(stats.length).to.eq(6);
                     expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be.undefined;
@@ -410,9 +408,7 @@ describe("Websocket", () => {
                 url: new RegExp(`${path1}$`, "i")
             });
 
-            cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outputDir, { fileName });
-
+            cy.wsInterceptorStatsToLog(outputDir, { fileName }).then(() => {
                 cy.readFile(createOutputFileName(outputDir, fileName)).then(
                     (stats: CallStackWebsocket[]) => {
                         expect(stats.length).to.eq(6);
@@ -470,67 +466,65 @@ describe("Websocket", () => {
 
             const filePath = createOutputFileName(outputDir, fileName);
 
-            cy.wsInterceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outputDir, { fileName, prettyOutput: true });
+            cy.wsInterceptorStatsToLog(outputDir, { fileName, prettyOutput: true });
 
-                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
-                    expect(stats.length).to.eq(12);
-                });
+            cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                expect(stats.length).to.eq(12);
+            });
 
-                intereptor.writeStatsToLog(outputDir, { fileName, matcher: { protocols: "soap" } });
+            cy.wsInterceptorStatsToLog(outputDir, { fileName, matcher: { protocols: "soap" } });
 
-                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
-                    expect(stats.length).to.eq(6);
-                    expect(stats.find((entry) => entry.url.endsWith(path2))).not.to.be.undefined;
-                    expect(stats[2].data).not.to.be.empty;
-                    expect(stats[2].type).to.eq("send");
-                    expect(stats[3].data).to.haveOwnProperty("data", responseData21);
-                    expect(stats[3].type).to.eq("onmessage");
-                    expect(stats[4].data).not.to.be.empty;
-                    expect(stats[4].type).to.eq("send");
-                    expect(stats[5].data).to.haveOwnProperty("data", responseData22);
-                    expect(stats[5].type).to.eq("onmessage");
-                });
+            cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                expect(stats.length).to.eq(6);
+                expect(stats.find((entry) => entry.url.endsWith(path2))).not.to.be.undefined;
+                expect(stats[2].data).not.to.be.empty;
+                expect(stats[2].type).to.eq("send");
+                expect(stats[3].data).to.haveOwnProperty("data", responseData21);
+                expect(stats[3].type).to.eq("onmessage");
+                expect(stats[4].data).not.to.be.empty;
+                expect(stats[4].type).to.eq("send");
+                expect(stats[5].data).to.haveOwnProperty("data", responseData22);
+                expect(stats[5].type).to.eq("onmessage");
+            });
 
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    matcher: { type: "onmessage", url: `**/${path1}` }
-                });
+            cy.wsInterceptorStatsToLog(outputDir, {
+                fileName,
+                matcher: { type: "onmessage", url: `**/${path1}` }
+            });
 
-                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
-                    expect(stats.length).to.eq(2);
-                    expect(stats[0].data).to.haveOwnProperty("data", responseData11);
-                    expect(stats[0].type).to.eq("onmessage");
-                    expect(stats[1].data).to.haveOwnProperty("data", responseData12);
-                    expect(stats[1].type).to.eq("onmessage");
-                });
+            cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                expect(stats.length).to.eq(2);
+                expect(stats[0].data).to.haveOwnProperty("data", responseData11);
+                expect(stats[0].type).to.eq("onmessage");
+                expect(stats[1].data).to.haveOwnProperty("data", responseData12);
+                expect(stats[1].type).to.eq("onmessage");
+            });
 
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    filter: (callStack) => callStack.url.endsWith(path2)
-                });
+            cy.wsInterceptorStatsToLog(outputDir, {
+                fileName,
+                filter: (callStack) => callStack.url.endsWith(path2)
+            });
 
-                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
-                    expect(stats.length).to.eq(6);
-                    expect(stats.every((entry) => entry.url.endsWith(path2)));
-                });
+            cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                expect(stats.length).to.eq(6);
+                expect(stats.every((entry) => entry.url.endsWith(path2)));
+            });
 
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    mapper: (callStack) => ({ type: callStack.type, url: callStack.url })
-                });
+            cy.wsInterceptorStatsToLog(outputDir, {
+                fileName,
+                mapper: (callStack) => ({ type: callStack.type, url: callStack.url })
+            });
 
-                cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
-                    expect(stats.length).to.eq(12);
-                    expect(
-                        stats.every(
-                            (entry) =>
-                                entry.type !== undefined &&
-                                entry.url !== undefined &&
-                                Object.keys(entry).length === 2
-                        )
-                    ).to.be.true;
-                });
+            cy.readFile(filePath).then((stats: CallStackWebsocket[]) => {
+                expect(stats.length).to.eq(12);
+                expect(
+                    stats.every(
+                        (entry) =>
+                            entry.type !== undefined &&
+                            entry.url !== undefined &&
+                            Object.keys(entry).length === 2
+                    )
+                ).to.be.true;
             });
         });
     });

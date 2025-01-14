@@ -4,6 +4,8 @@
 
 # Cypress Interceptor
 
+![Example of using](https://github.com/MartinTichovsky/__sources__/raw/master/ezgif-3-82de2705f1.gif)
+
 ## About
 
 Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to log all fetch or XHR requests, which can be analyzed in case of failure. It provides extended ways to log these statistics, including the ability to mock or throttle requests easily. Cypress Interceptor is better than `cy.intercept` because it can avoid issues, especially when using global request catch.
@@ -11,6 +13,7 @@ Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to l
 There is also a possibility to work with websocket. For more details, refer to the [websocket section](#websocket-interceptor).
 
 ## What's new
+- Added [`cy.wsInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
 - Complete rework, exclude `cy.intercept` as the main tool of logging, stabilizing runs, support all fetch and XHR body types
 - Added [watchTheConsole](#watchtheconsole) as the way of how to log console output and unhandled JavaScript errors
 - Added a possibility to filter and map stats when a test fails
@@ -37,12 +40,12 @@ There is also a possibility to work with websocket. For more details, refer to t
         - [cy.resetInterceptorWatch](#cyresetinterceptorwatch)
         - [cy.throttleInterceptorRequest](#cythrottleinterceptorrequest)
         - [cy.waitUntilRequestIsDone](#cywaituntilrequestisdone)
+        - [cy.writeInterceptorStatsToLog](#cywriteinterceptorstatstolog)
     - [Interceptor public methods](#interceptor-public-methods)
         - [callStack](#callstack)
         - [onRequestError](#onrequesterror)
         - [removeMock](#removemock)
         - [removeThrottle](#removethrottle)
-        - [writeStatsToLog](#writestatstolog)
     - [Interfaces](#interfaces)
     - [Useful tips](#useful-tips)
         - [Log on fail](#log-on-fail)
@@ -55,11 +58,11 @@ There is also a possibility to work with websocket. For more details, refer to t
         - [cy.wsInterceptor](#cywsinterceptor)
         - [cy.wsInterceptorLastRequest](#cywsinterceptorlastrequest)
         - [cy.wsInterceptorStats](#cywsinterceptorstats)
+        - [cy.wsInterceptorStatsToLog](#cywsinterceptorstatstolog)
         - [cy.wsResetInterceptorWatch](#cywsresetinterceptorwatch)
         - [cy.waitUntilWebsocketAction](#cywaituntilwebsocketaction)
     - [Websocket Interceptor public methods](#websocket-interceptor-public-methods)
         - [callStack](#callstack-1)
-        - [writeStatsToLog](#writestatstolog-1)
     - [Interfaces](#interfaces-1)
 - [Watch The Console](#watch-the-console)
     - [Implementation](#implementation)
@@ -193,6 +196,18 @@ waitUntilRequestIsDone: (
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
 ) => Chainable<Interceptor>;
+/**
+ * Write the logged requests' information (or those filtered by the provided route matcher) to a file
+ *
+ * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+ * @example cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+ * @example cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
+ * @example cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+ *
+ * @param outputDir The path for the output folder
+ * @param options Options
+ */
+writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions) => void;
 ```
 
 # Cypress environment variables
@@ -490,6 +505,8 @@ cy.throttleInterceptorRequest(
 
 ## cy.waitUntilRequestIsDone
 
+![Example of using](https://github.com/MartinTichovsky/__sources__/raw/master/ezgif-3-3992b366b5.gif)
+
 ```ts
 waitUntilRequestIsDone: (
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
@@ -537,6 +554,34 @@ cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", timeout: 2000
 cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", waitForNextRequest: 2000 });
 // wait until all cross-domain requests are finished but do not fail if there is none
 cy.waitUntilRequestIsDone({ crossDomain: true, enforceCheck: false });
+```
+
+## cy.writeInterceptorStatsToLog
+
+```ts
+writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions): Chainable<void>;
+```
+
+_References:_
+  - [`WriteStatsOptions`](#writestatsoptions)
+
+Write the logged requests' information (or those filtered by the provided route matcher) to a file. The file will contain the JSON.stringify of [`callStack`](#callstack).
+
+### Example
+
+```ts
+afterAll(() => {
+    // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
+    cy.writeInterceptorStatsToLog("./out");
+    // the output file will be "./out/file_name.stats.json"
+    cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" });
+    // write only "fetch" requests to the output file
+    cy.writeInterceptorStatsToLog("./out", { routeMatcher: { resourceType: "fetch" }});
+    // write only "POST" requests to the output file
+    cy.writeInterceptorStatsToLog("./out", { filter: (entry) => entry.method === "POST" });
+    // map the output that will be written to the output file
+    cy.writeInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) });
+});
 ```
 
 # Interceptor public methods
@@ -607,33 +652,7 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 
 ## writeStatsToLog
 
-```ts
-public writeStatsToLog(outputDir: string, options?: WriteStatsOptions): void;
-```
-
-_References:_
-  - [`WriteStatsOptions`](#writestatsoptions)
-
-Write the logged requests' information (or those filtered by the provided route matcher) to a file. The file will contain the JSON.stringify of [`callStack`](#callstack).
-
-### Example
-
-```ts
-afterAll(() => {
-    cy.interceptor().then(interceptor => {
-        // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
-        interceptor.writeStatsToLog("./out");
-        // the output file will be "./out/file_name.stats.json"
-        interceptor.writeStatsToLog("./out", { fileName: "file_name" });
-        // write only "fetch" requests to the output file
-        interceptor.writeStatsToLog("./out", { routeMatcher: { resourceType: "fetch" }});
-        // write only "POST" requests to the output file
-        interceptor.writeStatsToLog("./out", { filter: (entry) => entry.method === "POST" });
-        // map the output that will be written to the output file
-        interceptor.writeStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) });
-    });
-});
-```
+Same as [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog).
 
 # Interfaces
 
@@ -852,9 +871,7 @@ import "cypress-interceptor";
 
 afterEach(function () {
     if (this.currentTest?.state === "failed") {
-        cy.interceptor().then(interceptor => {
-            interceptor.writeStatsToLog("./mochawesome-report/_interceptor");
-        });
+        cy..writeInterceptorStatsToLog("./mochawesome-report/_interceptor");
     }
 });
 ```
@@ -863,10 +880,10 @@ The code above will write all requests to the output file. However, you can use 
 
 ```ts
 // the output will contain only ajax requests
-interceptor.writeStatsToLog("./mochawesome-report/_interceptor", { url: "**/my-api" });
+cy.writeInterceptorStatsToLog("./mochawesome-report/_interceptor", { url: "**/my-api" });
 ```
 
-See the method you can use: [`writeStatsToLog`](#writestatstolog).
+See the method you can use: [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog).
 
 ## Clean the videos for successful tests
 
@@ -933,6 +950,22 @@ wsInterceptorLastRequest: (
  * If none match, it returns an empty array.
  */
 wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+/**
+ * Write the logged requests' information (or those filtered by the provided matcher) to a file
+ *
+ * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+ * @example cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+ * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
+ * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
+ * @example cy.wsInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+ *
+ * @param outputDir A path for the output directory
+ * @param options Options
+ */
+wsInterceptorStatsToLog: (
+    outputDir: string,
+    options?: WriteStatsOptions
+) => Chainable<void>;
 /**
  * Reset the the Websocket Interceptor's watch
  */
@@ -1042,6 +1075,35 @@ cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
     expect(stats.length).to.eq(2);
     expect(stats[0].data).to.haveOwnProperty("data", "some response 1");
     expect(stats[1].data).to.haveOwnProperty("data", "some response 2");
+});
+```
+
+## cy.wsInterceptorStatsToLog
+
+
+```ts
+wsInterceptorStatsToLog: (outputDir: string,options?: WriteStatsOptions) => Chainable<void>;
+```
+
+_References:_
+  - [`WriteStatsOptions`](#writestatsoptions-1)
+
+Write the logged requests' information (or those filtered by the provided matcher) to a file. The file will contain the JSON.stringify of [`callStack`](#callstack-1).
+
+### Example
+
+```ts
+afterAll(() => {
+    // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
+    cy.wsInterceptorStatsToLog("./out");
+    // the output file will be "./out/file_name.stats.json"
+    cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" });
+    // write only stats for a specific URL to the output file
+    cy.wsInterceptorStatsToLog("./out", { matcher: { url: "**/some-url" } });
+        // write only "onmessage" actions to the output file
+    cy.wsInterceptorStatsToLog("./out", { filter: (entry) => entry.type === "onmessage" });
+    // map the output that will be written to the output file
+    cy.wsInterceptorStatsToLog("./out", { mapper: (entry) => ({ type: entry.type, url: entry.url }) });
 });
 ```
 
@@ -1160,33 +1222,7 @@ Same as [`cy.waitUntilWebsocketAction`](#cywaituntilwebsocketaction).
 
 ## writeStatsToLog
 
-```ts
-writeStatsToLog(outputDir: string, options?: WriteStatsOptions): void;
-```
-
-_References:_
-  - [`WriteStatsOptions`](#writestatsoptions-1)
-
-Write the logged requests' information (or those filtered by the provided matcher) to a file. The file will contain the JSON.stringify of [`callStack`](#callstack-1).
-
-### Example
-
-```ts
-afterAll(() => {
-    cy.wsInterceptor().then(interceptor => {
-        // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
-        interceptor.writeStatsToLog("./out");
-        // the output file will be "./out/file_name.stats.json"
-        interceptor.writeStatsToLog("./out", { fileName: "file_name" });
-        // write only stats for a specific URL to the output file
-        interceptor.writeStatsToLog("./out", { matcher: { url: "**/some-url" } });
-         // write only "onmessage" actions to the output file
-        interceptor.writeStatsToLog("./out", { filter: (entry) => entry.type === "onmessage" });
-        // map the output that will be written to the output file
-        interceptor.writeStatsToLog("./out", { mapper: (entry) => ({ type: entry.type, url: entry.url }) });
-    });
-});
-```
+Same as [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog).
 
 # Interfaces
 

@@ -9,6 +9,7 @@ interface Ref {
 }
 
 const cypressFailEnvName = "__CONSOLE_FAIL_TEST__";
+const invalidDate = new Date("").toString();
 const staticUrl = generateUrl("public/index.html");
 const outputDir = "_console";
 
@@ -56,7 +57,7 @@ const createTestWithFail = (ref: Ref, logQueue: [ConsoleLogType, string][]) => {
 
     it("Visit the page, create some console logs and fail intentionally", () => {
         cy.visit(staticUrl);
-        ref.outputFile = createOutputFileName(outputDir);
+        ref.outputFile = createOutputFileName("");
 
         createConsoleLog(logQueue);
 
@@ -93,12 +94,11 @@ describe("Log on Fail", () => {
     createTestWithFail(ref, logQueue);
 
     it("Should create a file with all console types from the previous test", () => {
-        expect(ref.outputFile).not.to.be.undefined;
+        const outputFile = `${outputDir}${ref.outputFile}`;
 
-        cy.readFile(ref.outputFile!).then((log: ConsoleLog[]) => {
-            console.log(log);
-            const invalidDate = new Date("").toString();
+        expect(outputFile).not.to.be.undefined;
 
+        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(logQueue.length + 1);
             expect(log[0][0]).to.equal(ConsoleLogType.Error);
             expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
@@ -146,11 +146,11 @@ describe("Log on Fail", () => {
     createTestWithFail(ref, logQueue);
 
     it("Should create a file with one console entry from the previous test", () => {
-        expect(ref.outputFile).not.to.be.undefined;
+        const outputFile = `${outputDir}${ref.outputFile}`;
 
-        cy.readFile(ref.outputFile!).then((log: ConsoleLog[]) => {
-            const invalidDate = new Date("").toString();
+        expect(outputFile).not.to.be.undefined;
 
+        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(1);
             expect(log[0][0]).to.equal(ConsoleLogType.ConsoleError);
             expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
@@ -182,11 +182,11 @@ describe("Log on Fail", () => {
     createTestWithFail(ref, logQueue);
 
     it("Should create a file with multiple console log types from the previous test", () => {
-        expect(ref.outputFile).not.to.be.undefined;
+        const outputFile = `${outputDir}${ref.outputFile}`;
 
-        cy.readFile(ref.outputFile!).then((log: ConsoleLog[]) => {
-            const invalidDate = new Date("").toString();
+        expect(outputFile).not.to.be.undefined;
 
+        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(2);
             expect(log[0][0]).to.equal(ConsoleLogType.ConsoleWarn);
             expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
@@ -221,9 +221,11 @@ describe("Log on Fail", () => {
     createTestWithFail(ref, logQueue);
 
     it("Should not create any file from the previous test", () => {
-        expect(ref.outputFile).not.to.be.undefined;
+        const outputFile = `${outputDir}${ref.outputFile}`;
 
-        cy.task("doesFileExist", ref.outputFile).should("be.false");
+        expect(outputFile).not.to.be.undefined;
+
+        cy.task("doesFileExist", outputFile).should("be.false");
     });
 });
 
@@ -293,8 +295,6 @@ describe("Custom log", () => {
 
     it("Should create a file with console error types", () => {
         cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
-            const invalidDate = new Date("").toString();
-
             expect(log.length).to.equal(2);
             expect(log[0][0]).to.equal(ConsoleLogType.ConsoleError);
             expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
@@ -358,8 +358,6 @@ describe("Custom log", () => {
     });
 
     it("Should create a file with console error types", () => {
-        const invalidDate = new Date("").toString();
-
         cy.readFile(outputFileName1).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(1);
             expect(log[0][0]).to.equal(ConsoleLogType.Error);
@@ -410,6 +408,85 @@ describe("Custom log", () => {
             expect(new Date(log[5][1]).toString()).not.to.equal(invalidDate);
             expect(log[5][2]).to.be.a("string").and.not.to.be.empty;
             expect(log[5][3]).to.equal(logQueue[4][1]);
+        });
+    });
+});
+
+describe("Mutliple use", () => {
+    const outputDir1 = "_console_1";
+    const outputDir2 = "_console_2";
+
+    // for failures
+    watchTheConsole(outputDir1);
+
+    // for all
+    watchTheConsole([
+        {
+            outputDir: outputDir2,
+            types: [ConsoleLogType.ConsoleLog]
+        }
+    ]);
+
+    const logQueue: [ConsoleLogType, string][] = [
+        [ConsoleLogType.ConsoleLog, "ConsoleLog"],
+        [ConsoleLogType.ConsoleError, "ConsoleError 1"],
+        [ConsoleLogType.ConsoleInfo, "ConsoleInfo"],
+        [ConsoleLogType.ConsoleError, "ConsoleError 2"],
+        [ConsoleLogType.ConsoleWarn, "ConsoleInfo"]
+    ];
+
+    const ref: Ref = {
+        outputFile: undefined,
+        skipError: undefined
+    };
+
+    before(() => {
+        cy.task("clearLogs", [outputDir1, outputDir2]);
+    });
+
+    createTestWithFail(ref, logQueue);
+
+    it("Should create a file with console error types", () => {
+        const outputFile1 = `${outputDir1}${ref.outputFile}`;
+        const outputFile2 = `${outputDir2}${ref.outputFile}`;
+
+        cy.task("doesFileExist", outputFile1).should("be.true");
+        cy.task("doesFileExist", outputFile2).should("be.true");
+
+        cy.readFile(outputFile1).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(logQueue.length + 1);
+            expect(log[0][0]).to.equal(ConsoleLogType.Error);
+            expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
+            expect(log[0][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[0][3]).to.be.a("string");
+            expect(log[1][0]).to.equal(ConsoleLogType.ConsoleLog);
+            expect(new Date(log[1][1]).toString()).not.to.equal(invalidDate);
+            expect(log[1][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[1][3]).to.equal(logQueue[0][1]);
+            expect(log[2][0]).to.equal(ConsoleLogType.ConsoleError);
+            expect(new Date(log[2][1]).toString()).not.to.equal(invalidDate);
+            expect(log[2][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[2][3]).to.equal(logQueue[1][1]);
+            expect(log[3][0]).to.equal(ConsoleLogType.ConsoleInfo);
+            expect(new Date(log[3][1]).toString()).not.to.equal(invalidDate);
+            expect(log[3][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[3][3]).to.equal(logQueue[2][1]);
+            expect(log[4][0]).to.equal(ConsoleLogType.ConsoleError);
+            expect(new Date(log[4][1]).toString()).not.to.equal(invalidDate);
+            expect(log[4][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[4][3]).to.equal(logQueue[3][1]);
+            expect(log[5][0]).to.equal(ConsoleLogType.ConsoleWarn);
+            expect(new Date(log[5][1]).toString()).not.to.equal(invalidDate);
+            expect(log[5][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[5][3]).to.equal(logQueue[4][1]);
+        });
+
+        cy.readFile(outputFile2).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(1);
+            expect(log[0][0]).to.equal(ConsoleLogType.ConsoleLog);
+            expect(new Date(log[0][1]).toString()).not.to.equal(invalidDate);
+            expect(log[0][2]).to.be.a("string").and.not.to.be.empty;
+            expect(log[0][3]).to.equal(logQueue[0][1]);
         });
     });
 });

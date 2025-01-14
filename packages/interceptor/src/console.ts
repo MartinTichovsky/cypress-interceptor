@@ -67,68 +67,55 @@ export function watchTheConsole(
     let log: ConsoleLog[] = [];
 
     beforeEach(() => {
-        cy.on(
-            "window:before:load",
-            (
-                win: Cypress.AUTWindow & {
-                    _consoleLogRegistered: boolean;
-                }
-            ) => {
-                log = [];
+        cy.on("window:before:load", (win: Cypress.AUTWindow) => {
+            log = [];
 
-                if (win._consoleLogRegistered) {
-                    return;
-                }
+            win.addEventListener("error", (e: ErrorEvent) => {
+                const [dateTime, currentTime] = getCurrentTime();
 
-                win._consoleLogRegistered = true;
+                log.push([ConsoleLogType.Error, dateTime, currentTime, e.error.stack]);
+            });
 
-                win.addEventListener("error", (e: ErrorEvent) => {
-                    const [dateTime, currentTime] = getCurrentTime();
+            const originConsoleLog = win.console.log;
 
-                    log.push([ConsoleLogType.Error, dateTime, currentTime, e.error.stack]);
-                });
+            win.console.log = (...args) => {
+                const [dateTime, currentTime] = getCurrentTime();
 
-                const originConsoleLog = win.console.log;
+                log.push([ConsoleLogType.ConsoleLog, dateTime, currentTime, args.join(",")]);
 
-                win.console.log = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
+                originConsoleLog(...args);
+            };
 
-                    log.push([ConsoleLogType.ConsoleLog, dateTime, currentTime, args.join(",")]);
+            const originConsoleInfo = win.console.info;
 
-                    originConsoleLog(...args);
-                };
+            win.console.info = (...args) => {
+                const [dateTime, currentTime] = getCurrentTime();
 
-                const originConsoleInfo = win.console.info;
+                log.push([ConsoleLogType.ConsoleInfo, dateTime, currentTime, args.join(",")]);
 
-                win.console.info = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
+                originConsoleInfo(...args);
+            };
 
-                    log.push([ConsoleLogType.ConsoleInfo, dateTime, currentTime, args.join(",")]);
+            const originConsoleWarn = win.console.warn;
 
-                    originConsoleInfo(...args);
-                };
+            win.console.warn = (...args) => {
+                const [dateTime, currentTime] = getCurrentTime();
 
-                const originConsoleWarn = win.console.warn;
+                log.push([ConsoleLogType.ConsoleWarn, dateTime, currentTime, args.join(",")]);
 
-                win.console.warn = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
+                originConsoleWarn(...args);
+            };
 
-                    log.push([ConsoleLogType.ConsoleWarn, dateTime, currentTime, args.join(",")]);
+            const originConsoleError = win.console.error;
 
-                    originConsoleWarn(...args);
-                };
+            win.console.error = (...args) => {
+                const [dateTime, currentTime] = getCurrentTime();
 
-                const originConsoleError = win.console.error;
+                log.push([ConsoleLogType.ConsoleError, dateTime, currentTime, args.join(",")]);
 
-                win.console.error = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
-
-                    log.push([ConsoleLogType.ConsoleError, dateTime, currentTime, args.join(",")]);
-
-                    originConsoleError(...args);
-                };
-            }
-        );
+                originConsoleError(...args);
+            };
+        });
     });
 
     const writeFailed = (outputDir: string) => {

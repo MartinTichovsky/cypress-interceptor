@@ -16,6 +16,9 @@ const createCommands = () => {
     Cypress.Commands.add("wsInterceptorStats", (matcher) =>
         cy.wrap(websocketInterceptor.getStats(matcher))
     );
+    Cypress.Commands.add("wsInterceptorStatsToLog", (outputDir, options) =>
+        cy.wrap(websocketInterceptor.writeStatsToLog(outputDir, options))
+    );
     Cypress.Commands.add("wsResetInterceptorWatch", () => websocketInterceptor.resetWatch());
     Cypress.Commands.add("waitUntilWebsocketAction", (...args) =>
         websocketInterceptor.waitUntilWebsocketAction(
@@ -31,7 +34,5 @@ beforeEach(() => {
 // FOR DEBUG
 
 // afterEach(function () {
-//     cy.wsInterceptor().then((interceptor) => {
-//         interceptor.writeStatsToLog("./_stats");
-//     });
+//     cy.wsInterceptorStatsToLog("./_stats");
 // });

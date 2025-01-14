@@ -36,6 +36,22 @@ declare global {
              */
             wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
             /**
+             * Write the logged requests' information (or those filtered by the provided matcher) to a file
+             *
+             * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+             * @example cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+             * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
+             * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
+             * @example cy.wsInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+             *
+             * @param outputDir A path for the output directory
+             * @param options Options
+             */
+            wsInterceptorStatsToLog: (
+                outputDir: string,
+                options?: WriteStatsOptions
+            ) => Chainable<void>;
+            /**
              * Reset the the Websocket Interceptor's watch
              */
             wsResetInterceptorWatch: VoidFunction;
@@ -346,11 +362,11 @@ export class WebsocketInterceptor {
     /**
      * Write the logged requests' information (or those filtered by the provided matcher) to a file
      *
-     * @example wsInterceptor.writeStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
-     * @example wsInterceptor.writeStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
-     * @example wsInterceptor.writeStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
-     * @example wsInterceptor.writeStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
-     * @example wsInterceptor.writeStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+     * @example writeStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+     * @example writeStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+     * @example writeStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
+     * @example writeStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
+     * @example writeStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
      *
      * @param outputDir A path for the output directory
      * @param options Options
