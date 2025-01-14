@@ -131,6 +131,21 @@ declare global {
                 stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
                 errorMessage?: string
             ) => Chainable<Interceptor>;
+            /**
+             * Write the logged requests' information (or those filtered by the provided route matcher) to a file
+             *
+             * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+             * @example cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+             * @example cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
+             * @example cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+             *
+             * @param outputDir The path for the output folder
+             * @param options Options
+             */
+            writeInterceptorStatsToLog: (
+                outputDir: string,
+                options?: WriteStatsOptions
+            ) => Chainable<void>;
         }
     }
 }
@@ -667,10 +682,10 @@ export class Interceptor {
     /**
      * Write the logged requests' information (or those filtered by the provided route matcher) to a file
      *
-     * @example interceptor.writeStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
-     * @example interceptor.writeStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
-     * @example interceptor.writeStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
-     * @example interceptor.writeStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+     * @example writeStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+     * @example writeStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+     * @example writeStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
+     * @example writeStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
      *
      * @param outputDir The path for the output folder
      * @param options Options

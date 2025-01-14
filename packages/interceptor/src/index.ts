@@ -44,6 +44,9 @@ const createCommands = () => {
     Cypress.Commands.add("waitUntilRequestIsDone", (stringMatcherOrOptions, errorMessage) =>
         interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
     );
+    Cypress.Commands.add("writeInterceptorStatsToLog", (outputDir, options) =>
+        cy.wrap(interceptor.writeStatsToLog(outputDir, options))
+    );
 };
 
 beforeEach(() => {
@@ -53,7 +56,5 @@ beforeEach(() => {
 // FOR DEBUG
 
 // afterEach(function () {
-//     cy.interceptor().then((interceptor) => {
-//         // interceptor.writeStatsToLog("./_stats");
-//     });
+//     cy.writeInterceptorStatsToLog("./_stats");
 // });

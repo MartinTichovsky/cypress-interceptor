@@ -43,9 +43,7 @@ describe("Custom", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptor().then((intereptor) => {
-            intereptor.writeStatsToLog(`${outputDir}/`);
-
+        cy.writeInterceptorStatsToLog(`${outputDir}/`).then(() => {
             cy.readFile(createOutputFileName(outputDir)).then((stats: CallStack[]) => {
                 expect(stats.length > 0).to.be.true;
                 expect(
@@ -71,9 +69,7 @@ describe("Custom", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptor().then((intereptor) => {
-            intereptor.writeStatsToLog(outputDir, { fileName });
-
+        cy.writeInterceptorStatsToLog(outputDir, { fileName }).then(() => {
             cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
                 expect(stats.length > 0).to.be.true;
                 expect(
@@ -147,101 +143,84 @@ describe("Custom", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.interceptor().then((intereptor) => {
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    prettyOutput: true
+            cy.writeInterceptorStatsToLog(outputDir, {
+                fileName,
+                prettyOutput: true
+            });
+
+            cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(2);
+            });
+
+            cy.writeInterceptorStatsToLog(outputDir, {
+                fileName,
+                prettyOutput: true,
+                routeMatcher: { resourceType }
+            });
+
+            cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(2);
+                expect(stats.every((entry) => entry.resourceType === resourceType)).to.be.true;
+                Object.entries(testPath_Fetch1_Headers).every(([key, value]) => {
+                    expect(stats[0].request.headers[key]).to.eq(value);
                 });
-
-                cy.readFile(createOutputFileName(outputDir, fileName)).then(
-                    (stats: CallStack[]) => {
-                        expect(stats.length).to.eq(2);
-                    }
-                );
-
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    prettyOutput: true,
-                    routeMatcher: { resourceType }
+                Object.entries(testPath_Fetch2_Headers).every(([key, value]) => {
+                    expect(stats[1].request.headers[key]).to.eq(value);
                 });
-
-                cy.readFile(createOutputFileName(outputDir, fileName)).then(
-                    (stats: CallStack[]) => {
-                        expect(stats.length).to.eq(2);
-                        expect(stats.every((entry) => entry.resourceType === resourceType)).to.be
-                            .true;
-                        Object.entries(testPath_Fetch1_Headers).every(([key, value]) => {
-                            expect(stats[0].request.headers[key]).to.eq(value);
-                        });
-                        Object.entries(testPath_Fetch2_Headers).every(([key, value]) => {
-                            expect(stats[1].request.headers[key]).to.eq(value);
-                        });
-                        expect(stats[0].request.body).to.eq(
-                            convertToRequestBody(requestBody(testPath_Fetch1), bodyFormat)
-                        );
-                        expect(stats[1].request.body).to.eq("");
-                        expect(stats[1].request.query).to.deep.eq({
-                            ...requestQuery(testPath_Fetch2),
-                            path: testPath_Fetch2,
-                            responseBody: JSON.stringify(responseBody(testPath_Fetch2))
-                        });
-                        expect(stats[0].response!.body).to.eq(
-                            JSON.stringify(responseBody(testPath_Fetch1))
-                        );
-                        expect(stats[1].response!.body).to.eq(
-                            JSON.stringify(responseBody(testPath_Fetch2))
-                        );
-                        expect(Object.entries(stats[0].response?.headers ?? {}).length).to.be.above(
-                            0
-                        );
-                        expect(Object.entries(stats[1].response?.headers ?? {}).length).to.be.above(
-                            2
-                        );
-                    }
+                expect(stats[0].request.body).to.eq(
+                    convertToRequestBody(requestBody(testPath_Fetch1), bodyFormat)
                 );
-
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    routeMatcher: { method: "GET", resourceType: [resourceType] }
+                expect(stats[1].request.body).to.eq("");
+                expect(stats[1].request.query).to.deep.eq({
+                    ...requestQuery(testPath_Fetch2),
+                    path: testPath_Fetch2,
+                    responseBody: JSON.stringify(responseBody(testPath_Fetch2))
                 });
-
-                cy.readFile(createOutputFileName(outputDir, fileName)).then(
-                    (stats: CallStack[]) => {
-                        expect(stats.length).to.eq(1);
-                        expect(stats.every((entry) => entry.request.method === "GET")).to.be.true;
-                    }
+                expect(stats[0].response!.body).to.eq(
+                    JSON.stringify(responseBody(testPath_Fetch1))
                 );
-
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    filter: (callStack) => callStack.url.pathname.endsWith(testPath_Fetch1)
-                });
-
-                cy.readFile(createOutputFileName(outputDir, fileName)).then(
-                    (stats: CallStack[]) => {
-                        expect(stats.length).to.eq(1);
-                        expect(new URL(stats[0].url).pathname.endsWith(testPath_Fetch1)).to.be.true;
-                    }
+                expect(stats[1].response!.body).to.eq(
+                    JSON.stringify(responseBody(testPath_Fetch2))
                 );
+                expect(Object.entries(stats[0].response?.headers ?? {}).length).to.be.above(0);
+                expect(Object.entries(stats[1].response?.headers ?? {}).length).to.be.above(2);
+            });
 
-                intereptor.writeStatsToLog(outputDir, {
-                    fileName,
-                    mapper: (callStack) => ({ isPending: callStack.isPending, url: callStack.url })
-                });
+            cy.writeInterceptorStatsToLog(outputDir, {
+                fileName,
+                routeMatcher: { method: "GET", resourceType: [resourceType] }
+            });
 
-                cy.readFile(createOutputFileName(outputDir, fileName)).then(
-                    (stats: CallStack[]) => {
-                        expect(stats.length).to.eq(2);
-                        expect(
-                            stats.every(
-                                (entry) =>
-                                    entry.isPending === false &&
-                                    entry.url !== undefined &&
-                                    Object.keys(entry).length === 2
-                            )
-                        ).to.be.true;
-                    }
-                );
+            cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(1);
+                expect(stats.every((entry) => entry.request.method === "GET")).to.be.true;
+            });
+
+            cy.writeInterceptorStatsToLog(outputDir, {
+                fileName,
+                filter: (callStack) => callStack.url.pathname.endsWith(testPath_Fetch1)
+            });
+
+            cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(1);
+                expect(new URL(stats[0].url).pathname.endsWith(testPath_Fetch1)).to.be.true;
+            });
+
+            cy.writeInterceptorStatsToLog(outputDir, {
+                fileName,
+                mapper: (callStack) => ({ isPending: callStack.isPending, url: callStack.url })
+            });
+
+            cy.readFile(createOutputFileName(outputDir, fileName)).then((stats: CallStack[]) => {
+                expect(stats.length).to.eq(2);
+                expect(
+                    stats.every(
+                        (entry) =>
+                            entry.isPending === false &&
+                            entry.url !== undefined &&
+                            Object.keys(entry).length === 2
+                    )
+                ).to.be.true;
             });
         }
     );
@@ -260,9 +239,7 @@ describe("Custom", () => {
 
         cy.waitUntilRequestIsDone();
 
-        cy.interceptor().then((intereptor) => {
-            intereptor.writeStatsToLog(outputDir);
-
+        cy.writeInterceptorStatsToLog(outputDir).then(() => {
             const fileName = createOutputFileName(outputDir);
 
             expect(fileName).to.have.length.be.lte(255);
