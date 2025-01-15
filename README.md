@@ -13,7 +13,7 @@ Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to l
 There is also a possibility to work with websocket. For more details, refer to the [websocket section](#websocket-interceptor).
 
 ## What's new
-- Added [`cy.wsInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
+- Added [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
 - Complete rework, exclude `cy.intercept` as the main tool of logging, stabilizing runs, support all fetch and XHR body types
 - Added [watchTheConsole](#watchtheconsole) as the way of how to log console output and unhandled JavaScript errors
 - Added a possibility to filter and map stats when a test fails
