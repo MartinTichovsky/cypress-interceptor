@@ -12,10 +12,15 @@ Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to l
 
 There is also a possibility to work with websocket. For more details, refer to the [websocket section](#websocket-interceptor).
 
+## Motivation
+
+This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+
 ## What's new
+- The improved [Watch The Console](#watch-the-console) now safely logs objects and functions, with an added filtering option
 - Added [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
 - Complete rework, exclude `cy.intercept` as the main tool of logging, stabilizing runs, support all fetch and XHR body types
-- Added [watchTheConsole](#watchtheconsole) as the way of how to log console output and unhandled JavaScript errors
+- Added [Watch The Console](#watch-the-console) as the way of how to log console output and unhandled JavaScript errors
 - Added a possibility to filter and map stats when a test fails
 - Added a possibility to bypass the response
 - Work with canceled and aborted requests
@@ -69,6 +74,7 @@ There is also a possibility to work with websocket. For more details, refer to t
     - [Log on fail](#log-on-fail-1)
     - [Log on failure with type filtering](#log-on-failure-with-type-filtering)
     - [Custom log](#custom-log)
+    - [Filtering](#filtering)
     - [Combination](#combination)
 
 ## Getting started
@@ -871,7 +877,7 @@ import "cypress-interceptor";
 
 afterEach(function () {
     if (this.currentTest?.state === "failed") {
-        cy..writeInterceptorStatsToLog("./mochawesome-report/_interceptor");
+        cy.writeInterceptorStatsToLog("./mochawesome-report/_interceptor");
     }
 });
 ```
@@ -1338,15 +1344,24 @@ function watchTheConsole(outputDir: string, logOnlyType?: ConsoleLogType[]): voi
  */
 function watchTheConsole(options: CustomLog | CustomLog[]): void;
 
-/**
- * The output log is a JSON.stringify of an array of the following type:
- * 
- * - Console Type
- * - The getTime() of the Date when the console was logged (for future investigation)
- * - The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
- * - The console output or the unhandled JavaScript error message
- */
-type ConsoleLog = [ConsoleLogType, DateTime, CurrentTime, unknown]
+type ConsoleLog = {
+    /**
+     * The console output or the unhandled JavaScript error message and stack trace
+     */
+    args: unknown[];
+    /**
+     * The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking
+     */
+    currentTime: CurrentTime;
+    /**
+     * The getTime() of the Date when the console was logged (for future investigation)
+     */
+    dateTime: DateTime;
+    /**
+     * Console Type
+     */
+    type: ConsoleLogType;
+};
 ```
 
 ## Examples
@@ -1387,6 +1402,16 @@ watchTheConsole([
         types: [ConsoleLogType.ConsoleWarn]
     }
 ]);
+```
+
+### Filtering
+
+```ts
+// Filter all console output to include only entries starting with "Custom log:"
+watchTheConsole({
+    filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:"),
+    outputDir: "_console"
+});
 ```
 
 ### Combination

@@ -1,14 +1,23 @@
 import { getFilePath } from "./utils";
 
-/**
- * The output log is a JSON.stringify of an array of the following type:
- *
- * - Console Type
- * - The getTime() of the Date when the console was logged (for future investigation)
- * - The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
- * - The console output or the unhandled JavaScript error message
- */
-export type ConsoleLog = [ConsoleLogType, DateTime, CurrentTime, unknown];
+export type ConsoleLog = {
+    /**
+     * The console output or the unhandled JavaScript error message and stack trace
+     */
+    args: unknown[];
+    /**
+     * The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking
+     */
+    currentTime: CurrentTime;
+    /**
+     * The getTime() of the Date when the console was logged (for future investigation)
+     */
+    dateTime: DateTime;
+    /**
+     * Console Type
+     */
+    type: ConsoleLogType;
+};
 
 export enum ConsoleLogType {
     ConsoleInfo = "console.info",
@@ -35,6 +44,7 @@ const getCurrentTime = (): [number, string] => {
 type CurrentTime = string;
 
 interface CustomLog {
+    filter?: (type: ConsoleLogType, ...args: unknown[]) => boolean;
     /**
      * The output directory where the console logs will be saved
      */
@@ -46,6 +56,30 @@ interface CustomLog {
 }
 
 type DateTime = number;
+
+const safeStringify = (obj: unknown) => {
+    const seen = new WeakSet();
+
+    return JSON.stringify(
+        obj,
+        (_key, value) => {
+            if (typeof value === "function") {
+                return String(value);
+            }
+
+            if (typeof value === "object" && value !== null) {
+                if (seen.has(value)) {
+                    return "[Circular]";
+                }
+
+                seen.add(value);
+            }
+
+            return value;
+        },
+        4
+    );
+};
 
 /**
  * Watch the console output and save it to a file if a test fails
@@ -65,67 +99,105 @@ export function watchTheConsole(
     logOnlyType?: ConsoleLogType[]
 ) {
     let log: ConsoleLog[] = [];
+    let init = true;
 
     beforeEach(() => {
-        cy.on("window:before:load", (win: Cypress.AUTWindow) => {
-            log = [];
+        log = [];
 
-            win.addEventListener("error", (e: ErrorEvent) => {
-                const [dateTime, currentTime] = getCurrentTime();
+        cy.on(
+            "window:before:load",
+            (
+                win: Cypress.AUTWindow & {
+                    _consoleLogRegistered: boolean;
+                }
+            ) => {
+                if (win._consoleLogRegistered && !init) {
+                    return;
+                }
 
-                log.push([ConsoleLogType.Error, dateTime, currentTime, e.error.stack]);
-            });
+                win._consoleLogRegistered = true;
 
-            const originConsoleLog = win.console.log;
+                win.addEventListener("error", (e: ErrorEvent) => {
+                    const [dateTime, currentTime] = getCurrentTime();
 
-            win.console.log = (...args) => {
-                const [dateTime, currentTime] = getCurrentTime();
+                    log.push({
+                        args: [e.error.message, e.error.stack],
+                        currentTime,
+                        dateTime,
+                        type: ConsoleLogType.Error
+                    });
+                });
 
-                log.push([ConsoleLogType.ConsoleLog, dateTime, currentTime, args.join(",")]);
+                const originConsoleLog = win.console.log;
 
-                originConsoleLog(...args);
-            };
+                win.console.log = (...args) => {
+                    const [dateTime, currentTime] = getCurrentTime();
 
-            const originConsoleInfo = win.console.info;
+                    log.push({
+                        args,
+                        currentTime,
+                        dateTime,
+                        type: ConsoleLogType.ConsoleLog
+                    });
 
-            win.console.info = (...args) => {
-                const [dateTime, currentTime] = getCurrentTime();
+                    originConsoleLog(...args);
+                };
 
-                log.push([ConsoleLogType.ConsoleInfo, dateTime, currentTime, args.join(",")]);
+                const originConsoleInfo = win.console.info;
 
-                originConsoleInfo(...args);
-            };
+                win.console.info = (...args) => {
+                    const [dateTime, currentTime] = getCurrentTime();
 
-            const originConsoleWarn = win.console.warn;
+                    log.push({
+                        args,
+                        currentTime,
+                        dateTime,
+                        type: ConsoleLogType.ConsoleInfo
+                    });
 
-            win.console.warn = (...args) => {
-                const [dateTime, currentTime] = getCurrentTime();
+                    originConsoleInfo(...args);
+                };
 
-                log.push([ConsoleLogType.ConsoleWarn, dateTime, currentTime, args.join(",")]);
+                const originConsoleWarn = win.console.warn;
 
-                originConsoleWarn(...args);
-            };
+                win.console.warn = (...args) => {
+                    const [dateTime, currentTime] = getCurrentTime();
 
-            const originConsoleError = win.console.error;
+                    log.push({
+                        args,
+                        currentTime,
+                        dateTime,
+                        type: ConsoleLogType.ConsoleWarn
+                    });
 
-            win.console.error = (...args) => {
-                const [dateTime, currentTime] = getCurrentTime();
+                    originConsoleWarn(...args);
+                };
 
-                log.push([ConsoleLogType.ConsoleError, dateTime, currentTime, args.join(",")]);
+                const originConsoleError = win.console.error;
 
-                originConsoleError(...args);
-            };
-        });
+                win.console.error = (...args) => {
+                    const [dateTime, currentTime] = getCurrentTime();
+
+                    log.push({
+                        args,
+                        currentTime,
+                        dateTime,
+                        type: ConsoleLogType.ConsoleError
+                    });
+
+                    originConsoleError(...args);
+                };
+
+                init = false;
+            }
+        );
     });
 
     const writeFailed = (outputDir: string) => {
-        const filteredLog = log.filter(([type]) => !logOnlyType || logOnlyType.includes(type));
+        const filteredLog = log.filter(({ type }) => !logOnlyType || logOnlyType.includes(type));
 
-        if (filteredLog.length > 0) {
-            cy.writeFile(
-                getFilePath(undefined, outputDir, "console"),
-                JSON.stringify(filteredLog, undefined, 4)
-            );
+        if (filteredLog.length) {
+            cy.writeFile(getFilePath(undefined, outputDir, "console"), safeStringify(filteredLog));
         }
     };
 
@@ -147,20 +219,20 @@ export function watchTheConsole(
         }
 
         for (const customLog of outputDirOrOptions) {
-            if (
-                log.some(([type]) =>
-                    customLog.types === undefined ? true : customLog.types.includes(type)
-                )
-            ) {
+            let filteredLog = log.filter(({ type }) =>
+                customLog.types === undefined ? true : customLog.types.includes(type)
+            );
+
+            const customFilter = customLog.filter;
+
+            if (customFilter) {
+                filteredLog = filteredLog.filter(({ type, args }) => customFilter(type, ...args));
+            }
+
+            if (filteredLog.length) {
                 cy.writeFile(
                     getFilePath(undefined, customLog.outputDir, "console"),
-                    JSON.stringify(
-                        log.filter(([type]) =>
-                            customLog.types === undefined ? true : customLog.types.includes(type)
-                        ),
-                        undefined,
-                        4
-                    )
+                    safeStringify(filteredLog)
                 );
             }
         }
