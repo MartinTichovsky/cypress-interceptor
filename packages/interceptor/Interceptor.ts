@@ -22,6 +22,8 @@ import {
 } from "./utils";
 import { waitTill } from "./wait";
 
+/// <reference types="cypress" />
+
 declare global {
     namespace Cypress {
         interface Chainable {
@@ -144,8 +146,9 @@ declare global {
              */
             writeInterceptorStatsToLog: (
                 outputDir: string,
-                options?: WriteStatsOptions
-            ) => Chainable<void>;
+                options?: WriteStatsOptions &
+                    Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+            ) => ReturnType<Cypress.Chainable["writeFile"]>;
         }
     }
 }
@@ -690,7 +693,10 @@ export class Interceptor {
      * @param outputDir The path for the output folder
      * @param options Options
      */
-    public writeStatsToLog(outputDir: string, options?: WriteStatsOptions) {
+    public writeStatsToLog(
+        outputDir: string,
+        options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+    ) {
         let callStack = options?.routeMatcher
             ? this.callStack.filter(this.filterItemsByMatcher(options?.routeMatcher))
             : this.callStack;
@@ -699,13 +705,18 @@ export class Interceptor {
             callStack = callStack.filter(options.filter);
         }
 
-        cy.writeFile(
+        if (!callStack.length) {
+            return cy.wrap(null);
+        }
+
+        return cy.writeFile(
             getFilePath(options?.fileName, outputDir, "stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 replacer,
                 options?.prettyOutput ? 4 : undefined
-            )
+            ),
+            options
         );
     }
 }

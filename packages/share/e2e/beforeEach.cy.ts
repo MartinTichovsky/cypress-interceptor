@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { fireRequest } from "../src/utils";

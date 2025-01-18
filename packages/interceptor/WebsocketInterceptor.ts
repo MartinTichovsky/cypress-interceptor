@@ -8,6 +8,8 @@ import {
 } from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
+/// <reference types="cypress" />
+
 declare global {
     namespace Cypress {
         interface Chainable {
@@ -49,8 +51,9 @@ declare global {
              */
             wsInterceptorStatsToLog: (
                 outputDir: string,
-                options?: WriteStatsOptions
-            ) => Chainable<void>;
+                options?: WriteStatsOptions &
+                    Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+            ) => ReturnType<Cypress.Chainable["writeFile"]>;
             /**
              * Reset the the Websocket Interceptor's watch
              */
@@ -371,7 +374,10 @@ export class WebsocketInterceptor {
      * @param outputDir A path for the output directory
      * @param options Options
      */
-    public writeStatsToLog(outputDir: string, options?: WriteStatsOptions) {
+    public writeStatsToLog(
+        outputDir: string,
+        options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+    ) {
         let callStack = options?.matcher
             ? this.callStack.filter(this.filterItemsByMatcher(options?.matcher))
             : this.callStack;
@@ -380,13 +386,18 @@ export class WebsocketInterceptor {
             callStack = callStack.filter(options.filter);
         }
 
-        cy.writeFile(
+        if (!callStack.length) {
+            return cy.wrap(null);
+        }
+
+        return cy.writeFile(
             getFilePath(options?.fileName, outputDir, "ws.stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 replacer,
                 options?.prettyOutput ? 4 : undefined
-            )
+            ),
+            options
         );
     }
 }

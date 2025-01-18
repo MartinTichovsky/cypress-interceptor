@@ -1,5 +1,8 @@
-import { getFilePath } from "cypress-interceptor/src/utils";
-import { CallStackWebsocket } from "cypress-interceptor/src/WebsocketInterceptor.types";
+/* istanbul ignore file */
+import "cypress-interceptor/websocket";
+
+import { getFilePath } from "cypress-interceptor/utils";
+import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 

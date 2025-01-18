@@ -1,4 +1,5 @@
-import { IRequestInit } from "cypress-interceptor/src/Interceptor.types";
+/* istanbul ignore file */
+import { IRequestInit } from "cypress-interceptor/Interceptor.types";
 import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 

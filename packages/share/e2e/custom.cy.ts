@@ -1,6 +1,6 @@
-import { CallStack } from "cypress-interceptor/src/Interceptor.types";
-import { getFilePath } from "cypress-interceptor/src/utils";
-import { convertToString } from "cypress-interceptor/src/utils";
+/* istanbul ignore file */
+import { CallStack } from "cypress-interceptor/Interceptor.types";
+import { convertToString, getFilePath } from "cypress-interceptor/utils";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { convertToRequestBody, testCaseIt } from "../src/utils";

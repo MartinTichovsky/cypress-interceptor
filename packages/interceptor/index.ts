@@ -45,7 +45,7 @@ const createCommands = () => {
         interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
     );
     Cypress.Commands.add("writeInterceptorStatsToLog", (outputDir, options) =>
-        cy.wrap(interceptor.writeStatsToLog(outputDir, options))
+        interceptor.writeStatsToLog(outputDir, options)
     );
 };
 

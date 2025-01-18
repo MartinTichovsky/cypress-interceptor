@@ -1,2 +1,2 @@
-import "cypress-interceptor/src/index";
-import "cypress-interceptor/src/websocket";
+import "cypress-interceptor";
+import "cypress-interceptor/websocket";

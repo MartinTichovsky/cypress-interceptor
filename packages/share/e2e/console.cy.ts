@@ -1,16 +1,12 @@
 /* istanbul ignore file */
-import { ConsoleLog, ConsoleLogType, watchTheConsole } from "cypress-interceptor/src/console";
-import { getFilePath } from "cypress-interceptor/src/utils";
-import { generateUrl } from "cypress-interceptor-server/src/utils";
+import "cypress-interceptor/console";
 
-interface Ref {
-    outputFile: string | undefined;
-    skipError: boolean | undefined;
-}
+import { getFilePath } from "cypress-interceptor/utils";
+import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
+import { generateUrl } from "cypress-interceptor-server/src/utils";
 
 type LogQueue = [ConsoleLogType, unknown[]][];
 
-const cypressFailEnvName = "__CONSOLE_FAIL_TEST__";
 const invalidDate = new Date("").toString();
 const staticUrl = generateUrl("public/index.html");
 const outputDir = "_console";
@@ -36,77 +32,39 @@ const createConsoleLog = (logQueue: LogQueue) => {
     });
 };
 
-const createTestWithFail = (ref: Ref, logQueue: [ConsoleLogType, unknown[]][]) => {
-    function listener(assertionError: unknown) {
-        if (ref.skipError) {
-            // enable the fail flag
-            Cypress.env(cypressFailEnvName, true);
-            ref.skipError = false;
-        } else {
-            throw assertionError;
-        }
-    }
-
-    afterEach(function () {
-        Cypress.env(cypressFailEnvName, undefined);
-        Cypress.off("fail", listener);
-    });
-
-    beforeEach(function () {
-        Cypress.on("fail", listener);
-    });
-
-    it("Visit the page, create some console logs and fail intentionally", () => {
-        cy.visit(staticUrl);
-        ref.outputFile = createOutputFileName("");
-
-        createConsoleLog(logQueue);
-
-        ref.skipError = true;
-
-        // fail the test
-        cy.get(".something-not-exist", { log: false, timeout: 0 });
-    });
-};
-
-function createOutputFileName(outputDir: string) {
-    return getFilePath(undefined, outputDir, "console");
+function createOutputFileName(outputDir: string, fileName: string | undefined = undefined) {
+    return getFilePath(fileName, outputDir, "console");
 }
 
 Cypress.on("uncaught:exception", () => false);
 
-describe("Log on Fail", () => {
-    watchTheConsole(outputDir);
-
-    const ref: Ref = {
-        outputFile: undefined,
-        skipError: undefined
-    };
-
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError"]]
-    ];
-
+describe("Custom log", () => {
     before(() => {
         cy.task("clearLogs", [outputDir]);
     });
 
-    createTestWithFail(ref, logQueue);
+    it("Should create a file", () => {
+        cy.visit(staticUrl);
 
-    it("Should create a file with all console types from the previous test", () => {
-        const outputFile = `${outputDir}${ref.outputFile}`;
+        const logQueue: LogQueue = [
+            [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
+            [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]]
+        ];
 
-        expect(outputFile).not.to.be.undefined;
+        createConsoleLog(logQueue);
 
-        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
+        cy.writeConsoleLogToFile(outputDir);
+
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.task("doesFileExist", outputFileName).should("be.true");
+
+        const checkTheLog = (log: ConsoleLog[]) => {
             expect(log.length).to.equal(logQueue.length + 1);
             expect(log[0].type).to.equal(ConsoleLogType.Error);
             expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[0].args[0]).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].currentTime).to.be.a("string");
+            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[0].args[0]).to.be.a("string");
             expect(log[1].type).to.equal(ConsoleLogType.ConsoleLog);
             expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
@@ -115,157 +73,96 @@ describe("Log on Fail", () => {
             expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
             expect(log[2].args).to.deep.equal(logQueue[1][1]);
-            expect(log[3].type).to.equal(ConsoleLogType.ConsoleWarn);
-            expect(new Date(log[3].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[3].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[3].args).to.deep.equal(logQueue[2][1]);
-            expect(log[4].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[4].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[4].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[4].args).to.deep.equal(logQueue[3][1]);
+        };
+
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            checkTheLog(log);
+        });
+
+        cy.watchTheConsole().then((watchTheConsole) => {
+            checkTheLog(watchTheConsole.log);
+            expect(
+                watchTheConsole.log.filter((entry) => entry.type === ConsoleLogType.ConsoleError)
+                    .length
+            ).to.eq(0);
         });
     });
-});
 
-describe("Log on Fail", () => {
-    watchTheConsole(outputDir, [ConsoleLogType.ConsoleError]);
+    it("Should not keep records from the previous test run", () => {
+        cy.visit(staticUrl);
 
-    const ref: Ref = {
-        outputFile: undefined,
-        skipError: undefined
-    };
+        const logQueue: LogQueue = [
+            [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]],
+            [ConsoleLogType.ConsoleError, ["ConsoleError"]]
+        ];
 
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError"]]
-    ];
+        createConsoleLog(logQueue);
 
-    before(() => {
-        cy.task("clearLogs", [outputDir]);
-    });
+        cy.writeConsoleLogToFile(outputDir);
 
-    createTestWithFail(ref, logQueue);
+        const outputFileName = createOutputFileName(outputDir);
 
-    it("Should create a file with one console entry from the previous test", () => {
-        const outputFile = `${outputDir}${ref.outputFile}`;
+        cy.task("doesFileExist", outputFileName).should("be.true");
 
-        expect(outputFile).not.to.be.undefined;
-
-        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(1);
-            expect(log[0].type).to.equal(ConsoleLogType.ConsoleError);
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(logQueue.length + 1);
+            expect(log[0].type).to.equal(ConsoleLogType.Error);
             expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args).to.deep.equal(logQueue[3][1]);
+            expect(log[0].args[0]).to.be.a("string");
+            expect(log[1].type).to.equal(ConsoleLogType.ConsoleWarn);
+            expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[1].args).to.deep.equal(logQueue[0][1]);
+            expect(log[2].type).to.equal(ConsoleLogType.ConsoleError);
+            expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[2].args).to.deep.equal(logQueue[1][1]);
         });
     });
-});
 
-describe("Log on Fail", () => {
-    watchTheConsole(outputDir, [ConsoleLogType.ConsoleError, ConsoleLogType.ConsoleWarn]);
+    it("Should create a file with a custom name", () => {
+        cy.visit(staticUrl);
 
-    const ref: Ref = {
-        outputFile: undefined,
-        skipError: undefined
-    };
+        const fileName = "CONSOLE_LOG_FILE";
 
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError"]]
-    ];
+        const logQueue: LogQueue = [
+            [ConsoleLogType.ConsoleError, ["ConsoleError"]],
+            [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
+            [ConsoleLogType.ConsoleLog, ["ConsoleLog"]]
+        ];
 
-    before(() => {
-        cy.task("clearLogs", [outputDir]);
-    });
+        createConsoleLog(logQueue);
 
-    createTestWithFail(ref, logQueue);
+        cy.writeConsoleLogToFile(outputDir, { fileName });
 
-    it("Should create a file with multiple console log types from the previous test", () => {
-        const outputFile = `${outputDir}${ref.outputFile}`;
+        const outputFileName = createOutputFileName(outputDir, fileName);
 
-        expect(outputFile).not.to.be.undefined;
+        cy.task("doesFileExist", outputFileName).should("be.true");
 
-        cy.readFile(outputFile).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(2);
-            expect(log[0].type).to.equal(ConsoleLogType.ConsoleWarn);
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(logQueue.length + 1);
+            expect(log[0].type).to.equal(ConsoleLogType.Error);
             expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args).to.deep.equal(logQueue[2][1]);
+            expect(log[0].args[0]).to.be.a("string");
             expect(log[1].type).to.equal(ConsoleLogType.ConsoleError);
             expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[1].args).to.deep.equal(logQueue[3][1]);
+            expect(log[1].args).to.deep.equal(logQueue[0][1]);
+            expect(log[2].type).to.equal(ConsoleLogType.ConsoleInfo);
+            expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[2].args).to.deep.equal(logQueue[1][1]);
+            expect(log[3].type).to.equal(ConsoleLogType.ConsoleLog);
+            expect(new Date(log[3].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[3].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[3].args).to.deep.equal(logQueue[2][1]);
         });
     });
 });
 
-describe("Log on Fail", () => {
-    watchTheConsole(outputDir, [ConsoleLogType.ConsoleError]);
-
-    const ref: Ref = {
-        outputFile: undefined,
-        skipError: undefined
-    };
-
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]]
-    ];
-
-    before(() => {
-        cy.task("clearLogs", [outputDir]);
-    });
-
-    createTestWithFail(ref, logQueue);
-
-    it("Should not create any file from the previous test", () => {
-        const outputFile = `${outputDir}${ref.outputFile}`;
-
-        expect(outputFile).not.to.be.undefined;
-
-        cy.task("doesFileExist", outputFile).should("be.false");
-    });
-});
-
-describe("Custom log", () => {
-    watchTheConsole({
-        outputDir,
-        types: [ConsoleLogType.ConsoleError]
-    });
-
-    let outputFileName: string;
-
-    before(() => {
-        cy.task("clearLogs", [outputDir]);
-    });
-    3;
-    it("Visit the page and create logs", () => {
-        cy.visit(staticUrl);
-
-        outputFileName = createOutputFileName(outputDir);
-
-        createConsoleLog([
-            [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-            [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]]
-        ]);
-    });
-
-    it("Should not create any file from the previous test", () => {
-        cy.task("doesFileExist", outputFileName).should("be.false");
-    });
-});
-
-describe("Custom log", () => {
-    watchTheConsole({
-        outputDir,
-        types: [ConsoleLogType.ConsoleError]
-    });
-
+describe("Custom types", () => {
     const logQueue: LogQueue = [
         [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
         [ConsoleLogType.ConsoleError, ["ConsoleError 1"]],
@@ -274,21 +171,21 @@ describe("Custom log", () => {
         [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]]
     ];
 
-    let outputFileName: string;
-
     before(() => {
         cy.task("clearLogs", [outputDir]);
     });
 
-    it("Visit the page and create logs", () => {
+    beforeEach(() => {
         cy.visit(staticUrl);
-
-        outputFileName = createOutputFileName(outputDir);
 
         createConsoleLog(logQueue);
     });
 
     it("Should create a file with console error types", () => {
+        cy.writeConsoleLogToFile(outputDir, { types: [ConsoleLogType.ConsoleError] });
+
+        const outputFileName = createOutputFileName(outputDir);
+
         cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(2);
             expect(log[0].type).to.equal(ConsoleLogType.ConsoleError);
@@ -301,183 +198,24 @@ describe("Custom log", () => {
             expect(log[1].args).to.deep.equal(logQueue[3][1]);
         });
     });
-});
 
-describe("Custom log", () => {
-    const outputDir1 = "_console_1";
-    const outputDir2 = "_console_2";
-    const outputDir3 = "_console_3";
-
-    watchTheConsole([
-        {
-            outputDir: outputDir1,
-            types: [ConsoleLogType.Error]
-        },
-        {
-            outputDir: outputDir2,
-            types: [ConsoleLogType.ConsoleError, ConsoleLogType.ConsoleWarn]
-        },
-        {
-            outputDir: outputDir3
-        }
-    ]);
-
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError 1"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError 2"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]]
-    ];
-
-    let outputFileName1: string;
-    let outputFileName2: string;
-    let outputFileName3: string;
-
-    before(() => {
-        cy.task("clearLogs", [outputDir1, outputDir2, outputDir3]);
-    });
-
-    it("Visit the page and create logs", () => {
-        cy.visit(staticUrl);
-
-        outputFileName1 = createOutputFileName(outputDir1);
-        outputFileName2 = createOutputFileName(outputDir2);
-        outputFileName3 = createOutputFileName(outputDir3);
-
-        createConsoleLog(logQueue);
-    });
-
-    it("Should create a file with console error types", () => {
-        cy.readFile(outputFileName1).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(1);
-            expect(log[0].type).to.equal(ConsoleLogType.Error);
-            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args[0]).to.be.a("string");
+    it("Should create a file with console info and log types", () => {
+        cy.writeConsoleLogToFile(outputDir, {
+            types: [ConsoleLogType.ConsoleInfo, ConsoleLogType.ConsoleLog]
         });
 
-        cy.readFile(outputFileName2).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(3);
-            expect(log[0].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args).to.deep.equal(logQueue[1][1]);
-            expect(log[1].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[1].args).to.deep.equal(logQueue[3][1]);
-            expect(log[2].type).to.equal(ConsoleLogType.ConsoleWarn);
-            expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[2].args).to.deep.equal(logQueue[4][1]);
-        });
+        const outputFileName = createOutputFileName(outputDir);
 
-        cy.readFile(outputFileName3).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(logQueue.length + 1);
-            expect(log[0].type).to.equal(ConsoleLogType.Error);
-            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args[0]).to.be.a("string");
-            expect(log[1].type).to.equal(ConsoleLogType.ConsoleLog);
-            expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[1].args).to.deep.equal(logQueue[0][1]);
-            expect(log[2].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[2].args).to.deep.equal(logQueue[1][1]);
-            expect(log[3].type).to.equal(ConsoleLogType.ConsoleInfo);
-            expect(new Date(log[3].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[3].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[3].args).to.deep.equal(logQueue[2][1]);
-            expect(log[4].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[4].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[4].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[4].args).to.deep.equal(logQueue[3][1]);
-            expect(log[5].type).to.equal(ConsoleLogType.ConsoleWarn);
-            expect(new Date(log[5].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[5].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[5].args).to.deep.equal(logQueue[4][1]);
-        });
-    });
-});
-
-describe("Mutliple use", () => {
-    const outputDir1 = "_console_1";
-    const outputDir2 = "_console_2";
-
-    // for failures
-    watchTheConsole(outputDir1);
-
-    // for all
-    watchTheConsole([
-        {
-            outputDir: outputDir2,
-            types: [ConsoleLogType.ConsoleLog]
-        }
-    ]);
-
-    const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError 1"]],
-        [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]],
-        [ConsoleLogType.ConsoleError, ["ConsoleError 2"]],
-        [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]]
-    ];
-
-    const ref: Ref = {
-        outputFile: undefined,
-        skipError: undefined
-    };
-
-    before(() => {
-        cy.task("clearLogs", [outputDir1, outputDir2]);
-    });
-
-    createTestWithFail(ref, logQueue);
-
-    it("Should create a file with console error types", () => {
-        const outputFile1 = `${outputDir1}${ref.outputFile}`;
-        const outputFile2 = `${outputDir2}${ref.outputFile}`;
-
-        cy.task("doesFileExist", outputFile1).should("be.true");
-        cy.task("doesFileExist", outputFile2).should("be.true");
-
-        cy.readFile(outputFile1).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(logQueue.length + 1);
-            expect(log[0].type).to.equal(ConsoleLogType.Error);
-            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[0].args[0]).to.be.a("string");
-            expect(log[1].type).to.equal(ConsoleLogType.ConsoleLog);
-            expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[1].args).to.deep.equal(logQueue[0][1]);
-            expect(log[2].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[2].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[2].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[2].args).to.deep.equal(logQueue[1][1]);
-            expect(log[3].type).to.equal(ConsoleLogType.ConsoleInfo);
-            expect(new Date(log[3].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[3].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[3].args).to.deep.equal(logQueue[2][1]);
-            expect(log[4].type).to.equal(ConsoleLogType.ConsoleError);
-            expect(new Date(log[4].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[4].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[4].args).to.deep.equal(logQueue[3][1]);
-            expect(log[5].type).to.equal(ConsoleLogType.ConsoleWarn);
-            expect(new Date(log[5].dateTime).toString()).not.to.equal(invalidDate);
-            expect(log[5].currentTime).to.be.a("string").and.not.to.be.empty;
-            expect(log[5].args).to.deep.equal(logQueue[4][1]);
-        });
-
-        cy.readFile(outputFile2).then((log: ConsoleLog[]) => {
-            expect(log.length).to.equal(1);
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(2);
             expect(log[0].type).to.equal(ConsoleLogType.ConsoleLog);
             expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
             expect(log[0].args).to.deep.equal(logQueue[0][1]);
+            expect(log[1].type).to.equal(ConsoleLogType.ConsoleInfo);
+            expect(new Date(log[1].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[1].args).to.deep.equal(logQueue[2][1]);
         });
     });
 });
@@ -486,21 +224,6 @@ describe("Filtering with a string", () => {
     const outputDir1 = "_console_1";
     const outputDir2 = "_console_2";
     const outputDir3 = "_console_3";
-
-    watchTheConsole([
-        {
-            filter: (type) => type === ConsoleLogType.ConsoleError,
-            outputDir: outputDir1
-        },
-        {
-            filter: (_type, message) => String(message).startsWith("ConsoleInfo"),
-            outputDir: outputDir2
-        },
-        {
-            filter: () => false,
-            outputDir: outputDir3
-        }
-    ]);
 
     const logQueue: LogQueue = [
         [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
@@ -511,25 +234,27 @@ describe("Filtering with a string", () => {
         [ConsoleLogType.ConsoleWarn, ["ConsoleWarn"]]
     ];
 
-    let outputFileName1: string;
-    let outputFileName2: string;
-    let outputFileName3: string;
-
     before(() => {
         cy.task("clearLogs", [outputDir1, outputDir2, outputDir3]);
     });
 
-    it("Visit the page and create logs", () => {
+    it("Should create a file with filtered entries", () => {
         cy.visit(staticUrl);
 
-        outputFileName1 = createOutputFileName(outputDir1);
-        outputFileName2 = createOutputFileName(outputDir2);
-        outputFileName3 = createOutputFileName(outputDir3);
-
         createConsoleLog(logQueue);
-    });
 
-    it("Should create a file with filtered entries", () => {
+        cy.writeConsoleLogToFile(outputDir1, {
+            filter: (type) => type === ConsoleLogType.ConsoleError
+        });
+        cy.writeConsoleLogToFile(outputDir2, {
+            filter: (_type, message) => String(message).startsWith("ConsoleInfo")
+        });
+        cy.writeConsoleLogToFile(outputDir3, { filter: () => false });
+
+        const outputFileName1 = createOutputFileName(outputDir1);
+        const outputFileName2 = createOutputFileName(outputDir2);
+        const outputFileName3 = createOutputFileName(outputDir3);
+
         cy.readFile(outputFileName1).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(2);
             expect(log[0].type).to.equal(ConsoleLogType.ConsoleError);
@@ -563,26 +288,6 @@ describe("Filtering with an object", () => {
     const outputDir2 = "_console_2";
     const outputDir3 = "_console_3";
 
-    watchTheConsole([
-        {
-            filter: (_type, obj1) => typeof obj1 === "object" && obj1 !== null && "message" in obj1,
-            outputDir: outputDir1
-        },
-        {
-            filter: (_type, _obj1, obj2) =>
-                typeof obj2 === "object" &&
-                obj2 !== null &&
-                "arr" in obj2 &&
-                Array.isArray(obj2.arr) &&
-                obj2.arr.length > 0,
-            outputDir: outputDir2
-        },
-        {
-            filter: (_type, obj1) => typeof obj1 === "string",
-            outputDir: outputDir3
-        }
-    ]);
-
     const logQueue: LogQueue = [
         [
             ConsoleLogType.ConsoleInfo,
@@ -600,25 +305,32 @@ describe("Filtering with an object", () => {
         [ConsoleLogType.ConsoleLog, [[true, false, 0, null, ""]]]
     ];
 
-    let outputFileName1: string;
-    let outputFileName2: string;
-    let outputFileName3: string;
-
     before(() => {
         cy.task("clearLogs", [outputDir1, outputDir2, outputDir3]);
     });
 
-    it("Visit the page and create logs", () => {
+    it("Should create a file with filtered entries", () => {
         cy.visit(staticUrl);
 
-        outputFileName1 = createOutputFileName(outputDir1);
-        outputFileName2 = createOutputFileName(outputDir2);
-        outputFileName3 = createOutputFileName(outputDir3);
-
         createConsoleLog(logQueue);
-    });
 
-    it("Should create a file with filtered entries", () => {
+        cy.writeConsoleLogToFile(outputDir1, {
+            filter: (_type, obj1) => typeof obj1 === "object" && obj1 !== null && "message" in obj1
+        });
+        cy.writeConsoleLogToFile(outputDir2, {
+            filter: (_type, _obj1, obj2) =>
+                typeof obj2 === "object" &&
+                obj2 !== null &&
+                "arr" in obj2 &&
+                Array.isArray(obj2.arr) &&
+                obj2.arr.length > 0
+        });
+        cy.writeConsoleLogToFile(outputDir3, { filter: (_type, obj1) => typeof obj1 === "string" });
+
+        const outputFileName1 = createOutputFileName(outputDir1);
+        const outputFileName2 = createOutputFileName(outputDir2);
+        const outputFileName3 = createOutputFileName(outputDir3);
+
         cy.readFile(outputFileName1).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(3);
             expect(log[0].type).to.equal(ConsoleLogType.ConsoleInfo);
@@ -662,12 +374,6 @@ describe("Filtering with an object", () => {
 });
 
 describe("JSON.stringify function or recursive object", () => {
-    watchTheConsole([
-        {
-            outputDir
-        }
-    ]);
-
     const recursiveObject: Record<string, unknown> = {};
 
     recursiveObject.something = 123;
@@ -688,25 +394,24 @@ describe("JSON.stringify function or recursive object", () => {
         ]
     ];
 
-    let outputFileName1: string;
-    let outputFileName2: string;
-
     before(() => {
         cy.task("clearLogs", [outputDir]);
     });
 
-    it("Visit the page and create logs", () => {
-        cy.visit("/");
-
-        outputFileName1 = createOutputFileName(outputDir);
-
-        createConsoleLog(logQueue);
+    beforeEach(() => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
     });
 
     it("Should create a file with filtered entries", () => {
-        outputFileName2 = createOutputFileName(outputDir);
+        cy.visit("/");
 
-        cy.readFile(outputFileName1).then((log: ConsoleLog[]) => {
+        createConsoleLog(logQueue);
+
+        cy.writeConsoleLogToFile(outputDir, { prettyOutput: true });
+
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
             expect(log.length).to.equal(2);
             expect(log[0].type).to.equal(ConsoleLogType.ConsoleInfo);
             expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
@@ -730,8 +435,153 @@ describe("JSON.stringify function or recursive object", () => {
             ]);
         });
     });
+});
 
-    it("Should not create a file from the previous test", () => {
-        cy.task("doesFileExist", outputFileName2).should("be.false");
+describe("JSON.stringify multiple types and deeply nested objects", () => {
+    const recursiveObject: Record<string, unknown> = {};
+
+    recursiveObject.abc = "abc";
+    recursiveObject.bool = false;
+    recursiveObject.n = null;
+    recursiveObject.u = undefined;
+    recursiveObject.rec = {
+        arr: [9, false, true, NaN, recursiveObject],
+        obj: {
+            ref: recursiveObject
+        },
+        p: function abcd() {
+            return false;
+        }
+    };
+
+    const logQueue: LogQueue = [
+        [
+            ConsoleLogType.ConsoleInfo,
+            [{ recursiveObject }, [recursiveObject, recursiveObject, recursiveObject]]
+        ],
+        [
+            ConsoleLogType.ConsoleWarn,
+            [[recursiveObject, recursiveObject], { more: { recursiveObject } }]
+        ]
+    ];
+
+    before(() => {
+        cy.task("clearLogs", [outputDir]);
+    });
+
+    beforeEach(() => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
+    });
+
+    it("Should create a file with filtered entries", () => {
+        cy.visit("/");
+
+        createConsoleLog(logQueue);
+
+        cy.writeConsoleLogToFile(outputDir, { prettyOutput: true });
+
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log[0].args).to.deep.eq([
+                {
+                    recursiveObject: {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    }
+                },
+                [
+                    {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    },
+                    {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    },
+                    {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    }
+                ]
+            ]);
+
+            expect(log[1].args).to.deep.eq([
+                [
+                    {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    },
+                    {
+                        abc: "abc",
+                        bool: false,
+                        n: null,
+                        rec: {
+                            arr: [9, false, true, null, "[Circular]"],
+                            obj: {
+                                ref: "[Circular]"
+                            },
+                            p: "function abcd() {\n      return false;\n    }"
+                        }
+                    }
+                ],
+                {
+                    more: {
+                        recursiveObject: {
+                            abc: "abc",
+                            bool: false,
+                            n: null,
+                            rec: {
+                                arr: [9, false, true, null, "[Circular]"],
+                                obj: {
+                                    ref: "[Circular]"
+                                },
+                                p: "function abcd() {\n      return false;\n    }"
+                            }
+                        }
+                    }
+                }
+            ]);
+        });
     });
 });
