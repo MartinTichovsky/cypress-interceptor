@@ -47,58 +47,10 @@ declare global {
     }
 }
 
+const __MAX_CALL_COUNT__ = 999999;
+
 const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && val !== null && !Array.isArray(val);
-
-const cloneAndRemoveCircular = (value: unknown, recursiveStack: unknown[] = []) => {
-    if (isObject(value) && recursiveStack.includes(value)) {
-        return "[Circular]";
-    } else if (isObject(value)) {
-        recursiveStack.push(value);
-
-        const result: Record<string, unknown> = {};
-
-        for (const key of Object.keys(value)) {
-            result[key] = cloneAndRemoveCircular(value[key], [...recursiveStack]);
-        }
-
-        return result;
-    } else if (Array.isArray(value) && recursiveStack.includes(value)) {
-        return "[Circular]";
-    } else if (Array.isArray(value)) {
-        const result: unknown[] = [];
-
-        for (const entry of value) {
-            result.push(cloneAndRemoveCircular(entry, [...recursiveStack]));
-        }
-
-        return result;
-    } else if (typeof value === "function") {
-        return String(value);
-    } else {
-        return value;
-    }
-};
-
-const cloneConsoleArguments = (args: unknown[]) => {
-    const result: unknown[] = [];
-
-    for (const arg of args) {
-        if (
-            typeof arg === "string" ||
-            typeof arg === "number" ||
-            typeof arg === "boolean" ||
-            arg === null ||
-            arg === undefined
-        ) {
-            result.push(arg);
-        } else {
-            result.push(cloneAndRemoveCircular(arg));
-        }
-    }
-
-    return result;
-};
 
 const defaultOptions: Required<WatchTheConsoleOptions> = {
     cloneConsoleArguments: false
@@ -122,6 +74,7 @@ export class WatchTheConsole {
     private _options: Required<WatchTheConsoleOptions> = {
         ...defaultOptions
     };
+    private _win?: Cypress.AUTWindow = undefined;
 
     constructor() {
         Cypress.on(
@@ -132,6 +85,7 @@ export class WatchTheConsole {
                 }
             ) => {
                 this._log = [];
+                this._win = win;
 
                 win.addEventListener("error", (e: ErrorEvent) => {
                     const [dateTime, currentTime] = getCurrentTime();
@@ -151,7 +105,7 @@ export class WatchTheConsole {
 
                     this._log.push({
                         args: this._options.cloneConsoleArguments
-                            ? cloneConsoleArguments(args)
+                            ? this.cloneConsoleArguments(args)
                             : args,
                         currentTime,
                         dateTime,
@@ -168,7 +122,7 @@ export class WatchTheConsole {
 
                     this._log.push({
                         args: this._options.cloneConsoleArguments
-                            ? cloneConsoleArguments(args)
+                            ? this.cloneConsoleArguments(args)
                             : args,
                         currentTime,
                         dateTime,
@@ -185,7 +139,7 @@ export class WatchTheConsole {
 
                     this._log.push({
                         args: this._options.cloneConsoleArguments
-                            ? cloneConsoleArguments(args)
+                            ? this.cloneConsoleArguments(args)
                             : args,
                         currentTime,
                         dateTime,
@@ -202,7 +156,7 @@ export class WatchTheConsole {
 
                     this._log.push({
                         args: this._options.cloneConsoleArguments
-                            ? cloneConsoleArguments(args)
+                            ? this.cloneConsoleArguments(args)
                             : args,
                         currentTime,
                         dateTime,
@@ -220,6 +174,101 @@ export class WatchTheConsole {
      */
     get log() {
         return deepCopy(this._log);
+    }
+
+    private get win() {
+        return this._win ?? window;
+    }
+
+    private cloneAndRemoveCircular(value: unknown, recursiveStack: unknown[] = [], callCount = 0) {
+        if (callCount > __MAX_CALL_COUNT__) {
+            return "MAX_CALL_COUNT_REACHED";
+        }
+
+        if (
+            typeof value === "bigint" ||
+            typeof value === "boolean" ||
+            typeof value === "number" ||
+            typeof value === "string" ||
+            value === null ||
+            value === undefined
+        ) {
+            return value;
+        }
+
+        value = this.removeNonClonable(value);
+
+        if (isObject(value) && recursiveStack.includes(value)) {
+            return "[Circular]";
+        } else if (isObject(value) && Object.keys(value).length) {
+            const index = recursiveStack.push(value);
+            const result: Record<string, unknown> = {};
+
+            for (const key of Object.keys(value)) {
+                result[key] = this.cloneAndRemoveCircular(value[key], recursiveStack, ++callCount);
+            }
+
+            recursiveStack.splice(index - 1, 1);
+
+            return result;
+        } else if (Array.isArray(value) && recursiveStack.includes(value)) {
+            return "[Circular]";
+        } else if (Array.isArray(value)) {
+            const index = recursiveStack.push(value);
+            const result: unknown[] = [];
+
+            for (const entry of value) {
+                result.push(this.cloneAndRemoveCircular(entry, recursiveStack, ++callCount));
+            }
+
+            recursiveStack.splice(index - 1, 1);
+
+            return result;
+        } else {
+            return value;
+        }
+    }
+
+    private cloneConsoleArguments(args: unknown[]) {
+        const result: unknown[] = [];
+
+        for (const arg of args) {
+            result.push(this.cloneAndRemoveCircular(arg));
+        }
+
+        return result;
+    }
+
+    private removeNonClonable(value: unknown) {
+        if (value instanceof this.win.Element || value instanceof this.win.HTMLElement) {
+            return value.constructor?.name || "HTMLElement";
+        }
+
+        if (isObject(value) && value.$$typeof === Symbol.for("react.element")) {
+            return "ReactElement";
+        }
+
+        if (typeof value === "function") {
+            return String(value);
+        }
+
+        if (value instanceof this.win.WeakMap) {
+            return "WeakMap";
+        }
+
+        if (value instanceof this.win.WeakSet) {
+            return "WeakSet";
+        }
+
+        if (value instanceof this.win.Window) {
+            return "Window";
+        }
+
+        if (typeof value === "symbol") {
+            return "Symbol";
+        }
+
+        return value;
     }
 
     /**

@@ -637,6 +637,8 @@ Write the logged requests' information (or those filtered by the provided route 
 afterAll(() => {
     // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
     cy.writeInterceptorStatsToLog("./out");
+    // increase the timeout for `cy.writeFile` when you expect a big output
+    cy.writeInterceptorStatsToLog("./out", { timeout: 120000 });
     // the output file will be "./out/file_name.stats.json"
     cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" });
     // write only "fetch" requests to the output file
@@ -1096,6 +1098,13 @@ afterEach(function () {
 ```
 
 ```ts
+// increase the timeout for `cy.writeFile` when you expect a big output
+cy.writeConsoleLogToFile("_console", {
+    timeout: 120000
+});
+```
+
+```ts
 // write only the console errors and unhandled JavaScript errors to the output file
 cy.writeConsoleLogToFile("_console", {
     types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error]
@@ -1399,6 +1408,8 @@ Write the logged requests' information (or those filtered by the provided matche
 afterAll(() => {
     // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
     cy.wsInterceptorStatsToLog("./out");
+    // increase the timeout for `cy.writeFile` when you expect a big output
+    cy.wsInterceptorStatsToLog("./out", { timeout: 120000 });
     // the output file will be "./out/file_name.stats.json"
     cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" });
     // write only stats for a specific URL to the output file

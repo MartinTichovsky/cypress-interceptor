@@ -585,3 +585,281 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
         });
     });
 });
+
+describe("Logging various JavaScript objects", () => {
+    before(() => {
+        cy.task("clearLogs", [outputDir]);
+    });
+
+    const visitAndLog = (extraLog = false) => {
+        cy.visit(staticUrl);
+
+        cy.window().then(
+            (
+                window: Cypress.AUTWindow & {
+                    React?: {
+                        createElement: (...args: unknown[]) => unknown;
+                    };
+                }
+            ) => {
+                const logQueue: LogQueue = [
+                    [ConsoleLogType.ConsoleLog, [{ message: "String", value: "Hello, World!" }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Number", value: 42 }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Boolean", value: true }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Null", value: null }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Undefined", value: undefined }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Array", value: [1, 2, 3] }]],
+                    [ConsoleLogType.ConsoleLog, [{ message: "Object", value: { key: "value" } }]],
+                    [
+                        ConsoleLogType.ConsoleLog,
+                        [
+                            {
+                                message: "Function",
+                                value: function () {
+                                    return "Hello";
+                                }
+                            }
+                        ]
+                    ],
+                    [
+                        ConsoleLogType.ConsoleLog,
+                        [{ message: "Date", value: new Date("01-18-2025") }]
+                    ],
+                    [ConsoleLogType.ConsoleLog, [{ message: "RegExp", value: /abc/ }]],
+                    [
+                        ConsoleLogType.ConsoleLog,
+                        [{ message: "DOM Element", value: window.document.createElement("div") }]
+                    ],
+                    [
+                        ConsoleLogType.ConsoleLog,
+                        [
+                            {
+                                message: "Button Element",
+                                value: window.document.createElement("button")
+                            }
+                        ]
+                    ],
+                    [
+                        ConsoleLogType.ConsoleLog,
+                        [
+                            {
+                                message: "React Element",
+                                value: window.React?.createElement("div", null, "Hello, React!")
+                            }
+                        ]
+                    ]
+                ];
+
+                if (extraLog) {
+                    logQueue.push([ConsoleLogType.ConsoleInfo, [window]]);
+                }
+
+                createConsoleLog(logQueue);
+            }
+        );
+    };
+
+    it("Should log various JavaScript objects - with clone", () => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
+
+        visitAndLog(true);
+
+        cy.writeConsoleLogToFile(outputDir, { prettyOutput: true });
+
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.task("doesFileExist", outputFileName).should("be.true");
+
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(15);
+            expect(log[0].type).to.equal(ConsoleLogType.Error);
+            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[0].args[0]).to.be.a("string");
+            expect(log[1].args).to.deep.eq([
+                {
+                    message: "String",
+                    value: "Hello, World!"
+                }
+            ]);
+            expect(log[2].args).to.deep.eq([
+                {
+                    message: "Number",
+                    value: 42
+                }
+            ]);
+            expect(log[3].args).to.deep.eq([
+                {
+                    message: "Boolean",
+                    value: true
+                }
+            ]);
+            expect(log[4].args).to.deep.eq([
+                {
+                    message: "Null",
+                    value: null
+                }
+            ]);
+            expect(log[5].args).to.deep.eq([
+                {
+                    message: "Undefined"
+                }
+            ]);
+            expect(log[6].args).to.deep.eq([
+                {
+                    message: "Array",
+                    value: [1, 2, 3]
+                }
+            ]);
+            expect(log[7].args).to.deep.eq([
+                {
+                    message: "Object",
+                    value: {
+                        key: "value"
+                    }
+                }
+            ]);
+            expect(log[8].args).to.deep.eq([
+                {
+                    message: "Function",
+                    value: "function value() {\n          return \"Hello\";\n        }"
+                }
+            ]);
+            expect(log[9].args).to.deep.eq([
+                {
+                    message: "Date",
+                    value: "2025-01-17T23:00:00.000Z"
+                }
+            ]);
+            expect(log[10].args).to.deep.eq([
+                {
+                    message: "RegExp",
+                    value: {}
+                }
+            ]);
+            expect(log[11].args).to.deep.eq([
+                {
+                    message: "DOM Element",
+                    value: "HTMLDivElement"
+                }
+            ]);
+            expect(log[12].args).to.deep.eq([
+                {
+                    message: "Button Element",
+                    value: "HTMLButtonElement"
+                }
+            ]);
+            expect(log[13].args).to.deep.eq([
+                {
+                    message: "React Element",
+                    value: "ReactElement"
+                }
+            ]);
+            expect(log[14].args).to.deep.eq(["Window"]);
+        });
+    });
+
+    it("Should log various JavaScript objects - without clone", () => {
+        visitAndLog();
+
+        cy.writeConsoleLogToFile(outputDir, { prettyOutput: true });
+
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.task("doesFileExist", outputFileName).should("be.true");
+
+        cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+            expect(log.length).to.equal(14);
+            expect(log[0].type).to.equal(ConsoleLogType.Error);
+            expect(new Date(log[0].dateTime).toString()).not.to.equal(invalidDate);
+            expect(log[0].currentTime).to.be.a("string").and.not.to.be.empty;
+            expect(log[0].args[0]).to.be.a("string");
+            expect(log[1].args).to.deep.eq([
+                {
+                    message: "String",
+                    value: "Hello, World!"
+                }
+            ]);
+            expect(log[2].args).to.deep.eq([
+                {
+                    message: "Number",
+                    value: 42
+                }
+            ]);
+            expect(log[3].args).to.deep.eq([
+                {
+                    message: "Boolean",
+                    value: true
+                }
+            ]);
+            expect(log[4].args).to.deep.eq([
+                {
+                    message: "Null",
+                    value: null
+                }
+            ]);
+            expect(log[5].args).to.deep.eq([
+                {
+                    message: "Undefined"
+                }
+            ]);
+            expect(log[6].args).to.deep.eq([
+                {
+                    message: "Array",
+                    value: [1, 2, 3]
+                }
+            ]);
+            expect(log[7].args).to.deep.eq([
+                {
+                    message: "Object",
+                    value: {
+                        key: "value"
+                    }
+                }
+            ]);
+            expect(log[8].args).to.deep.eq([
+                {
+                    message: "Function"
+                }
+            ]);
+            expect(log[9].args).to.deep.eq([
+                {
+                    message: "Date",
+                    value: "2025-01-17T23:00:00.000Z"
+                }
+            ]);
+            expect(log[10].args).to.deep.eq([
+                {
+                    message: "RegExp",
+                    value: {}
+                }
+            ]);
+            expect(log[11].args).to.deep.eq([
+                {
+                    message: "DOM Element",
+                    value: {}
+                }
+            ]);
+            expect(log[12].args).to.deep.eq([
+                {
+                    message: "Button Element",
+                    value: {}
+                }
+            ]);
+            expect(log[13].args).to.deep.eq([
+                {
+                    message: "React Element",
+                    value: {
+                        type: "div",
+                        key: null,
+                        ref: null,
+                        props: {
+                            children: "Hello, React!"
+                        },
+                        _owner: null
+                    }
+                }
+            ]);
+        });
+    });
+});
