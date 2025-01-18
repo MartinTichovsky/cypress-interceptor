@@ -1,6 +1,16 @@
 import { createRequestProxy } from "./createRequestProxy";
 import { Interceptor } from "./Interceptor";
+import {
+    IMockResponse,
+    IMockResponseOptions,
+    InterceptorOptions,
+    IRouteMatcher,
+    IThrottleRequestOptions,
+    WaitUntilRequestOptions,
+    WriteStatsOptions
+} from "./Interceptor.types";
 import { RequestProxy } from "./RequestProxy";
+import { StringMatcher } from "./WebsocketInterceptor.types";
 
 const createCommands = () => {
     let timeStart: number | undefined = undefined;
@@ -12,20 +22,22 @@ const createCommands = () => {
     cy.on("window:before:load", createRequestProxy(requestProxy));
 
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
-    Cypress.Commands.add("interceptorLastRequest", (routeMatcher) =>
+    Cypress.Commands.add("interceptorLastRequest", (routeMatcher?: IRouteMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
     );
-    Cypress.Commands.add("interceptorOptions", (options) =>
+    Cypress.Commands.add("interceptorOptions", (options?: InterceptorOptions) =>
         cy.wrap(interceptor.setOptions(options))
     );
-    Cypress.Commands.add("interceptorRequestCalls", (routeMatcher) =>
+    Cypress.Commands.add("interceptorRequestCalls", (routeMatcher?: IRouteMatcher) =>
         cy.wrap(interceptor.requestCalls(routeMatcher))
     );
-    Cypress.Commands.add("interceptorStats", (routeMatcher) =>
+    Cypress.Commands.add("interceptorStats", (routeMatcher?: IRouteMatcher) =>
         cy.wrap(interceptor.getStats(routeMatcher))
     );
-    Cypress.Commands.add("mockInterceptorResponse", (routeMatcher, mock, options) =>
-        cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
+    Cypress.Commands.add(
+        "mockInterceptorResponse",
+        (routeMatcher: IRouteMatcher, mock: IMockResponse, options?: IMockResponseOptions) =>
+            cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
     );
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
@@ -38,14 +50,22 @@ const createCommands = () => {
             timeout: 0
         });
     });
-    Cypress.Commands.add("throttleInterceptorRequest", (routeMatcher, delay, options) =>
-        cy.wrap(interceptor.throttleRequest(routeMatcher, delay, options))
+    Cypress.Commands.add(
+        "throttleInterceptorRequest",
+        (routeMatcher: IRouteMatcher, delay: number, options?: IThrottleRequestOptions) =>
+            cy.wrap(interceptor.throttleRequest(routeMatcher, delay, options))
     );
-    Cypress.Commands.add("waitUntilRequestIsDone", (stringMatcherOrOptions, errorMessage) =>
-        interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
+    Cypress.Commands.add(
+        "waitUntilRequestIsDone",
+        (stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions, errorMessage?: string) =>
+            interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
     );
-    Cypress.Commands.add("writeInterceptorStatsToLog", (outputDir, options) =>
-        interceptor.writeStatsToLog(outputDir, options)
+    Cypress.Commands.add(
+        "writeInterceptorStatsToLog",
+        (
+            outputDir: string,
+            options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+        ) => interceptor.writeStatsToLog(outputDir, options)
     );
 };
 

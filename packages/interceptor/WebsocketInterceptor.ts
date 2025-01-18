@@ -8,8 +8,6 @@ import {
 } from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
-/// <reference types="cypress" />
-
 declare global {
     namespace Cypress {
         interface Chainable {
@@ -53,7 +51,7 @@ declare global {
                 outputDir: string,
                 options?: WriteStatsOptions &
                     Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-            ) => ReturnType<Cypress.Chainable["writeFile"]>;
+            ) => Chainable<null>;
             /**
              * Reset the the Websocket Interceptor's watch
              */

@@ -1,2 +1,1 @@
-import "cypress-interceptor";
-import "cypress-interceptor/websocket";
+import "cypress-interceptor-share/support/e2e";

@@ -213,7 +213,7 @@ waitUntilRequestIsDone: (
  * @param outputDir The path for the output folder
  * @param options Options
  */
-writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => ReturnType<Cypress.Chainable["writeFile"]>;
+writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
 ```
 
 # Cypress environment variables
@@ -623,7 +623,7 @@ cy.waitUntilRequestIsDone(outputDir, {
 ## cy.writeInterceptorStatsToLog
 
 ```ts
-writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>): ReturnType<Cypress.Chainable["writeFile"]>
+writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>): Chainable<null>
 ```
 
 _References:_
@@ -1023,7 +1023,7 @@ watchTheConsoleOptions: (
 writeConsoleLogToFile: (
     outputDir: string,
     options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-) => ReturnType<Cypress.Chainable["writeFile"]>;
+) => Chainable<null>;
 ```
 
 # Documentation and examples
@@ -1078,7 +1078,7 @@ beforeEach(() => {
 writeConsoleLogToFile: (
     outputDir: string,
     options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-) => ReturnType<Cypress.Chainable["writeFile"]>;
+) => Chainable<null>;
 ```
 
 _References:_
@@ -1264,7 +1264,7 @@ wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
 wsInterceptorStatsToLog: (
     outputDir: string,
     options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-) => ReturnType<Cypress.Chainable["writeFile"]>;
+) => Chainable<null>;
 /**
  * Reset the the Websocket Interceptor's watch
  */
@@ -1385,7 +1385,7 @@ cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
 
 
 ```ts
-wsInterceptorStatsToLog: (outputDir: string,options?: WriteStatsOptions  & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => ReturnType<Cypress.Chainable["writeFile"]>;
+wsInterceptorStatsToLog: (outputDir: string,options?: WriteStatsOptions  & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
 ```
 
 _References:_

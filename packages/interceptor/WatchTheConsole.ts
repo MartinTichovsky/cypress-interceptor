@@ -42,7 +42,7 @@ declare global {
             writeConsoleLogToFile: (
                 outputDir: string,
                 options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-            ) => ReturnType<Cypress.Chainable["writeFile"]>;
+            ) => Chainable<null>;
         }
     }
 }
