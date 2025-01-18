@@ -13,7 +13,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
         experimentalRunAllSpecs: true,
         setupNodeEvents(on, config) {
             if (codeCoverage) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 require("@cypress/code-coverage/task")(on, config);
             }
 

@@ -722,15 +722,16 @@ describe("Logging various JavaScript objects", () => {
             expect(log[8].args).to.deep.eq([
                 {
                     message: "Function",
-                    value: "function value() {\n          return \"Hello\";\n        }"
+                    // eslint-disable-next-line quotes
+                    value: 'function value() {\n          return "Hello";\n        }'
                 }
             ]);
-            // expect(log[9].args).to.deep.eq([
-            //     {
-            //         message: "Date",
-            //         value: "2025-01-17T23:00:00.000Z"
-            //     }
-            // ]);
+
+            const dateEntry = log[9].args[0] as { message: string; value: string };
+
+            expect(dateEntry.message).to.eq("Date");
+            expect(new Date(dateEntry.value).toString()).not.to.equal(invalidDate);
+
             expect(log[10].args).to.deep.eq([
                 {
                     message: "RegExp",
@@ -822,12 +823,12 @@ describe("Logging various JavaScript objects", () => {
                     message: "Function"
                 }
             ]);
-            // expect(log[9].args).to.deep.eq([
-            //     {
-            //         message: "Date",
-            //         value: "2025-01-17T23:00:00.000Z"
-            //     }
-            // ]);
+
+            const dateEntry = log[9].args[0] as { message: string; value: string };
+
+            expect(dateEntry.message).to.eq("Date");
+            expect(new Date(dateEntry.value).toString()).not.to.equal(invalidDate);
+
             expect(log[10].args).to.deep.eq([
                 {
                     message: "RegExp",
