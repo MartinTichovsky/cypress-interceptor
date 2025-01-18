@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";

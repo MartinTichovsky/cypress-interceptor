@@ -10,21 +10,18 @@
 
 Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to log all fetch or XHR requests, which can be analyzed in case of failure. It provides extended ways to log these statistics, including the ability to mock or throttle requests easily. Cypress Interceptor is better than `cy.intercept` because it can avoid issues, especially when using global request catch.
 
-There is also a possibility to work with websocket. For more details, refer to the [websocket section](#websocket-interceptor).
+There is also an option to monitor the web browser console output and log it to a file or work with websockets. For more details, refer to the [Watch The Console](#watch-the-console) or [websocket section](#websocket-interceptor).
 
 ## Motivation
 
 This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
 
 ## What's new
+- [Watch The Console](#watch-the-console) has been reworked and its logic completely changed
 - The improved [Watch The Console](#watch-the-console) now safely logs objects and functions, with an added filtering option
 - Added [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
 - Complete rework, exclude `cy.intercept` as the main tool of logging, stabilizing runs, support all fetch and XHR body types
-- Added [Watch The Console](#watch-the-console) as the way of how to log console output and unhandled JavaScript errors
-- Added a possibility to filter and map stats when a test fails
-- Added a possibility to bypass the response
 - Work with canceled and aborted requests
-- Work with XHR requests
 - Add support for Websockets
 
 ## Table of contents
@@ -33,7 +30,7 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
     - [Getting started](#getting-started)
     - [Would you just log all requests to a file on fail?](#would-you-just-log-all-requests-to-a-file-on-fail)
     - [Would you like to wait until a request or requests are done?](#would-you-like-to-wait-until-a-request-or-requests-are-done)
-    - [Interceptor Cypress commands](#interceptor-cypress-commands)
+    - [Interceptor Cypress commands](#the-cypress-interceptor-commands)
     - [Cypress environment variables](#cypress-environment-variables)
     - [Documentation and examples](#documentation-and-examples)
         - [cy.interceptor](#cyinterceptor)
@@ -55,11 +52,21 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
     - [Useful tips](#useful-tips)
         - [Log on fail](#log-on-fail)
         - [Clean the videos for successful tests](#clean-the-videos-for-successful-tests)
-- [Websocket Interceptor](#websocket-interceptor)
+- [Watch The Console](#watch-the-console)
     - [Getting started](#getting-started-1)
-    - [Websocket Interceptor Cypress commands](#websocket-interceptor-cypress-commands)
-    - [Cypress environment variables](#cypress-environment-variables-1)
+    - [WatchTheConsole Cypress commands](#the-cypress-watchtheconsole-commands)
     - [Documentation and examples](#documentation-and-examples-1)
+        - [cy.watchTheConsole](#cywatchtheconsole)
+        - [cy.watchTheConsoleOptions](#cywatchtheconsoleoptions)
+        - [cy.writeConsoleLogToFile](#cywriteconsolelogtofile)
+    - [WatchTheConsole public methods](#watchtheconsole-public-methods)
+        - [log](#log)
+    - [Interfaces](#interfaces-1)
+- [Websocket Interceptor](#websocket-interceptor)
+    - [Getting started](#getting-started-2)
+    - [Websocket Interceptor Cypress commands](#the-cypress-websocket-interceptor-commands)
+    - [Cypress environment variables](#cypress-environment-variables-1)
+    - [Documentation and examples](#documentation-and-examples-2)
         - [cy.wsInterceptor](#cywsinterceptor)
         - [cy.wsInterceptorLastRequest](#cywsinterceptorlastrequest)
         - [cy.wsInterceptorStats](#cywsinterceptorstats)
@@ -68,18 +75,11 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
         - [cy.waitUntilWebsocketAction](#cywaituntilwebsocketaction)
     - [Websocket Interceptor public methods](#websocket-interceptor-public-methods)
         - [callStack](#callstack-1)
-    - [Interfaces](#interfaces-1)
-- [Watch The Console](#watch-the-console)
-    - [Implementation](#implementation)
-    - [Log on fail](#log-on-fail-1)
-    - [Log on failure with type filtering](#log-on-failure-with-type-filtering)
-    - [Custom log](#custom-log)
-    - [Filtering](#filtering)
-    - [Combination](#combination)
+    - [Interfaces](#interfaces-2)
 
 ## Getting started
 
-It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
+It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js`, `cypress/support/e2e.ts` or in any of your test files:
 
 ```js
 import "cypress-interceptor";
@@ -213,7 +213,7 @@ waitUntilRequestIsDone: (
  * @param outputDir The path for the output folder
  * @param options Options
  */
-writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions) => void;
+writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
 ```
 
 # Cypress environment variables
@@ -310,6 +310,9 @@ Get the number of requests matching the provided route matcher.
 ```ts
 // There should be only one call logged to a URL ending with `/api/getOrder`
 cy.interceptorRequestCalls("**/api/getOrder").should("eq", 1);
+```
+
+```ts
 // there should be only 4 fetch requests
 cy.interceptorRequestCalls({ resourceType: ["fetch"] }).should("eq", 4);
 ```
@@ -374,6 +377,9 @@ cy.mockInterceptorResponse(
     { statusCode: 400 },
     { times: Number.POSITIVE_INFINITY }
 );
+```
+
+```ts
 // return a custom body to a request ending with `/api/getUser`, default once
 cy.mockInterceptorResponse(
     { url: "**/api/getUser" },
@@ -383,6 +389,9 @@ cy.mockInterceptorResponse(
         }
      }
 );
+```
+
+```ts
 // return a custom header to all POST requests, indefinitely
 cy.mockInterceptorResponse(
     { method: "POST" },
@@ -393,6 +402,9 @@ cy.mockInterceptorResponse(
      },
      { times: Number.POSITIVE_INFINITY }
 );
+```
+
+```ts
 // return a custom body to any fetch request, twice
 cy.mockInterceptorResponse(
     { resourceType: "fetch" },
@@ -405,6 +417,9 @@ cy.mockInterceptorResponse(
      },
      { times: 2 }
 );
+```
+
+```ts
 // mock the request having query string `page` = 5, once
 cy.mockInterceptorResponse(
     {
@@ -419,6 +434,9 @@ cy.mockInterceptorResponse(
         times: 1 // this is the default value, no need to set
     }
 );
+```
+
+```ts
 // mock the request having `page` in the request body, default once
 cy.mockInterceptorResponse(
     {
@@ -487,11 +505,20 @@ Throttle requests matching the provided route matcher by setting a delay. By def
 ```ts
 // make the request to `/api/getUser` last for 5 seconds
 cy.throttleInterceptorRequest("**/api/getUser", 5000);
+```
+
+```ts
 // throttle a request which has the URL query string containing key `page` equal to 5
 cy.throttleInterceptorRequest({ queryMatcher: (query) => query?.page === 5}, 5000);
+```
+
+```ts
 // throtlle all requests for 5 seconds
 cy.throttleInterceptorRequest({ resourceType: "all" }, 5000, { times: Number.POSITIVE_INFINITY });
 cy.throttleInterceptorRequest("*", 5000, { times: Number.POSITIVE_INFINITY });
+```
+
+```ts
 // throttle the request having `userName` in the request body
 cy.throttleInterceptorRequest(
     {
@@ -542,30 +569,61 @@ By default, there must be at least one match. Otherwise, it waits until a reques
 ```ts
 // will wait until all requests are finished
 cy.waitUntilRequestIsDone();
+```
+
+```ts
 // wait for requests ending with `/api/getUser`
 cy.waitUntilRequestIsDone("**/api/getUser");
 cy.waitUntilRequestIsDone(new RegExp("api\/getUser$", "i"));
+```
+
+```ts
 // wait for requests containing `/api/`
 cy.waitUntilRequestIsDone("**/api/**");
 cy.waitUntilRequestIsDone(new RegExp("(.*)\/api\/(.*)", "i"));
+```
+
+```ts
 // wait until this request is finished
 cy.waitUntilRequestIsDone("http://my-page.org/api/getUser");
+```
+
+```ts
 // providing a custom error message when maximum time of waiting is reached
 cy.waitUntilRequestIsDone("http://my-page.org/api/getUser", "Request never happened");
+```
+
+```ts
 // wait until all fetch requests are finished
 cy.waitUntilRequestIsDone({ resourceType: "fetch" });
+```
+
+```ts
 // wait maximum 200s for this fetch to finish
 cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", timeout: 200000 });
+```
+
+```ts
 // wait 2s after the request to `api/getUser` finishes to check if there is an another request
 cy.waitUntilRequestIsDone({ url: "http://my-page.org/api/getUser", waitForNextRequest: 2000 });
+```
+
+```ts
 // wait until all cross-domain requests are finished but do not fail if there is none
 cy.waitUntilRequestIsDone({ crossDomain: true, enforceCheck: false });
+```
+
+```ts
+// increase the timeout of `cy.writeFile` if you expect the stats to be large
+cy.waitUntilRequestIsDone(outputDir, {
+    timeout: 60000
+});
 ```
 
 ## cy.writeInterceptorStatsToLog
 
 ```ts
-writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions): Chainable<void>;
+writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>): Chainable<null>
 ```
 
 _References:_
@@ -579,6 +637,8 @@ Write the logged requests' information (or those filtered by the provided route 
 afterAll(() => {
     // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
     cy.writeInterceptorStatsToLog("./out");
+    // increase the timeout for `cy.writeFile` when you expect a big output
+    cy.writeInterceptorStatsToLog("./out", { timeout: 120000 });
     // the output file will be "./out/file_name.stats.json"
     cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" });
     // write only "fetch" requests to the output file
@@ -919,14 +979,256 @@ export default defineConfig({
 });
 ```
 
+# Watch The Console
+
+Watch The Console is a helper function for logging the browser's console to a file. It provides a class which observes the web browser console output. This output is possible to log to a file.
+
+## Getting started
+
+In your `cypress/support/e2e.js`, `cypress/support/e2e.ts` or in any of your test files:
+
+```ts
+import "cypress-interceptor/console";
+```
+
+## The Cypress WatchTheConsole commands
+
+```ts
+ /**
+ * Get an instance of the WatchTheConsole
+ *
+ * @returns An instance of the WatchTheConsole
+ */
+watchTheConsole: () => Chainable<WatchTheConsole>;
+/**
+ * Set the WatchTheConsole options. This must be called before a web page is visited.
+ *
+ * @param options Options
+ * @returns The current WatchTheConsole options
+ */
+watchTheConsoleOptions: (
+    options?: WatchTheConsoleOptions
+) => Chainable<WatchTheConsoleOptions>;
+/**
+ * Write the logged console output to a file
+ *
+ * @example cy.writeConsoleLogToFile("./out") => the output file will be "./out/Description - It.stats.json"
+ * @example cy.writeConsoleLogToFile("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
+ * @example cy.writeConsoleLogToFile("./out", { types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error] }) => write only the
+ * console errors and unhandled JavaScript errors to the output file
+ * @example cy.writeConsoleLogToFile("./out", { filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:") }) =>
+ * filter all console output to include only entries starting with "Custom log:"
+ *
+ * @param outputDir The path for the output folder
+ * @param options Options
+ */
+writeConsoleLogToFile: (
+    outputDir: string,
+    options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+) => Chainable<null>;
+```
+
+# Documentation and examples
+
+## cy.watchTheConsole
+
+```ts
+watchTheConsole: () => Chainable<WatchTheConsole>;
+```
+
+Get an instance of the WatchTheConsole
+
+### Example
+
+```ts
+cy.watchTheConsole().then(watchTheConsole => {
+    expect(
+        watchTheConsole.log.filter((entry) => entry.type === ConsoleLogType.ConsoleError).length
+    ).to.eq(0);
+});
+```
+
+## cy.watchTheConsoleOptions
+
+```ts
+watchTheConsoleOptions: (
+    options?: WatchTheConsoleOptions
+) => Chainable<WatchTheConsoleOptions>;
+```
+
+_References:_
+  - [`WatchTheConsoleOptions`](#watchtheconsoleoptions)
+
+Set the WatchTheConsole options. This must be called before a web page is visited.
+
+### Example
+
+```ts
+beforeEach(() => {
+    /**
+     * My application is using `redux-logger` and provides an extended log of the Redux store. Therefore,
+     * it is necessary to remove circular dependencies and, most importantly, capture the object at the
+     * moment it is logged to prevent changes in the store over time.
+     */
+    cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
+});
+```
+
+## cy.writeConsoleLogToFile
+
+```ts
+writeConsoleLogToFile: (
+    outputDir: string,
+    options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+) => Chainable<null>;
+```
+
+_References:_
+  - [`WriteLogOptions`](#writelogoptions)
+
+### Example
+
+```ts
+// when a test fails, log all console output to a file with formatted output
+afterEach(function () {
+    if (this.currentTest?.state === "failed") {
+         cy.writeConsoleLogToFile("_console", { prettyOutput: true });
+    }
+});
+```
+
+```ts
+// increase the timeout for `cy.writeFile` when you expect a big output
+cy.writeConsoleLogToFile("_console", {
+    timeout: 120000
+});
+```
+
+```ts
+// write only the console errors and unhandled JavaScript errors to the output file
+cy.writeConsoleLogToFile("_console", {
+    types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error]
+});
+```
+
+```ts
+// filter all console output to include only entries starting with "Custom log:"
+cy.writeConsoleLogToFile(outputDir, {
+    filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:")
+});
+```
+
+```ts
+// increase the timeout of `cy.writeFile` if you expect the log to be large
+cy.writeConsoleLogToFile(outputDir, {
+    timeout: 60000
+});
+```
+
+# WatchTheConsole public methods
+
+## log
+
+```ts
+get log(): ConsoleLog[];
+```
+
+Return a copy of all logged console outputs.
+
+## setOptions
+
+Same as [`cy.watchTheConsoleOptions`](#cywatchTheConsoleOptions).
+
+## writeLogToFile
+
+Same as [`cy.writeConsoleLogToFile`](#cywriteConsoleLogToFile).
+
+# Interfaces
+
+### ConsoleLog
+
+```ts
+interface ConsoleLog {
+    /**
+     * The console output or the unhandled JavaScript error message and stack trace
+     */
+    args: unknown[];
+    /**
+     * The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking)
+     */
+    currentTime: CurrentTime;
+    /**
+     * The getTime() of the Date when the console was logged (for future investigation)
+     */
+    dateTime: DateTime;
+    /**
+     * Console Type
+     */
+    type: ConsoleLogType;
+}
+```
+
+### ConsoleLogType
+
+```ts
+enum ConsoleLogType {
+    ConsoleInfo = "console.info",
+    ConsoleError = "console.error",
+    ConsoleLog = "console.log",
+    ConsoleWarn = "console.warn",
+    // this is equal to a unhandled JavaScript error
+    Error = "error"
+}
+```
+
+### WatchTheConsoleOptions
+
+```ts
+interface WatchTheConsoleOptions {
+    /**
+     * When the console output includes an object, it is highly recommended to set this option to `true`
+     * because an object can change at runtime and may not match the object that was logged at that moment.
+     * When set to `true`, it will deeply copy the object and remove any circular dependencies.
+     */
+    cloneConsoleArguments?: boolean;
+}
+```
+
+### WriteLogOptions
+
+```ts
+interface WriteLogOptions {
+    /**
+     * The name of the file. If `undefined`, it will be generated from the running test.
+     */
+    fileName?: string;
+    /**
+     * An option to filter the logged items
+     *
+     * @param type The type of the console log
+     * @param args The console log arguments
+     * @returns `false` if the item should be skipped
+     */
+    filter?: (type: ConsoleLogType, ...args: unknown[]) => boolean;
+    /**
+     * When set to `true`, the output JSON will be formatted with tabs
+     */
+    prettyOutput?: boolean;
+    /**
+     * "If the type is not provided, it logs all console entries
+     */
+    types?: ConsoleLogType[];
+}
+```
+
 # Websocket Interceptor
 
 ## Getting started
 
-It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
+It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js`, `cypress/support/e2e.ts` or in any of your test files:
 
 ```js
-import "cypress-interceptor/lib/websocket";
+import "cypress-interceptor/websocket";
 ```
 
 ## The Cypress Websocket Interceptor commands
@@ -970,8 +1272,8 @@ wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
  */
 wsInterceptorStatsToLog: (
     outputDir: string,
-    options?: WriteStatsOptions
-) => Chainable<void>;
+    options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+) => Chainable<null>;
 /**
  * Reset the the Websocket Interceptor's watch
  */
@@ -1051,8 +1353,10 @@ wsInterceptorLastRequest: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket
 
 ```ts
 cy.wsInterceptorLastRequest({ url: "some-url" }).should("not.be.undefined");
+```
 
- cy.wsInterceptorLastRequest({ type: "close" }).then((entry) => {
+```ts
+cy.wsInterceptorLastRequest({ type: "close" }).then((entry) => {
     expect(entry).not.to.be.undefined;
     expect(entry!.data).to.haveOwnProperty("code", code);
     expect(entry!.data).to.haveOwnProperty("reason", reason);
@@ -1076,7 +1380,9 @@ cy.wsInterceptorStats({ type: "send" }).then((stats) => {
     expect(stats[0].data).not.to.be.empty;
     expect(stats[1].data).not.to.be.empty;
 });
+```
 
+```ts
 cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
     expect(stats.length).to.eq(2);
     expect(stats[0].data).to.haveOwnProperty("data", "some response 1");
@@ -1088,7 +1394,7 @@ cy.wsInterceptorStats({ type: "onmessage" }).then((stats) => {
 
 
 ```ts
-wsInterceptorStatsToLog: (outputDir: string,options?: WriteStatsOptions) => Chainable<void>;
+wsInterceptorStatsToLog: (outputDir: string,options?: WriteStatsOptions  & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
 ```
 
 _References:_
@@ -1102,6 +1408,8 @@ Write the logged requests' information (or those filtered by the provided matche
 afterAll(() => {
     // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
     cy.wsInterceptorStatsToLog("./out");
+    // increase the timeout for `cy.writeFile` when you expect a big output
+    cy.wsInterceptorStatsToLog("./out", { timeout: 120000 });
     // the output file will be "./out/file_name.stats.json"
     cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" });
     // write only stats for a specific URL to the output file
@@ -1149,11 +1457,17 @@ cy.waitUntilWebsocketAction({
     data: "some response",
     type: "onmessage"
 });
+```
+
+```ts
 // wait for the specific send
 cy.waitUntilWebsocketAction({
     data: "some data",
     type: "send"
 });
+```
+
+```ts
 // wait for two sends
 cy.waitUntilWebsocketAction(
     {
@@ -1161,6 +1475,9 @@ cy.waitUntilWebsocketAction(
     },
     { countMatch: 2 }
 );
+```
+
+```ts
 // wait for multiple actions
 cy.waitUntilWebsocketAction([
     {
@@ -1180,12 +1497,18 @@ cy.waitUntilWebsocketAction([
         url: "**/path-3"
     }
 ]);
+```
+
+```ts
 // wait for an action having a url filtered by RegExp
 cy.waitUntilWebsocketAction({
     data: responseData12,
     type: "onmessage",
     url: new RegExp(`some-path$`, "i")
 });
+```
+
+```ts
 // wait for a specific close action with the code and reason equal to a specified value
 cy.waitUntilWebsocketAction([
     {
@@ -1314,116 +1637,4 @@ interface WriteStatsOptions {
      */
     prettyOutput?: boolean;
 }
-```
-
-# Watch The Console
-
-Watch The Console is a helper function for logging the browser's console to a file. After a test fails, it creates a file in the output folder with all console entries. You can also use custom options to customize the output and create output files independently of test failures.
-
-## Using
-
-In your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
-
-```ts
-import { watchTheConsole } from "cypress-interceptor/lib/console";
-
-// catch all console entries such as log, info, warn, error, JavaScript error, and log them to a JSON file in the output folder
-watchTheConsole("output_dir");
-```
-
-## Implementation
-
-```ts
-/**
- * @param outputDir The output directory where the console logs will be saved
- * @param logOnlyType Log only specific types of console output. If not provided, it logs all console entries.
- */
-function watchTheConsole(outputDir: string, logOnlyType?: ConsoleLogType[]): void;
-/**
- * @param options Log options
- */
-function watchTheConsole(options: CustomLog | CustomLog[]): void;
-
-type ConsoleLog = {
-    /**
-     * The console output or the unhandled JavaScript error message and stack trace
-     */
-    args: unknown[];
-    /**
-     * The customized date and time in the format dd/MM/yyyy, hh:mm:ss.milliseconds. (for better visual checking
-     */
-    currentTime: CurrentTime;
-    /**
-     * The getTime() of the Date when the console was logged (for future investigation)
-     */
-    dateTime: DateTime;
-    /**
-     * Console Type
-     */
-    type: ConsoleLogType;
-};
-```
-
-## Examples
-
-```ts
-import { ConsoleLogType, watchTheConsole } from "cypress-interceptor/lib/console";
-```
-
-### Log on fail
-
-```ts
-// the log will be created in the following folder only for failed tests and will contain all console log types and unhandled JavaScript errors
-watchTheConsole("output_dir");
-```
-
-### Log on failure with type filtering
-
-```ts
-// the log will be created in the following folder only for failed tests and will contain only console error logs and unhandled JavaScript errors
-watchTheConsole("output_dir", [ConsoleLogType.ConsoleError, ConsoleLogType.Error]);
-```
-
-### Custom log
-
-```ts
-// log all console errors and unhandled JavaScript errors to the `_error_log` folder for all tests. If the test does not contain the type, it will not create the log file.
-watchTheConsole({
-    outputDir: "_error_log",
-    types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error]
-});
-// or you can combine multiple rules
-watchTheConsole([
-    {
-        outputDir: "_error_log",
-        types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error]
-    }, {
-        outputDir: "_warning_log",
-        types: [ConsoleLogType.ConsoleWarn]
-    }
-]);
-```
-
-### Filtering
-
-```ts
-// Filter all console output to include only entries starting with "Custom log:"
-watchTheConsole({
-    filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:"),
-    outputDir: "_console"
-});
-```
-
-### Combination
-
-You can call `watchTheConsole` multiple times for custom logs, including those for failing tests.
-
-```ts
-// log all console output and unhandled JavaScript errors to the `_fail_log` folder when a test fails
-watchTheConsole("_fail_log");
-// log all console errors and unhandled JavaScript errors to the `_error_log` folder for all tests
-watchTheConsole({
-    outputDir: "_error_log",
-    types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error]
-});
 ```

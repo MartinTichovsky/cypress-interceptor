@@ -1,7 +1,0 @@
-node_modules/
-**/node_modules/**
-*.md
-*.json
-packages/server/src/public/
-packages/server/src/exampleResponse/
-lib/
