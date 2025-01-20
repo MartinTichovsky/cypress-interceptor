@@ -30,30 +30,28 @@ declare global {
              *
              * @returns An instance of the Interceptor
              */
-            interceptor: () => Chainable<Interceptor>;
+            interceptor(): Chainable<Interceptor>;
             /**
              * Get the last call matching the provided route matcher.
              *
              * @param routeMatcher A route matcher
              * @returns The last call information or `undefined` if none matches.
              */
-            interceptorLastRequest: (
-                routeMatcher?: IRouteMatcher
-            ) => Chainable<CallStack | undefined>;
+            interceptorLastRequest(routeMatcher?: IRouteMatcher): Chainable<CallStack | undefined>;
             /**
              * Set the Interceptor options. This must be called before a request occurs.
              *
              * @param options Options
              * @returns The current Interceptor options
              */
-            interceptorOptions: (options?: InterceptorOptions) => Chainable<InterceptorOptions>;
+            interceptorOptions(options?: InterceptorOptions): Chainable<InterceptorOptions>;
             /**
              * Get the number of requests matching the provided route matcher.
              *
              * @param routeMatcher A route matcher
              * @returns The number of requests matching the provided route matcher since the current test started.
              */
-            interceptorRequestCalls: (routeMatcher?: IRouteMatcher) => Chainable<number>;
+            interceptorRequestCalls(routeMatcher?: IRouteMatcher): Chainable<number>;
             /**
              * Get the statistics for all requests matching the provided route matcher since the beginning
              * of the current test.
@@ -62,7 +60,7 @@ declare global {
              * @returns It returns all requests matching the provided route matcher with detailed information.
              * If none match, it returns an empty array.
              */
-            interceptorStats: (routeMatcher?: IRouteMatcher) => Chainable<CallStack[]>;
+            interceptorStats(routeMatcher?: IRouteMatcher): Chainable<CallStack[]>;
             /**
              * Mock the response of requests matching the provided route matcher. By default, it mocks the
              * first matching request, and then the mock is removed. Set `times` in the options to change
@@ -92,14 +90,14 @@ declare global {
              *
              * @returns performance.now() when the code is executed
              */
-            startTiming: () => Chainable<number>;
+            startTiming(): Chainable<number>;
             /**
              * Stop the time measurement (a helper function)
              *
              * @returns If `cy.startTiming` was called, it returns the time difference since startTiming was
              * called (in ms); otherwise, it returns `undefined`.
              */
-            stopTiming: () => Chainable<number | undefined>;
+            stopTiming(): Chainable<number | undefined>;
             /**
              * Throttle requests matching the provided route matcher by setting a delay. By default, it throttles
              * the first matching request, and then the throttle is removed. Set times in the options to change
@@ -123,14 +121,36 @@ declare global {
              * provided route matcher or until the maximum waiting time is reached. This behavior can be changed
              * by setting `enforceCheck` to `false` in the options.
              *
+             * @param action An action which should trigger a request
+             * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+             * @param errorMessage An error message when the maximum waiting time is reached
+             * @returns The result from the action
+             */
+            waitUntilRequestIsDone<T>(
+                action: () => Cypress.Chainable<T>,
+                stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+                errorMessage?: string
+            ): Chainable<T>;
+            /**
+             * @param action An action which should trigger a request
+             * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+             * @param errorMessage An error message when the maximum waiting time is reached
+             * @returns The result from the action
+             */
+            waitUntilRequestIsDone<T>(
+                action: () => T,
+                stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+                errorMessage?: string
+            ): Chainable<T>;
+            /**
              * @param stringMatcherOrOptions A string matcher OR options with a route matcher
              * @param errorMessage An error message when the maximum waiting time is reached
              * @returns An instance of the Interceptor
              */
-            waitUntilRequestIsDone: (
+            waitUntilRequestIsDone(
                 stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
                 errorMessage?: string
-            ) => Chainable<Interceptor>;
+            ): Chainable<Interceptor>;
             /**
              * Write the logged requests' information (or those filtered by the provided route matcher) to a file
              *
@@ -142,11 +162,11 @@ declare global {
              * @param outputDir The path for the output folder
              * @param options Options
              */
-            writeInterceptorStatsToLog: (
+            writeInterceptorStatsToLog(
                 outputDir: string,
                 options?: WriteStatsOptions &
                     Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-            ) => Chainable<null>;
+            ): Chainable<null>;
         }
     }
 }
@@ -609,6 +629,28 @@ export class Interceptor {
      * provided route matcher or until the maximum waiting time is reached. This behavior can be changed
      * by setting `enforceCheck` to `false` in the options.
      *
+     * @param action An action which should trigger a request
+     * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+     * @param errorMessage An error message when the maximum waiting time is reached
+     * @returns The result from the action
+     */
+    public waitUntilRequestIsDone<T>(
+        action: () => Cypress.Chainable<T>,
+        stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+        errorMessage?: string
+    ): Cypress.Chainable<T>;
+    /**
+     * @param action An action which should trigger a request
+     * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+     * @param errorMessage An error message when the maximum waiting time is reached
+     * @returns The result from the action
+     */
+    public waitUntilRequestIsDone<T>(
+        action: () => T,
+        stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+        errorMessage?: string
+    ): Cypress.Chainable<T>;
+    /**
      * @param stringMatcherOrOptions A string matcher OR options with a route matcher
      * @param errorMessage An error message when the maximum waiting time is reached
      * @returns An instance of the Interceptor
@@ -616,11 +658,53 @@ export class Interceptor {
     public waitUntilRequestIsDone(
         stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
         errorMessage?: string
-    ) {
+    ): Cypress.Chainable<Interceptor>;
+    public waitUntilRequestIsDone<T>(
+        actionOrStringMatcherOrOptions?:
+            | (() => Cypress.Chainable<T>)
+            | (() => T)
+            | StringMatcher
+            | WaitUntilRequestOptions,
+        stringMatcherOrOptionsOrErrorMessage?: StringMatcher | WaitUntilRequestOptions | string,
+        errorMessage?: string
+    ): Cypress.Chainable<T> | Cypress.Chainable<this> {
+        if (typeof actionOrStringMatcherOrOptions === "function") {
+            this.resetWatch();
+
+            const actionResult = actionOrStringMatcherOrOptions();
+
+            if (
+                typeof actionResult === "object" &&
+                actionResult !== null &&
+                "then" in actionResult &&
+                typeof actionResult.then === "function"
+            ) {
+                return actionResult.then((result) => {
+                    this.waitUntilRequestIsDone_withWait(
+                        stringMatcherOrOptionsOrErrorMessage,
+                        performance.now(),
+                        errorMessage
+                    );
+
+                    return cy.wrap(result);
+                });
+            } else {
+                this.waitUntilRequestIsDone_withWait(
+                    stringMatcherOrOptionsOrErrorMessage,
+                    performance.now(),
+                    errorMessage
+                );
+
+                return cy.wrap(actionResult as T);
+            }
+        }
+
         return this.waitUntilRequestIsDone_withWait(
-            stringMatcherOrOptions,
+            actionOrStringMatcherOrOptions,
             performance.now(),
-            errorMessage
+            typeof stringMatcherOrOptionsOrErrorMessage === "string"
+                ? stringMatcherOrOptionsOrErrorMessage
+                : undefined
         );
     }
 

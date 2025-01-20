@@ -17,6 +17,7 @@ There is also an option to monitor the web browser console output and log it to 
 This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
 
 ## What's new
+- Improved the use of Interceptor in `before` hooks and added the ability to pass a function to `cy.waitUntilRequestIsDone`
 - [Watch The Console](#watch-the-console) has been reworked and its logic completely changed
 - The improved [Watch The Console](#watch-the-console) now safely logs objects and functions, with an added filtering option
 - Added [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
@@ -186,7 +187,7 @@ throttleInterceptorRequest(
     delay: number,
     options?: IThrottleRequestOptions
 ): Chainable<number>;
-/**
+  /**
  * The method will wait until all requests matching the provided route matcher are finished or until
  * the maximum waiting time (`timeout` in options) is reached.
  *
@@ -194,14 +195,36 @@ throttleInterceptorRequest(
  * provided route matcher or until the maximum waiting time is reached. This behavior can be changed
  * by setting `enforceCheck` to `false` in the options.
  *
+ * @param action An action which should trigger a request
+ * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+ * @param errorMessage An error message when the maximum waiting time is reached
+ * @returns The result from the action
+ */
+waitUntilRequestIsDone<T>(
+    action: () => Cypress.Chainable<T>,
+    stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+    errorMessage?: string
+): Chainable<T>;
+/**
+ * @param action An action which should trigger a request
+ * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+ * @param errorMessage An error message when the maximum waiting time is reached
+ * @returns The result from the action
+ */
+waitUntilRequestIsDone<T>(
+    action: () => T,
+    stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+    errorMessage?: string
+): Chainable<T>;
+/**
  * @param stringMatcherOrOptions A string matcher OR options with a route matcher
  * @param errorMessage An error message when the maximum waiting time is reached
  * @returns An instance of the Interceptor
  */
-waitUntilRequestIsDone: (
+waitUntilRequestIsDone(
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
-) => Chainable<Interceptor>;
+): Chainable<Interceptor>;
 /**
  * Write the logged requests' information (or those filtered by the provided route matcher) to a file
  *
@@ -541,10 +564,37 @@ cy.throttleInterceptorRequest(
 ![Example of using](https://github.com/MartinTichovsky/__sources__/raw/master/ezgif-3-3992b366b5.gif)
 
 ```ts
-waitUntilRequestIsDone: (
+/**
+ * @param action An action which should trigger a request
+ * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+ * @param errorMessage An error message when the maximum waiting time is reached
+ * @returns The result from the action
+ */
+public waitUntilRequestIsDone<T>(
+    action: () => Cypress.Chainable<T>,
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
-) => Chainable<Interceptor>;
+): Cypress.Chainable<T>;
+/**
+ * @param action An action which should trigger a request
+ * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+ * @param errorMessage An error message when the maximum waiting time is reached
+ * @returns The result from the action
+ */
+public waitUntilRequestIsDone<T>(
+    action: () => T,
+    stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+    errorMessage?: string
+): Cypress.Chainable<T>;
+/**
+ * @param stringMatcherOrOptions A string matcher OR options with a route matcher
+ * @param errorMessage An error message when the maximum waiting time is reached
+ * @returns An instance of the Interceptor
+ */
+public waitUntilRequestIsDone(
+    stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
+    errorMessage?: string
+): Cypress.Chainable<Interceptor>;
 ```
 
 _References:_
@@ -564,20 +614,42 @@ const timeout = option?.timeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ??
 
 By default, there must be at least one match. Otherwise, it waits until a request matches the provided route matcher or until the maximum waiting time is reached. This behavior can be changed by setting `enforceCheck` to `false` in the options.
 
+__Important__
+
+It is crutial to call [`cy.resetInterceptorWatch()`](#cyresetinterceptorwatch) before an action that should trigger a request you want to wait for, or pass an action that should trigger the request as the first argument. The reason is that there may be a chain of requests preventing the one you want to wait for from being processed. More details below.
+
 ### Examples
 
 ```ts
-// will wait until all requests are finished
+// will wait until all requests in progress are finished
 cy.waitUntilRequestIsDone();
 ```
 
 ```ts
+// will wait until the login request is finished
+// cy.resetInterceptorWatch is called automatically when you provide a function as the first argument
+cy.waitUntilRequestIsDone(
+    // the request which triggers the request
+    () => cy.contains("button", "Log In").click(),
+    "**/api/log-in"
+);
+```
+
+```ts
+// when you do not provide a function as the first argument it is needed to call cy.resetInterceptorWatch
+// because the request you want to wait for could be called before and Interceptor will ses it as done
+cy.resetInterceptorWatch();
+// any action that should trigger the request
+cy.contains("button", "Log In").click();
 // wait for requests ending with `/api/getUser`
 cy.waitUntilRequestIsDone("**/api/getUser");
 cy.waitUntilRequestIsDone(new RegExp("api\/getUser$", "i"));
 ```
 
 ```ts
+cy.waitUntilRequestIsDone();
+// any action that should trigger the request
+action();
 // wait for requests containing `/api/`
 cy.waitUntilRequestIsDone("**/api/**");
 cy.waitUntilRequestIsDone(new RegExp("(.*)\/api\/(.*)", "i"));
