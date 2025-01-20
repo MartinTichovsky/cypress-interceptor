@@ -16,16 +16,16 @@ declare global {
              *
              * @returns An instance of the WatchTheConsole
              */
-            watchTheConsole: () => Chainable<WatchTheConsole>;
+            watchTheConsole(): Chainable<WatchTheConsole>;
             /**
              * Set the WatchTheConsole options. This must be called before a web page is visited.
              *
              * @param options Options
              * @returns The current WatchTheConsole options
              */
-            watchTheConsoleOptions: (
+            watchTheConsoleOptions(
                 options?: WatchTheConsoleOptions
-            ) => Chainable<WatchTheConsoleOptions>;
+            ): Chainable<WatchTheConsoleOptions>;
             /**
              * Write the logged console output to a file
              *
@@ -39,10 +39,10 @@ declare global {
              * @param outputDir The path for the output folder
              * @param options Options
              */
-            writeConsoleLogToFile: (
+            writeConsoleLogToFile(
                 outputDir: string,
                 options?: WriteLogOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-            ) => Chainable<null>;
+            ): Chainable<null>;
         }
     }
 }

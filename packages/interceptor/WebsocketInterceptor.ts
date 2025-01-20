@@ -16,16 +16,16 @@ declare global {
              *
              * @returns An instance of the Websocket Interceptor
              */
-            wsInterceptor: () => Chainable<WebsocketInterceptor>;
+            wsInterceptor(): Chainable<WebsocketInterceptor>;
             /**
              * Get the last call matching the provided route matcher.
              *
              * @param matcher A matcher
              * @returns The last call information or `undefined` if none matches.
              */
-            wsInterceptorLastRequest: (
+            wsInterceptorLastRequest(
                 matcher?: IWSMatcher
-            ) => Chainable<CallStackWebsocket | undefined>;
+            ): Chainable<CallStackWebsocket | undefined>;
             /**
              * Get the statistics for all requests matching the provided matcher since the beginning
              * of the current test.
@@ -34,7 +34,7 @@ declare global {
              * @returns It returns all requests matching the provided matcher with detailed information.
              * If none match, it returns an empty array.
              */
-            wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+            wsInterceptorStats(matcher?: IWSMatcher): Chainable<CallStackWebsocket[]>;
             /**
              * Write the logged requests' information (or those filtered by the provided matcher) to a file
              *
@@ -47,11 +47,11 @@ declare global {
              * @param outputDir A path for the output directory
              * @param options Options
              */
-            wsInterceptorStatsToLog: (
+            wsInterceptorStatsToLog(
                 outputDir: string,
                 options?: WriteStatsOptions &
                     Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-            ) => Chainable<null>;
+            ): Chainable<null>;
             /**
              * Reset the the Websocket Interceptor's watch
              */
@@ -86,11 +86,6 @@ declare global {
             waitUntilWebsocketAction(
                 matcher?: IWSMatcher | IWSMatcher[],
                 options?: WaitUntilActionOptions,
-                errorMessage?: string
-            ): Cypress.Chainable<WebsocketInterceptor>;
-            waitUntilWebsocketAction(
-                matcherOrOptions?: IWSMatcher | IWSMatcher[] | WaitUntilActionOptions,
-                errorMessageOrOptions?: string | WaitUntilActionOptions,
                 errorMessage?: string
             ): Cypress.Chainable<WebsocketInterceptor>;
         }
