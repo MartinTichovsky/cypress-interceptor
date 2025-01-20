@@ -19,6 +19,12 @@ const createCommands = () => {
     );
 };
 
-beforeEach(() => {
+// this technique is used to ensure the commands are loaded when using it in before hooks
+
+before(() => {
+    createCommands();
+});
+
+afterEach(() => {
     createCommands();
 });

@@ -8,7 +8,7 @@ export * from "./WebsocketInterceptor";
 const createCommands = () => {
     const websocketListener = new WebsocketListener();
 
-    cy.on("window:before:load", createWebsocketProxy(websocketListener));
+    Cypress.on("window:before:load", createWebsocketProxy(websocketListener));
 
     const websocketInterceptor = new WebsocketInterceptor(websocketListener);
 
@@ -34,7 +34,13 @@ const createCommands = () => {
     );
 };
 
-beforeEach(() => {
+// this technique is used to ensure the commands are loaded when using it in before hooks
+
+before(() => {
+    createCommands();
+});
+
+afterEach(() => {
     createCommands();
 });
 

@@ -19,7 +19,7 @@ const createCommands = () => {
     const requestProxy = new RequestProxy();
     const interceptor = new Interceptor(requestProxy);
 
-    cy.on("window:before:load", createRequestProxy(requestProxy));
+    Cypress.on("window:before:load", createRequestProxy(requestProxy));
 
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher?: IRouteMatcher) =>
@@ -69,7 +69,13 @@ const createCommands = () => {
     );
 };
 
-beforeEach(() => {
+// this technique is used to ensure the commands are loaded when using it in before hooks
+
+before(() => {
+    createCommands();
+});
+
+afterEach(() => {
     createCommands();
 });
 

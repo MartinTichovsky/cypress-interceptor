@@ -249,7 +249,7 @@ const processEntry = (entry: DynamicRequest) => {
             method: method ?? "GET",
             signal: controller.signal
         };
-        console.log(url);
+
         (entry.fetchObjectInit ? fetch(new Request(new URL(url), init)) : fetch(url, init))
             .then(async (response) => {
                 const duration = performance.now() - startTime;
