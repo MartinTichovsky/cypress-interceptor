@@ -1,17 +1,21 @@
 import { createWebsocketProxy } from "./createWebsocketProxy";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
-import { IWSMatcher, WriteStatsOptions } from "./WebsocketInterceptor.types";
+import { IWSMatcher, WindowType, WriteStatsOptions } from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
 export * from "./WebsocketInterceptor";
 
-const createCommands = () => {
+(() => {
     const websocketListener = new WebsocketListener();
+    let websocketInterceptor = new WebsocketInterceptor(websocketListener);
 
+    // to be able use it without cy.visit
+    createWebsocketProxy(websocketListener)(window as WindowType);
+
+    // create the proxy in each window
     Cypress.on("window:before:load", createWebsocketProxy(websocketListener));
 
-    const websocketInterceptor = new WebsocketInterceptor(websocketListener);
-
+    // register commands
     Cypress.Commands.add("wsInterceptor", () => cy.wrap(websocketInterceptor));
     Cypress.Commands.add("wsInterceptorLastRequest", (matcher?: IWSMatcher) =>
         cy.wrap(websocketInterceptor.getLastRequest(matcher))
@@ -32,17 +36,12 @@ const createCommands = () => {
             ...(args as Parameters<typeof websocketInterceptor.waitUntilWebsocketAction>)
         )
     );
-};
 
-// this technique is used to ensure the commands are loaded when using it in before hooks
-
-before(() => {
-    createCommands();
-});
-
-afterEach(() => {
-    createCommands();
-});
+    // reset the instance in each run
+    Cypress.on("test:before:run", () => {
+        websocketInterceptor = new WebsocketInterceptor(websocketListener);
+    });
+})();
 
 // FOR DEBUG
 

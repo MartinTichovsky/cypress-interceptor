@@ -33,7 +33,7 @@
     "scripts": {
         "build": "npm run build -w cypress-interceptor",
         "clean": "rimraf --glob ./**/node_modules",
-        "lint": "eslint .",
+        "lint": "npm run lint --workspaces",
         "server": "npm run start -w cypress-interceptor-server",
         "test": "npm run cy:run -w cypress-interceptor-tests-latest",
         "test:all": "npm run cy:run --workspaces --if-present",

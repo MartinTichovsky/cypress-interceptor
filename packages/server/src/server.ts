@@ -103,11 +103,18 @@ app.ws("/*", (ws, req) => {
     }
 });
 
+const cypressInterceptorString = "cypress-interceptor";
 const resourcesPath = "/public/resources/";
 
 app.get(`${resourcesPath}*`, (req, res) => {
     const scriptPath = `${req.url.replace(resourcesPath, "").replace(".js", "")}.ts`;
-    const tsFilePath = path.join(__dirname, "resources", ...scriptPath.split("/"));
+    const tsFilePath = scriptPath.includes(cypressInterceptorString)
+        ? path.join(
+              __dirname,
+              "../../interceptor",
+              ...scriptPath.replace(`${cypressInterceptorString}/`, "").split("/")
+          )
+        : path.join(__dirname, "resources", ...scriptPath.split("/"));
     const tsContent = fs.readFileSync(tsFilePath, "utf8");
 
     const compiled = ts.transpileModule(tsContent, {

@@ -1,3 +1,4 @@
+import { WindowType } from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
 const getQueryObjectFromString = (url: string) => {
@@ -14,11 +15,7 @@ const getQueryObjectFromString = (url: string) => {
 };
 
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
-    const listener = (
-        win: Cypress.AUTWindow & {
-            originWebSocket: typeof WebSocket;
-        }
-    ) => {
+    const listener = (win: WindowType) => {
         if (win.originWebSocket === undefined) {
             win.originWebSocket = win.WebSocket;
         }

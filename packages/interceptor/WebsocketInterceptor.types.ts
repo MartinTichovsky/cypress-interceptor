@@ -68,6 +68,10 @@ export interface WaitUntilActionOptions {
     timeout?: number;
 }
 
+export type WindowType = Cypress.AUTWindow & {
+    originWebSocket: typeof WebSocket;
+};
+
 export interface WriteStatsOptions {
     /**
      * The name of the file. If `undefined`, it will be generated from the running test.

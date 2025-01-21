@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 import { IRequestInit } from "cypress-interceptor/Interceptor.types";
 import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
+import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { fireRequest, testCaseDescribe, testCaseIt, toRegExp } from "../src/utils";
@@ -1008,7 +1009,6 @@ describe("Wait For Requests", () => {
                 return;
             }
 
-            /* istanbul ignore next */
             throw new Error(error.message);
         };
 
@@ -1051,7 +1051,6 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ timeout: duration / 2 }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -1064,7 +1063,6 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: "fetch", timeout: 5000 }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -1079,7 +1077,6 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: "fetch" }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -1092,9 +1089,151 @@ describe("Wait For Requests", () => {
 
             cy.waitUntilRequestIsDone({ resourceType: "fetch" }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
+            });
+        });
+
+        it("Action chainable", () => {
+            cy.visit(getDynamicUrl([]));
+
+            expectedErrorMessage = `${errMessage} (20000ms)`;
+
+            cy.waitUntilRequestIsDone(() => cy.wrap(null), { resourceType: "fetch" }, errMessage);
+
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
+            });
+        });
+
+        it("Action void", () => {
+            cy.visit(getDynamicUrl([]));
+
+            expectedErrorMessage = `${errMessage} (20000ms)`;
+
+            cy.waitUntilRequestIsDone(
+                () => {
+                    (() => {
+                        return 123;
+                    })();
+                },
+                { resourceType: "fetch" },
+                errMessage
+            );
+
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
+            });
+        });
+    });
+
+    testCaseDescribe("Providing action", (resourceType, bodyFormat, responseCatchType) => {
+        const config: DynamicRequest[] = [
+            {
+                bodyFormat,
+                delay: 100,
+                method: "POST",
+                path: testPath_api_1,
+                requests: [
+                    {
+                        bodyFormat,
+                        delay,
+                        duration: tripleDuration,
+                        fireOnClick: true,
+                        method: "POST",
+                        path: testPath_api_1,
+                        responseCatchType,
+                        type: resourceType
+                    }
+                ],
+                responseCatchType,
+                type: resourceType
+            }
+        ];
+
+        it("Providing chainable action", () => {
+            cy.startTiming();
+
+            cy.visit(getDynamicUrl(config));
+
+            // let the page to load
+            cy.wait(2000);
+
+            cy.startTiming();
+
+            const anyReturnObject = { anything: 123 };
+
+            cy.waitUntilRequestIsDone(
+                () => fireRequest().then(() => cy.wrap(anyReturnObject)),
+                `**/${testPath_api_1}`
+            ).then((passedReturn) => {
+                expect(passedReturn).to.eq(anyReturnObject);
+            });
+
+            cy.stopTiming().should("be.gte", tripleDuration);
+
+            cy.interceptorStats({ resourceType }).then((stats) => {
+                expect(stats.length).to.eq(2);
+                expect(stats[0].isPending).to.be.false;
+                expect(stats[1].isPending).to.be.false;
+            });
+        });
+
+        it("Providing void action", () => {
+            cy.startTiming();
+
+            cy.visit(getDynamicUrl(config));
+
+            // let the page to load
+            cy.wait(2000);
+
+            cy.startTiming();
+
+            cy.waitUntilRequestIsDone(() => {
+                fireRequest();
+            }, `**/${testPath_api_1}`).then((result) => {
+                cy.stopTiming().should("be.gte", tripleDuration);
+
+                expect(result).to.be.undefined;
+
+                cy.interceptor().then((interceptor) => {
+                    const stats = interceptor.getStats({ resourceType });
+
+                    expect(stats.length).to.eq(2);
+                    expect(stats[0].isPending).to.be.false;
+                    expect(stats[1].isPending).to.be.false;
+                });
+            });
+        });
+
+        it("Providing not chainable action", () => {
+            cy.startTiming();
+
+            cy.visit(getDynamicUrl(config));
+
+            // let the page to load
+            cy.wait(2000);
+
+            cy.startTiming();
+
+            const anyReturnObject = { anything: true, then: 1 };
+
+            cy.waitUntilRequestIsDone(() => {
+                fireRequest();
+
+                return anyReturnObject;
+            }, `**/${testPath_api_1}`).then((result) => {
+                cy.stopTiming().should("be.gte", tripleDuration);
+
+                expect(result).to.eq(anyReturnObject);
+
+                cy.interceptor().then((interceptor) => {
+                    const stats = interceptor.getStats({ resourceType });
+
+                    expect(stats.length).to.eq(2);
+                    expect(stats[0].isPending).to.be.false;
+                    expect(stats[1].isPending).to.be.false;
+                });
             });
         });
     });
