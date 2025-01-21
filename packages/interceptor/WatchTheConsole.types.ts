@@ -39,6 +39,10 @@ export interface WatchTheConsoleOptions {
     cloneConsoleArguments?: boolean;
 }
 
+export type WindowType = Cypress.AUTWindow & {
+    originWebSocket: typeof WebSocket;
+};
+
 export interface WriteLogOptions {
     /**
      * The name of the file. If `undefined`, it will be generated from the running test.

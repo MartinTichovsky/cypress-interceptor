@@ -6,7 +6,9 @@
         "moduleResolution": "node",
         "target": "ES2021",
         "paths": {
-            "cypress-interceptor": ["packages/interceptor"]
+            "cypress-interceptor": ["./packages/interceptor"],
+            "cypress-interceptor-server": ["./packages/server"],
+            "cypress-interceptor-share": ["./packages/share"]
         },
         "skipLibCheck": true
     }

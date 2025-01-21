@@ -261,6 +261,11 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     waitForNextRequest?: number;
 }
 
+export type WindowType = Cypress.AUTWindow & {
+    originFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+    originXMLHttpRequest: typeof XMLHttpRequest;
+};
+
 export interface WriteStatsOptions {
     /**
      * The name of the file. If `undefined`, it will be generated from the running test.

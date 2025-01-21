@@ -6,21 +6,25 @@ import {
     InterceptorOptions,
     IRouteMatcher,
     IThrottleRequestOptions,
-    WaitUntilRequestOptions,
+    WindowType,
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./RequestProxy";
-import { StringMatcher } from "./WebsocketInterceptor.types";
 
-const createCommands = () => {
+(() => {
     let timeStart: number | undefined = undefined;
     let timeStop: number | undefined = undefined;
 
     const requestProxy = new RequestProxy();
-    const interceptor = new Interceptor(requestProxy);
+    let interceptor = new Interceptor(requestProxy);
 
+    // to be able use it without cy.visit
+    createRequestProxy(requestProxy)(window as WindowType);
+
+    // create the proxy in each window
     Cypress.on("window:before:load", createRequestProxy(requestProxy));
 
+    // register commands
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher?: IRouteMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
@@ -55,10 +59,10 @@ const createCommands = () => {
         (routeMatcher: IRouteMatcher, delay: number, options?: IThrottleRequestOptions) =>
             cy.wrap(interceptor.throttleRequest(routeMatcher, delay, options))
     );
-    Cypress.Commands.add(
-        "waitUntilRequestIsDone",
-        (stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions, errorMessage?: string) =>
-            interceptor.waitUntilRequestIsDone(stringMatcherOrOptions, errorMessage)
+    Cypress.Commands.add("waitUntilRequestIsDone", (...args: unknown[]) =>
+        interceptor.waitUntilRequestIsDone(
+            ...(args as Parameters<typeof interceptor.waitUntilRequestIsDone>)
+        )
     );
     Cypress.Commands.add(
         "writeInterceptorStatsToLog",
@@ -67,17 +71,12 @@ const createCommands = () => {
             options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
         ) => interceptor.writeStatsToLog(outputDir, options)
     );
-};
 
-// this technique is used to ensure the commands are loaded when using it in before hooks
-
-before(() => {
-    createCommands();
-});
-
-afterEach(() => {
-    createCommands();
-});
+    // reset the instance in each run
+    Cypress.on("test:before:run", () => {
+        interceptor = new Interceptor(requestProxy);
+    });
+})();
 
 // FOR DEBUG
 

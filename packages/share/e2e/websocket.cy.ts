@@ -246,7 +246,6 @@ describe("Websocket", () => {
                 return;
             }
 
-            /* istanbul ignore next */
             throw new Error(error.message);
         };
 
@@ -297,7 +296,6 @@ describe("Websocket", () => {
                 errMessage
             );
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -310,7 +308,6 @@ describe("Websocket", () => {
 
             cy.waitUntilWebsocketAction({ timeout: 5000 }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -325,7 +322,6 @@ describe("Websocket", () => {
 
             cy.waitUntilWebsocketAction({ url: "some-url" }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });
@@ -338,7 +334,6 @@ describe("Websocket", () => {
 
             cy.waitUntilWebsocketAction({ url: "some-url" }, errMessage);
 
-            /* istanbul ignore next */
             cy.wrap(null).then(() => {
                 throw new Error("This line should not be reached");
             });

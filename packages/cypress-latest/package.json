@@ -7,6 +7,7 @@
     "cy:run:chrome": "cypress run -b chrome",
     "cy:run:edge": "cypress run -b edge",
     "cy:run:firefox": "cypress run -b firefox",
+    "lint": "eslint .",
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {

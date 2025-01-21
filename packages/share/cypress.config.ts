@@ -54,5 +54,6 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     experimentalInteractiveRunEvents: true,
     experimentalMemoryManagement: true,
     fixturesFolder: false,
+    screenshotOnRunFailure: false,
     video: false
 });

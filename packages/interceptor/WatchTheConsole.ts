@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import { ConsoleProxy } from "./ConsoleProxy";
 import { deepCopy, getFilePath, removeUndefinedFromObject } from "./utils";
 import {
     ConsoleLog,
@@ -74,99 +75,40 @@ export class WatchTheConsole {
     private _options: Required<WatchTheConsoleOptions> = {
         ...defaultOptions
     };
-    private _win?: Cypress.AUTWindow = undefined;
 
-    constructor() {
-        Cypress.on(
-            "window:before:load",
-            (
-                win: Cypress.AUTWindow & {
-                    _consoleLogRegistered: boolean;
-                }
-            ) => {
-                this._log = [];
-                this._win = win;
+    constructor(private consoleProxy: ConsoleProxy) {
+        this._log = [];
 
-                win.addEventListener("error", (e: ErrorEvent) => {
-                    const [dateTime, currentTime] = getCurrentTime();
+        consoleProxy.onLog = (type, ...args) => {
+            const [dateTime, currentTime] = getCurrentTime();
+
+            switch (type) {
+                case ConsoleLogType.Error: {
+                    const e = args[0] as ErrorEvent;
 
                     this._log.push({
                         args: [e.error.message, e.error.stack],
                         currentTime,
                         dateTime,
-                        type: ConsoleLogType.Error
+                        type
                     });
-                });
-
-                const originConsoleLog = win.console.log;
-
-                win.console.log = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
-
+                    break;
+                }
+                case ConsoleLogType.ConsoleLog:
+                case ConsoleLogType.ConsoleInfo:
+                case ConsoleLogType.ConsoleWarn:
+                case ConsoleLogType.ConsoleError: {
                     this._log.push({
                         args: this._options.cloneConsoleArguments
                             ? this.cloneConsoleArguments(args)
                             : args,
                         currentTime,
                         dateTime,
-                        type: ConsoleLogType.ConsoleLog
+                        type
                     });
-
-                    originConsoleLog(...args);
-                };
-
-                const originConsoleInfo = win.console.info;
-
-                win.console.info = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
-
-                    this._log.push({
-                        args: this._options.cloneConsoleArguments
-                            ? this.cloneConsoleArguments(args)
-                            : args,
-                        currentTime,
-                        dateTime,
-                        type: ConsoleLogType.ConsoleInfo
-                    });
-
-                    originConsoleInfo(...args);
-                };
-
-                const originConsoleWarn = win.console.warn;
-
-                win.console.warn = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
-
-                    this._log.push({
-                        args: this._options.cloneConsoleArguments
-                            ? this.cloneConsoleArguments(args)
-                            : args,
-                        currentTime,
-                        dateTime,
-                        type: ConsoleLogType.ConsoleWarn
-                    });
-
-                    originConsoleWarn(...args);
-                };
-
-                const originConsoleError = win.console.error;
-
-                win.console.error = (...args) => {
-                    const [dateTime, currentTime] = getCurrentTime();
-
-                    this._log.push({
-                        args: this._options.cloneConsoleArguments
-                            ? this.cloneConsoleArguments(args)
-                            : args,
-                        currentTime,
-                        dateTime,
-                        type: ConsoleLogType.ConsoleError
-                    });
-
-                    originConsoleError(...args);
-                };
+                }
             }
-        );
+        };
     }
 
     /**
@@ -177,7 +119,7 @@ export class WatchTheConsole {
     }
 
     private get win() {
-        return this._win ?? window;
+        return this.consoleProxy.win;
     }
 
     private cloneAndRemoveCircular(value: unknown, recursiveStack: unknown[] = [], callCount = 0) {
@@ -321,10 +263,23 @@ export class WatchTheConsole {
             return cy.wrap(null);
         }
 
-        return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "console"),
-            JSON.stringify(filteredLog, undefined, options?.prettyOutput ? 4 : undefined),
-            options
-        );
+        try {
+            return cy.writeFile(
+                getFilePath(options?.fileName, outputDir, "console"),
+                JSON.stringify(filteredLog, undefined, options?.prettyOutput ? 4 : undefined),
+                options
+            );
+        } catch {
+            // try to remove circular references
+            return cy.writeFile(
+                getFilePath(options?.fileName, outputDir, "console"),
+                JSON.stringify(
+                    this.cloneConsoleArguments(filteredLog),
+                    undefined,
+                    options?.prettyOutput ? 4 : undefined
+                ),
+                options
+            );
+        }
     }
 }
