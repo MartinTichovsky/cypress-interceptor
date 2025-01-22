@@ -2,7 +2,7 @@
 import { CallStack } from "cypress-interceptor/Interceptor.types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
-import { convertToRequestBody, testCaseDescribe } from "../src/utils";
+import { testCaseDescribe } from "../src/utils";
 
 describe("Stats", () => {
     const testPath_api_1 = "test/api-1";
@@ -71,7 +71,7 @@ describe("Stats", () => {
                 expect(stats.delay).to.be.undefined;
                 expect(stats.duration).to.be.gt(duration);
                 expect(stats.isPending).to.be.false;
-                expect(stats.request.body).to.eq(convertToRequestBody(body, bodyFormat));
+                expect(stats.request.body).to.eq(JSON.stringify(body));
                 expect(stats.request.headers[customHeaderKey]).to.eq(customHeaderValue);
                 expect(stats.request.query).to.deep.eq({
                     ...query,

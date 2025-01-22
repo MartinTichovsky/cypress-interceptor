@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
-import { convertToRequestBody, objectIncludes, testCaseDescribe } from "../src/utils";
+import { objectIncludes, testCaseDescribe } from "../src/utils";
 
 const testPath_api_1 = "test/api-1";
 const testPath_api_2 = "test/api-2";
@@ -239,7 +239,7 @@ testCaseDescribe(
                 url: `**/${testPath_api_1}`
             }).then((stats) => {
                 expect(stats).not.to.be.undefined;
-                expect(stats!.request.body).to.be.eq(convertToRequestBody(body1, bodyFormat));
+                expect(stats!.request.body).to.be.eq(JSON.stringify(body1));
                 expect(objectIncludes(stats!.request.headers, headers)).to.be.true;
                 expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody1a));
             });
@@ -263,7 +263,7 @@ testCaseDescribe(
                 expect(stats).not.to.be.undefined;
                 expect(stats!.delay).to.be.eq(throttleDelay);
                 expect(stats!.duration).to.be.gte(throttleDelay);
-                expect(stats!.request.body).to.be.eq(convertToRequestBody(body2, bodyFormat));
+                expect(stats!.request.body).to.be.eq(JSON.stringify(body2));
                 expect(objectIncludes(stats!.request.headers, headers)).to.be.true;
                 expect(stats!.response!.body).to.deep.eq(JSON.stringify(responseBody2));
             });

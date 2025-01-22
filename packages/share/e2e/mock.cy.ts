@@ -9,13 +9,7 @@ import {
     getResponseHeaders,
     getResponseStatus
 } from "../src/selectors";
-import {
-    convertToRequestBody,
-    createMatcher,
-    isObject,
-    objectIncludes,
-    testCaseDescribe
-} from "../src/utils";
+import { createMatcher, isObject, objectIncludes, testCaseDescribe } from "../src/utils";
 
 describe("Mock Respose", () => {
     const testPath_api_1 = "test/api-1";
@@ -514,11 +508,12 @@ describe("Mock Respose", () => {
             cy.mockInterceptorResponse(
                 { resourceType },
                 {
-                    generateBody: ({ body, headers, method, query }) => {
-                        expect(body).to.eq(convertToRequestBody(body1, bodyFormat));
+                    generateBody: ({ body, headers, method, query }, getJsonRequestBody) => {
+                        expect(body).to.eq(JSON.stringify(body1));
                         expect(objectIncludes(headers, headers1)).to.be.true;
                         expect(method).to.eq("POST");
                         expect(objectIncludes(query, query1)).to.be.true;
+                        expect(getJsonRequestBody()).to.deep.eq(body1);
 
                         return mockResponseBody;
                     }
@@ -651,7 +646,7 @@ describe("Mock Respose", () => {
             cy.throttleInterceptorRequest({ resourceType }, throttleDelay, {
                 mockResponse: {
                     generateBody: ({ body, headers, method, query }) => {
-                        expect(body).to.eq(convertToRequestBody(body1, bodyFormat));
+                        expect(body).to.eq(JSON.stringify(body1));
                         expect(objectIncludes(headers, headers1)).to.be.true;
                         expect(method).to.eq("POST");
                         expect(objectIncludes(query, query1)).to.be.true;
@@ -1884,13 +1879,6 @@ describe("Mock Respose", () => {
             cy.mockInterceptorResponse(
                 {
                     bodyMatcher: (bodyString) => {
-                        if (
-                            bodyFormat === "document" &&
-                            bodyString === convertToRequestBody(body2, bodyFormat)
-                        ) {
-                            return true;
-                        }
-
                         try {
                             const body = JSON.parse(bodyString);
 
@@ -2498,4 +2486,257 @@ describe("Mock Respose", () => {
             });
         });
     });
+
+    testCaseDescribe(
+        "`allowHitTheNetwork` option",
+        (resourceType, bodyFormat, responseCatchType) => {
+            const api_path_1 = "test/api-1";
+            const api_path_2 = "test/api-2";
+            const api_path_3 = "test/api-3";
+
+            const mockResponseBody1 = {
+                response: {
+                    val: "value"
+                }
+            };
+
+            const mockResponseBody2 = {
+                anything: {
+                    res: ["value"]
+                }
+            };
+
+            const mockResponseHeaders1 = {
+                custom1: "value-1"
+            };
+
+            const mockResponseHeaders2 = {
+                custom2: "value-2"
+            };
+
+            const mockResponseStatusCode1 = 201;
+            const mockResponseStatusCode2 = 202;
+
+            const config: DynamicRequest[] = [
+                {
+                    bodyFormat,
+                    delay: 100,
+                    method: "POST",
+                    path: api_path_1,
+                    responseBody: responseBody1,
+                    responseCatchType,
+                    status: 200,
+                    type: resourceType
+                },
+                {
+                    bodyFormat,
+                    delay: 150,
+                    method: "POST",
+                    path: api_path_2,
+                    responseBody: responseBody2,
+                    responseCatchType,
+                    status: 200,
+                    type: resourceType
+                },
+                {
+                    bodyFormat,
+                    delay: 200,
+                    method: "POST",
+                    path: api_path_3,
+                    responseBody: responseBody3,
+                    responseCatchType,
+                    status: 200,
+                    type: resourceType
+                }
+            ];
+
+            let requestUrl: string[] = [];
+            let responseUrl: string[] = [];
+
+            beforeEach(() => {
+                requestUrl = [];
+                responseUrl = [];
+
+                cy.intercept("/test/api*", (req) => {
+                    requestUrl.push(req.url);
+
+                    req.on("response", (res) => {
+                        responseUrl.push(req.url);
+
+                        res.send();
+                    });
+                });
+            });
+
+            const check = () => {
+                cy.interceptorStats({ resourceType, url: `**/${api_path_1}` }).then((stats) => {
+                    expect(stats).to.have.length(1);
+                    expect(stats[0].delay).to.be.undefined;
+                    expect(stats[0].response).not.to.be.undefined;
+                    expect(stats[0].response!.body).to.deep.eq(JSON.stringify(mockResponseBody1));
+                    expect(stats[0].response!.isMock).to.be.true;
+                    expect(objectIncludes(stats[0].response!.headers, mockResponseHeaders1)).to.be
+                        .true;
+                    expect(stats[0].response!.statusCode).to.eq(mockResponseStatusCode1);
+                });
+
+                getResponseBody(api_path_1).should("deep.equal", mockResponseBody1);
+                checkResponseHeaders(api_path_1, mockResponseHeaders1).should("be.true");
+                getResponseStatus(api_path_1).should("eq", mockResponseStatusCode1);
+
+                cy.interceptorStats({ resourceType, url: `**/${api_path_2}` }).then((stats) => {
+                    expect(stats).to.have.length(1);
+                    expect(stats[0].delay).to.be.eq(100);
+                    expect(stats[0].response).not.to.be.undefined;
+                    expect(stats[0].response!.body).to.deep.eq(JSON.stringify(mockResponseBody2));
+                    expect(stats[0].response!.isMock).to.be.true;
+                    expect(objectIncludes(stats[0].response!.headers, mockResponseHeaders2)).to.be
+                        .true;
+                    expect(stats[0].response!.statusCode).to.eq(mockResponseStatusCode2);
+                });
+
+                getResponseBody(api_path_2).should("deep.equal", mockResponseBody2);
+                checkResponseHeaders(api_path_2, mockResponseHeaders2).should("be.true");
+                getResponseStatus(api_path_2).should("eq", mockResponseStatusCode2);
+
+                cy.interceptorStats({ resourceType, url: `**/${api_path_3}` }).then((stats) => {
+                    expect(stats).to.have.length(1);
+                    expect(stats[0].delay).to.be.undefined;
+                    expect(stats[0].response).not.to.be.undefined;
+                    expect(stats[0].response!.body).to.deep.eq(JSON.stringify(responseBody3));
+                    expect(stats[0].response!.isMock).to.be.false;
+                    expect(objectIncludes(stats[0].response!.headers, mockResponseHeaders1)).to.be
+                        .false;
+                    expect(objectIncludes(stats[0].response!.headers, mockResponseHeaders2)).to.be
+                        .false;
+                    expect(stats[0].response!.statusCode).to.eq(200);
+                });
+
+                getResponseBody(api_path_3).should("deep.equal", responseBody3);
+                checkResponseHeaders(api_path_3, mockResponseHeaders1).should("be.false");
+                checkResponseHeaders(api_path_3, mockResponseHeaders2).should("be.false");
+                getResponseStatus(api_path_3).should("eq", 200);
+            };
+
+            it("Should hit the network with when `body` provided", () => {
+                cy.mockInterceptorResponse(`**/${api_path_1}`, {
+                    allowHitTheNetwork: true,
+                    body: mockResponseBody1,
+                    headers: mockResponseHeaders1,
+                    statusCode: mockResponseStatusCode1
+                });
+
+                cy.throttleInterceptorRequest(`**/${api_path_2}`, 100, {
+                    mockResponse: {
+                        allowHitTheNetwork: true,
+                        body: mockResponseBody2,
+                        headers: mockResponseHeaders2,
+                        statusCode: mockResponseStatusCode2
+                    }
+                });
+
+                cy.visit(getDynamicUrl(config));
+
+                cy.waitUntilRequestIsDone().then(() => {
+                    expect(requestUrl).to.have.length(3);
+                    expect(requestUrl[0].includes(api_path_1)).to.be.true;
+                    expect(requestUrl[1].includes(api_path_2)).to.be.true;
+                    expect(requestUrl[2].includes(api_path_3)).to.be.true;
+                    expect(responseUrl).to.have.length(3);
+                    expect(responseUrl[0].includes(api_path_1)).to.be.true;
+                    expect(responseUrl[1].includes(api_path_2)).to.be.true;
+                    expect(responseUrl[2].includes(api_path_3)).to.be.true;
+                });
+
+                check();
+            });
+
+            it("Should hit the network with when `generateBody` provided", () => {
+                cy.mockInterceptorResponse(`**/${api_path_1}`, {
+                    allowHitTheNetwork: true,
+                    generateBody: () => mockResponseBody1,
+                    headers: mockResponseHeaders1,
+                    statusCode: mockResponseStatusCode1
+                });
+
+                cy.throttleInterceptorRequest(`**/${api_path_2}`, 100, {
+                    mockResponse: {
+                        allowHitTheNetwork: true,
+                        generateBody: () => mockResponseBody2,
+                        headers: mockResponseHeaders2,
+                        statusCode: mockResponseStatusCode2
+                    }
+                });
+
+                cy.visit(getDynamicUrl(config));
+
+                cy.waitUntilRequestIsDone().then(() => {
+                    expect(requestUrl).to.have.length(3);
+                    expect(requestUrl[0].includes(api_path_1)).to.be.true;
+                    expect(requestUrl[1].includes(api_path_2)).to.be.true;
+                    expect(requestUrl[2].includes(api_path_3)).to.be.true;
+                    expect(responseUrl).to.have.length(3);
+                    expect(responseUrl[0].includes(api_path_1)).to.be.true;
+                    expect(responseUrl[1].includes(api_path_2)).to.be.true;
+                    expect(responseUrl[2].includes(api_path_3)).to.be.true;
+                });
+
+                check();
+            });
+
+            it("Should not hit the network with when `body` provided", () => {
+                cy.mockInterceptorResponse(`**/${api_path_1}`, {
+                    body: mockResponseBody1,
+                    headers: mockResponseHeaders1,
+                    statusCode: mockResponseStatusCode1
+                });
+
+                cy.throttleInterceptorRequest(`**/${api_path_2}`, 100, {
+                    mockResponse: {
+                        body: mockResponseBody2,
+                        headers: mockResponseHeaders2,
+                        statusCode: mockResponseStatusCode2
+                    }
+                });
+
+                cy.visit(getDynamicUrl(config));
+
+                cy.waitUntilRequestIsDone().then(() => {
+                    expect(requestUrl).to.have.length(1);
+                    expect(requestUrl[0].includes(testPath_api_3)).to.be.true;
+                    expect(responseUrl).to.have.length(1);
+                    expect(responseUrl[0].includes(testPath_api_3)).to.be.true;
+                });
+
+                check();
+            });
+
+            it("Should not hit the network with when `generateBody` provided", () => {
+                cy.mockInterceptorResponse(`**/${api_path_1}`, {
+                    generateBody: () => mockResponseBody1,
+                    headers: mockResponseHeaders1,
+                    statusCode: mockResponseStatusCode1
+                });
+
+                cy.throttleInterceptorRequest(`**/${api_path_2}`, 100, {
+                    mockResponse: {
+                        generateBody: () => mockResponseBody2,
+                        headers: mockResponseHeaders2,
+                        statusCode: mockResponseStatusCode2
+                    }
+                });
+
+                cy.visit(getDynamicUrl(config));
+
+                cy.waitUntilRequestIsDone().then(() => {
+                    expect(requestUrl).to.have.length(1);
+                    expect(requestUrl[0].includes(testPath_api_3)).to.be.true;
+                    expect(responseUrl).to.have.length(1);
+                    expect(responseUrl[0].includes(testPath_api_3)).to.be.true;
+                });
+
+                check();
+            });
+        }
+    );
 });

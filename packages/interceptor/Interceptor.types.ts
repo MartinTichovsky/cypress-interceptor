@@ -68,6 +68,11 @@ export type IHeaders = { [key: string]: string | string[] };
 
 export interface IMockResponse {
     /**
+     * When this property is set to `true`, it allows the request to reach the network.
+     * By default, the mocked request does not reach the network layer.
+     */
+    allowHitTheNetwork?: boolean;
+    /**
      * The response body, it can be anything
      */
     body?: unknown;
@@ -76,9 +81,10 @@ export interface IMockResponse {
      * than the `body` option.
      *
      * @param request An object with the request data (body, query, method, ...)
+     * @param getJsonRequestBody It will try to return a parsed request body
      * @returns The response body, it can be anything
      */
-    generateBody?: (request: IRequest) => unknown;
+    generateBody?: (request: IRequest, getJsonRequestBody: <T = unknown>() => T) => unknown;
     /**
      * If provided, this will be added to the original response headers.
      */
