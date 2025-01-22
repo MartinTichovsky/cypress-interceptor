@@ -391,6 +391,10 @@ _References:_
 
 Mock the response of requests matching the provided route matcher. By default, it mocks the first matching request, and then the mock is removed. Set `times` in the options to change how many times the matching requests should be mocked.
 
+__Important__
+
+By default, the mocked request does not reach the network layer. Set `allowHitTheNetwork` to `true` if you want the request to reach the network layer
+
 ### Examples
 
 ```ts
@@ -432,7 +436,7 @@ cy.mockInterceptorResponse(
 cy.mockInterceptorResponse(
     { resourceType: "fetch" },
     { 
-        generateBody: (request) => {
+        generateBody: (request, getJsonRequestBody) => {
             return {
                 userName: "LordVoldemort"
             };
@@ -441,6 +445,20 @@ cy.mockInterceptorResponse(
      { times: 2 }
 );
 ```
+
+```ts
+// generate the response dynamically
+cy.mockInterceptorResponse(
+    { resourceType: "fetch" },
+    {
+        generateBody: (_, getJsonRequestBody) =>
+            "page" in getJsonRequestBody<{ page: number }>()
+            ? ({ custom: "resposne 1" })
+            : ({ custom: "resposne 2" })
+    }
+);
+```
+
 
 ```ts
 // mock the request having query string `page` = 5, once
@@ -463,7 +481,7 @@ cy.mockInterceptorResponse(
 // mock the request having `page` in the request body, default once
 cy.mockInterceptorResponse(
     {
-        bodyMatcher: (bodyString) => {
+        bodyMatcher: () => {
             try {
                 const body = JSON.parse(bodyString);
 
@@ -520,8 +538,11 @@ throttleInterceptorRequest(
 _References:_
   - [`IRouteMatcher`](#iroutematcher)
   - [`IThrottleRequestOptions`](#ithrottlerequestoptions)
+  - [`IMockResponseOptions`](#imockresponseoptions)
 
 Throttle requests matching the provided route matcher by setting a delay. By default, it throttles the first matching request, and then the throttle is removed. Set times in the options to change how many times the matching requests should be throttled.
+
+In the options, the `mockResponse` property can accept the same mocking object as shown in [cy.mockInterceptorResponse](#cymockinterceptorresponse).
 
 ### Example
 
@@ -816,6 +837,11 @@ interface InterceptorOptions {
 ```ts
 interface IMockResponse {
     /**
+     * When this property is set to `true`, it allows the request to reach the network.
+     * By default, the mocked request does not reach the network layer.
+     */
+    allowHitTheNetwork?: boolean;
+    /**
      * The response body, it can be anything
      */
     body?: unknown;
@@ -824,9 +850,10 @@ interface IMockResponse {
      * than the `body` option.
      *
      * @param request An object with the request data (body, query, method, ...)
+     * @param getJsonRequestBody It will try to return a parsed request body
      * @returns The response body, it can be anything
      */
-    generateBody?: (request: IRequest) => unknown;
+    generateBody?: (request: IRequest, getJsonRequestBody: <T = unknown>() => T) => unknown;
     /**
      * If provided, this will be added to the original response headers.
      */
@@ -838,6 +865,7 @@ interface IMockResponse {
     /**
      * The response status text
      */
+    statusText?: string;
 }
 ```
 

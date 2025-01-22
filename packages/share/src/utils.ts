@@ -13,16 +13,6 @@ export const createMatcher =
                 : true
             : false;
 
-export const formDataOrURLSearchParamsToObject = (formData: FormData | URLSearchParams) => {
-    const obj: Record<string, unknown> = {};
-
-    for (const [key, value] of formData.entries()) {
-        obj[key] = value;
-    }
-
-    return obj;
-};
-
 export const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && !Array.isArray(val) && val !== null;
 
@@ -55,30 +45,6 @@ export const objectToURLSearchParams = (data: Record<string, unknown>) => {
         }
     }
     return params;
-};
-
-export const convertToRequestBody = (
-    body: Record<string, unknown>,
-    bodyFormat: BodyFormatFetch | BodyFormatXHR
-) => {
-    switch (bodyFormat) {
-        case "document": {
-            const parser = new DOMParser();
-            const xml = `<root>${Object.entries(body)
-                .map(([key, value]) => `<${key}>${String(value)}</${key}>`)
-                .join("")}</root>`;
-
-            return new XMLSerializer().serializeToString(
-                parser.parseFromString(xml, "application/xml")
-            );
-        }
-        case "formdata":
-            return JSON.stringify(formDataOrURLSearchParamsToObject(objectToFormData(body)));
-        case "urlencoded":
-            return JSON.stringify(formDataOrURLSearchParamsToObject(objectToURLSearchParams(body)));
-        default:
-            return JSON.stringify(body);
-    }
 };
 
 const testCases: {

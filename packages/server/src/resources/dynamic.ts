@@ -1,3 +1,6 @@
+import { objectToFormData, objectToURLSearchParams } from "cypress-interceptor/convert/formData";
+import { objectToXMLDocument } from "cypress-interceptor/convert/xmlDocument";
+
 import {
     BodyFormatFetch,
     BodyFormatXHR,
@@ -26,15 +29,7 @@ const createRequestBodyForFetch = (
         case "blob":
             return new Blob([JSON.stringify(data)], { type: "application/json" });
         case "formdata": {
-            const formData = new FormData();
-
-            for (const key in data) {
-                if (Object.prototype.hasOwnProperty.call(data, key)) {
-                    formData.append(key, data[key] instanceof Blob ? data[key] : String(data[key]));
-                }
-            }
-
-            return formData;
+            return objectToFormData(data, window);
         }
         case "typedarray": {
             const json = JSON.stringify(data);
@@ -43,15 +38,7 @@ const createRequestBodyForFetch = (
             return uint8Array;
         }
         case "urlencoded": {
-            const params = new URLSearchParams();
-
-            for (const key in data) {
-                if (Object.prototype.hasOwnProperty.call(data, key)) {
-                    params.append(key, String(data[key]));
-                }
-            }
-
-            return params;
+            return objectToURLSearchParams(data, window);
         }
         default:
             return JSON.stringify(data);
@@ -63,12 +50,7 @@ const createRequestBodyForXHR = (
     format: BodyFormatFetch | BodyFormatXHR | undefined
 ) => {
     if (format === "document") {
-        const parser = new DOMParser();
-        const xml = `<root>${Object.entries(data)
-            .map(([key, value]) => `<${key}>${String(value)}</${key}>`)
-            .join("")}</root>`;
-
-        return parser.parseFromString(xml, "application/xml");
+        return objectToXMLDocument(data, window);
     }
 
     return createRequestBodyForFetch(data, format);

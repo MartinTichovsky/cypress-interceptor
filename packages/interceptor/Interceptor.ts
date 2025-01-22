@@ -1,5 +1,6 @@
 import { StringMatcher } from "cypress/types/net-stubbing";
 
+import { convertInputBodyToString } from "./convert/convert";
 import {
     CallStack,
     IMockResponse,
@@ -12,14 +13,7 @@ import {
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./RequestProxy";
-import {
-    convertToString,
-    deepCopy,
-    getFilePath,
-    removeUndefinedFromObject,
-    replacer,
-    testUrlMatch
-} from "./utils";
+import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
 import { waitTill } from "./wait";
 
 declare global {
@@ -242,7 +236,7 @@ export class Interceptor {
                 crossDomain,
                 isPending: !ignoreItem,
                 request: {
-                    body: await convertToString(request.body, win),
+                    body: await convertInputBodyToString(request.body, win),
                     headers: deepCopy(request.headers),
                     method: request.method,
                     query: deepCopy(query)

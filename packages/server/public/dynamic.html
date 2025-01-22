@@ -10,6 +10,17 @@
         <script>
             exports = {}
         </script>
+        <script type="importmap">
+            {
+                "imports": {
+                    "cypress-interceptor/convert/common": "/public/resources/cypress-interceptor/convert/common.js",
+                    "cypress-interceptor/convert/convert": "/public/resources/cypress-interceptor/convert/convert.js",
+                    "cypress-interceptor/convert/formData": "/public/resources/cypress-interceptor/convert/formData.js",
+                    "cypress-interceptor/convert/replacer": "/public/resources/cypress-interceptor/convert/replacer.js",
+                    "cypress-interceptor/convert/xmlDocument": "/public/resources/cypress-interceptor/convert/xmlDocument.js"
+                }
+            }
+        </script>
         <script src="./resources/dynamic.js" type="module"></script>
         <div>
             <button id="fire_request" onclick="fireRequest()">Fire a request</button>

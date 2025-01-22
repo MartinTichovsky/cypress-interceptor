@@ -1,13 +1,9 @@
+import { convertInputBodyToString } from "./convert/convert";
+import { WindowType } from "./Interceptor.types";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
-import { convertToString } from "./utils";
 
 export const createRequestProxy = (requestProxy: RequestProxy) => {
-    const listener = (
-        win: Cypress.AUTWindow & {
-            originFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-            originXMLHttpRequest: typeof XMLHttpRequest;
-        }
-    ) => {
+    const listener = (win: WindowType) => {
         requestProxy.onCreate?.();
 
         if (win.originFetch === undefined) {
@@ -42,72 +38,85 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             return new Promise((resolve, reject) => {
                 const mock = proxy.mock;
 
-                if (!mock?.body && !mock?.generateBody) {
-                    win.originFetch(input, init)
-                        .then((response) => {
-                            // mock only headers or status
-                            if (mock?.headers || mock?.statusCode || mock?.statusText) {
-                                response
-                                    .text()
-                                    .then((responseText) => {
-                                        const headersWithMock = { ...headers, ...mock.headers };
+                const hasResponseBodyMock = !(!mock?.body && !mock?.generateBody);
 
-                                        const mockResponse = new Response(responseText, {
-                                            headers: headersWithMock,
-                                            status: mock?.statusCode ?? response.status,
-                                            statusText: mock?.statusText ?? response.statusText
-                                        });
+                const mockResponse = (responseText = "") => {
+                    convertInputBodyToString(init.body, win)
+                        .then((convertedBody) => {
+                            const body =
+                                mock!.generateBody?.(
+                                    {
+                                        body: convertedBody,
+                                        headers,
+                                        method: init.method ?? "GET",
+                                        query: Object.fromEntries(url.searchParams)
+                                    },
+                                    () => {
+                                        try {
+                                            return JSON.parse(convertedBody);
+                                        } catch {
+                                            return convertedBody;
+                                        }
+                                    }
+                                ) ??
+                                mock!.body ??
+                                responseText;
 
-                                        proxy.done(mockResponse, () => resolve(mockResponse), true);
-                                    })
-                                    .catch((error) => {
-                                        proxy.error(error);
-                                        reject(error);
-                                    });
-                            } else {
-                                proxy.done(response, () => resolve(response));
+                            const isObject = typeof body === "object";
+
+                            const headersWithMock = { ...headers, ...mock!.headers };
+
+                            if (
+                                isObject &&
+                                !Object.keys(headersWithMock).some(
+                                    (key) => key.toLowerCase() === "content-type"
+                                )
+                            ) {
+                                headersWithMock["Content-Type"] = "application/json";
                             }
+
+                            const response = new Response(
+                                isObject ? JSON.stringify(body) : String(body),
+                                {
+                                    headers: headersWithMock,
+                                    status: mock!.statusCode ?? 200,
+                                    statusText: mock!.statusText ?? "OK"
+                                }
+                            );
+
+                            return proxy.done(response, () => resolve(response), true);
                         })
                         .catch((error) => {
                             proxy.error(error);
                             reject(error);
                         });
-                    return;
+                };
+
+                if (hasResponseBodyMock && !mock.allowHitTheNetwork) {
+                    return mockResponse();
                 }
 
-                convertToString(init.body, win)
-                    .then((convertedBody) => {
-                        const body =
-                            mock.generateBody?.({
-                                body: convertedBody,
-                                headers,
-                                method: init.method ?? "GET",
-                                query: Object.fromEntries(url.searchParams)
-                            }) ?? mock.body;
-
-                        const isObject = typeof body === "object";
-
-                        const headersWithMock = { ...headers, ...mock.headers };
-
+                win.originFetch(input, init)
+                    .then((response) => {
+                        // mock only headers or status
                         if (
-                            isObject &&
-                            !Object.keys(headersWithMock).some(
-                                (key) => key.toLowerCase() === "content-type"
-                            )
+                            hasResponseBodyMock ||
+                            mock?.headers ||
+                            mock?.statusCode ||
+                            mock?.statusText
                         ) {
-                            headersWithMock["Content-Type"] = "application/json";
+                            response
+                                .text()
+                                .then((responseText) => {
+                                    mockResponse(responseText);
+                                })
+                                .catch((error) => {
+                                    proxy.error(error);
+                                    reject(error);
+                                });
+                        } else {
+                            proxy.done(response, () => resolve(response));
                         }
-
-                        const response = new Response(
-                            isObject ? JSON.stringify(body) : body?.toString(),
-                            {
-                                headers: headersWithMock,
-                                status: mock.statusCode ?? 200,
-                                statusText: mock.statusText ?? "OK"
-                            }
-                        );
-
-                        proxy.done(response, () => resolve(response), true);
                     })
                     .catch((error) => {
                         proxy.error(error);
@@ -136,35 +145,43 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                     "generateBody" in this._proxy.mock &&
                     this._proxy.mock.generateBody
                 ) {
-                    return this._proxy.mock.generateBody({
-                        body: this._convertedBody,
-                        headers: this._headers,
-                        method: this._method ?? "GET",
-                        query: Object.fromEntries(this._url.searchParams)
-                    });
+                    return this._proxy.mock.generateBody(
+                        {
+                            body: this._convertedBody,
+                            headers: this._headers,
+                            method: this._method ?? "GET",
+                            query: Object.fromEntries(this._url.searchParams)
+                        },
+                        () => {
+                            try {
+                                return JSON.parse(this._convertedBody);
+                            } catch {
+                                return this._convertedBody;
+                            }
+                        }
+                    );
                 }
 
                 return undefined;
             }
 
             _onResponse = (callback: VoidFunction) => {
-                if (!this._proxy || this._mockBody) {
-                    callback();
-                } else {
-                    this._proxy.done(
-                        this,
-                        callback,
-                        Boolean(
+                this._proxy.done(
+                    this,
+                    callback,
+                    Boolean(
+                        this._mockBody ||
                             this._proxy.mock?.headers ||
-                                this._proxy.mock?.statusCode ||
-                                this._proxy.mock?.statusText
-                        )
-                    );
-                }
+                            this._proxy.mock?.statusCode ||
+                            this._proxy.mock?.statusText
+                    )
+                );
             };
 
             get readyState() {
-                return this._mockBody ? XMLHttpRequest.DONE : super.readyState;
+                return this._mockBody && !this._proxy.mock?.allowHitTheNetwork
+                    ? XMLHttpRequest.DONE
+                    : super.readyState;
             }
 
             get response() {
@@ -308,12 +325,18 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         this._mockBody = Boolean(proxy.mock?.body || proxy.mock?.generateBody);
                         this._proxy = proxy;
 
-                        if (proxy && this._mockBody) {
-                            convertToString(body, win)
-                                .then((convertedBody) => {
-                                    this._convertedBody = convertedBody;
+                        if (!proxy || !this._mockBody) {
+                            return super.send(body);
+                        }
 
-                                    proxy.done(
+                        convertInputBodyToString(body, win)
+                            .then((convertedBody) => {
+                                this._convertedBody = convertedBody;
+
+                                if (proxy.mock?.allowHitTheNetwork) {
+                                    return super.send(body);
+                                } else {
+                                    return proxy.done(
                                         this,
                                         () => {
                                             this.dispatchEvent(
@@ -323,13 +346,11 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                                         },
                                         true
                                     );
-                                })
-                                .catch(() => {
-                                    this.onerror(new ProgressEvent("error"));
-                                });
-                        } else {
-                            super.send(body);
-                        }
+                                }
+                            })
+                            .catch(() => {
+                                this.onerror(new ProgressEvent("error"));
+                            });
                     })
                     .catch(() => {
                         this.onerror(new ProgressEvent("error"));
