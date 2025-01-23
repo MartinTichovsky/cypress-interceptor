@@ -1183,6 +1183,8 @@ writeConsoleLogToFile: (
 ) => Chainable<null>;
 ```
 
+Write the logged console output to a file.
+
 _References:_
   - [`WriteLogOptions`](#writelogoptions)
 
@@ -1215,13 +1217,6 @@ cy.writeConsoleLogToFile("_console", {
 // filter all console output to include only entries starting with "Custom log:"
 cy.writeConsoleLogToFile(outputDir, {
     filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:")
-});
-```
-
-```ts
-// increase the timeout of `cy.writeFile` if you expect the log to be large
-cy.writeConsoleLogToFile(outputDir, {
-    timeout: 60000
 });
 ```
 
