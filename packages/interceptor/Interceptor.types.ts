@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 import { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
 export interface CallStack {
@@ -267,7 +269,7 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     waitForNextRequest?: number;
 }
 
-export type WindowType = Cypress.AUTWindow & {
+export type WindowTypeOfRequestProxy = Cypress.AUTWindow & {
     originFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
     originXMLHttpRequest: typeof XMLHttpRequest;
 };

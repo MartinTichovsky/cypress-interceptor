@@ -1,7 +1,8 @@
 /// <reference types="cypress" />
 
 import { ConsoleProxy } from "./ConsoleProxy";
-import { deepCopy, getFilePath, removeUndefinedFromObject } from "./utils";
+import { deepCopy, removeUndefinedFromObject } from "./utils";
+import { getFilePath } from "./utils.cypress";
 import {
     ConsoleLog,
     ConsoleLogType,
@@ -47,8 +48,6 @@ declare global {
         }
     }
 }
-
-const __MAX_CALL_COUNT__ = 999999;
 
 const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && val !== null && !Array.isArray(val);
@@ -123,10 +122,6 @@ export class WatchTheConsole {
     }
 
     private cloneAndRemoveCircular(value: unknown, recursiveStack: unknown[] = [], callCount = 0) {
-        if (callCount > __MAX_CALL_COUNT__) {
-            return "MAX_CALL_COUNT_REACHED";
-        }
-
         if (
             typeof value === "bigint" ||
             typeof value === "boolean" ||
@@ -175,15 +170,24 @@ export class WatchTheConsole {
         const result: unknown[] = [];
 
         for (const arg of args) {
-            result.push(this.cloneAndRemoveCircular(arg));
+            try {
+                result.push(this.cloneAndRemoveCircular(arg));
+            } catch (e) {
+                result.push(String(e));
+            }
         }
 
         return result;
     }
 
     private removeNonClonable(value: unknown) {
-        if (value instanceof this.win.Element || value instanceof this.win.HTMLElement) {
-            return value.constructor?.name || "HTMLElement";
+        if (
+            value instanceof this.win.Element ||
+            value instanceof Element ||
+            value instanceof this.win.HTMLElement ||
+            value instanceof HTMLElement
+        ) {
+            return value.constructor.name;
         }
 
         if (isObject(value) && value.$$typeof === Symbol.for("react.element")) {
@@ -194,15 +198,15 @@ export class WatchTheConsole {
             return String(value);
         }
 
-        if (value instanceof this.win.WeakMap) {
+        if (value instanceof this.win.WeakMap || value instanceof WeakMap) {
             return "WeakMap";
         }
 
-        if (value instanceof this.win.WeakSet) {
+        if (value instanceof this.win.WeakSet || value instanceof WeakSet) {
             return "WeakSet";
         }
 
-        if (value instanceof this.win.Window) {
+        if (value instanceof this.win.Window || value instanceof Window) {
             return "Window";
         }
 

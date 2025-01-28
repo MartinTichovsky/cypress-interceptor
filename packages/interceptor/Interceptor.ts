@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 import { StringMatcher } from "cypress/types/net-stubbing";
 
 import { convertInputBodyToString } from "./convert/convert";
@@ -13,7 +15,8 @@ import {
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./RequestProxy";
-import { deepCopy, getFilePath, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
+import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
+import { getFilePath } from "./utils.cypress";
 import { waitTill } from "./wait";
 
 declare global {
@@ -211,6 +214,7 @@ export class Interceptor {
         routeMatcher: IRouteMatcher;
     }[] = [];
     private _throttleId = 0;
+    private win: Cypress.AUTWindow = window;
 
     constructor(requestProxy: RequestProxy) {
         requestProxy.onCreate = () => {
@@ -226,6 +230,7 @@ export class Interceptor {
         };
 
         requestProxy.requestProxyFunction = async (request, win, resourceType) => {
+            this.win = win;
             const crossDomain = request.url.host !== document.location.host;
             // the pending status is not logged in cross-domain requests when ignoreCrossDomain is `true`
             // but it can be mocked or throttled
@@ -249,10 +254,10 @@ export class Interceptor {
             this._callStack.push(item);
 
             const throttle = this.getThrottle(item);
-            const mock = this.getMock(item) ?? throttle?.mockResponse;
+            const mock = this.getMock(item) ?? throttle.mockResponse;
             const startTime = performance.now();
 
-            item.delay = throttle?.delay;
+            item.delay = throttle.delay;
 
             const onRequestDone = async (response: XMLHttpRequest | Response, isMock = false) => {
                 try {
@@ -280,7 +285,8 @@ export class Interceptor {
                         body,
                         headers: Object.fromEntries(
                             new Headers(
-                                response instanceof win.XMLHttpRequest
+                                response instanceof this.win.XMLHttpRequest ||
+                                response instanceof XMLHttpRequest
                                     ? parseResponseHeaders(response.getAllResponseHeaders())
                                     : (response.headers as HeadersInit)
                             ).entries()
@@ -345,7 +351,11 @@ export class Interceptor {
                 return true;
             }
 
-            if (routeMatcher instanceof RegExp || typeof routeMatcher === "string") {
+            if (
+                routeMatcher instanceof this.win.RegExp ||
+                routeMatcher instanceof RegExp ||
+                typeof routeMatcher === "string"
+            ) {
                 return testUrlMatch(routeMatcher, item.url.origin + item.url.pathname);
             }
 
@@ -709,6 +719,7 @@ export class Interceptor {
     ): Cypress.Chainable<this> {
         if (
             typeof stringMatcherOrOptions === "string" ||
+            stringMatcherOrOptions instanceof this.win.RegExp ||
             stringMatcherOrOptions instanceof RegExp ||
             typeof stringMatcherOrOptions !== "object"
         ) {
@@ -774,7 +785,7 @@ export class Interceptor {
         options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
     ) {
         let callStack = options?.routeMatcher
-            ? this.callStack.filter(this.filterItemsByMatcher(options?.routeMatcher))
+            ? this.callStack.filter(this.filterItemsByMatcher(options.routeMatcher))
             : this.callStack;
 
         if (options?.filter) {

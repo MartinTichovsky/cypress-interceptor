@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 export interface ConsoleLog {
     /**
      * The console output or the unhandled JavaScript error message and stack trace
@@ -39,7 +41,7 @@ export interface WatchTheConsoleOptions {
     cloneConsoleArguments?: boolean;
 }
 
-export type WindowType = Cypress.AUTWindow & {
+export type WindowTypeOfConsoleProxy = Cypress.AUTWindow & {
     originWebSocket: typeof WebSocket;
 };
 

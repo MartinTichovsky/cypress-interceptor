@@ -17,6 +17,7 @@ There is also an option to monitor the web browser console output and log it to 
 This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
 
 ## What's new
+- Added [`test.unit`](#testunit) as a helper for testing.
 - Improved the use of Interceptor in `before` hooks and added the ability to pass a function to `cy.waitUntilRequestIsDone`
 - [Watch The Console](#watch-the-console) has been reworked and its logic completely changed
 - The improved [Watch The Console](#watch-the-console) now safely logs objects and functions, with an added filtering option
@@ -77,6 +78,17 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
     - [Websocket Interceptor public methods](#websocket-interceptor-public-methods)
         - [callStack](#callstack-1)
     - [Interfaces](#interfaces-2)
+- [`test.unit`](#testunit)
+    - [How to use](#how-to-use)
+    - [Cypress Commands](#the-testunit-cypress-commands)
+    - [Documentation and examples](#documentation-and-examples-of-cypress-interceptortestunit)
+        - [enableCallLine](#enablecallline)
+        - [isCallLineEnabled](#iscalllineenabled)
+        - [getCallLine](#getcallline)
+        - [lineCalled](#linecalled)
+        - [lineCalledWithClone](#linecalledwithclone)
+    - [Interfaces](#interfaces-3)
+
 
 ## Getting started
 
@@ -1731,5 +1743,194 @@ interface WriteStatsOptions {
      * When set to `true`, the output JSON will be formatted with tabs
      */
     prettyOutput?: boolean;
+}
+```
+
+# `test.unit`
+
+This is a simple helper designed to store arguments passed to [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone) and then call them in your application for testing in Cypress. By default, the call line is not enabled — you must enable it first in your Cypress test. There's no need to worry; in the application, it does nothing and does not slow down performance.
+
+## How to use
+
+In your application, you can call [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone). anywhere you need. Then, enable it in your Cypress test setup before running the test:
+
+```ts
+import { enableCallLine } from "cypress-interceptor/test.unit";
+
+beforeEach(() => {
+    cy.window().then((win) => {
+        enableCallLine(window, win);
+    });
+});
+```
+
+And in your tests you will be able to use it as follows:
+
+```ts
+import "cypress-interceptor/test.unit.commands";
+
+cy.callLineLength().should("eq", 0);
+// OR cy.callLine().invoke("length").should("eq", 0);
+
+// do some action which should call `lineCalled` or `lineCalledWithClone`
+cy.contains("button", "Add").click();
+
+cy.callLineNext().should("eq", "Some value");
+// OR cy.callLineNext().should("deep.eq", ["some Value", { } ]);
+// OR cy.callLine().then(callLine => expect(callLine.next).to.eq("something"));
+```
+
+## The `test.unit` Cypress commands
+
+```ts
+  /**
+ * Get a created instance of the CallLine class
+ *
+ * @returns An instance of the CallLine class
+ */
+callLine(): Chainable<CallLine>;
+/**
+ * The last existing entry. It can be `undefined` if there is no entry at
+ * the moment or `next` has not been called. Otherwise it always returns
+ * the last entry invoked by `next`.
+ */
+callLineCurrent(): Chainable<unknown | unknown[] | undefined>;
+/**
+ * The number of all entries
+ */
+callLineLength(): Chainable<number>;
+/**
+ * Get the next entry. If there is no next entry, it returns undefined.
+ *
+ * If the entry was added as a single argument like `lineCalled("something")`,
+ * it will return the single value "something". But if it was added as multiple
+ * arguments like `lineCalled("something", 1, true)`, it will return an array
+ * `["something", 1, true]`.
+ */
+callLineNext(): Chainable<unknown | unknown[] | undefined>;
+```
+
+# Documentation and examples of `cypress-interceptor/test.unit`
+
+## enableCallLine
+
+```ts
+/**
+ * @param parentWindow A window instance. In Cypress, it must be the global window
+ * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
+ */
+enableCallLine(parentWindow: CallLineWindowType, childWindow?: CallLineWindowType): void;
+```
+
+Enable the call line in the window object.
+
+### Example
+
+```ts
+// to enable it in the current run only outside the web browser
+enableCallLine(window);
+```
+
+```ts
+// to enable it in the current run and the web browser
+cy.window().then((win) => {
+    enableCallLine(window, win);
+});
+```
+
+## isCallLineEnabled
+
+```ts
+/**
+ * @returns True if the call line is enabled
+ */
+isCallLineEnabled(): boolean;
+```
+
+Check if the call line is enabled.
+
+
+## getCallLine
+
+```ts
+/**
+ * @returns An instance of the CallLine class
+ */
+getCallLine(): CallLine;
+```
+
+_References:_
+  - [`CallLine`](#callline)
+
+Get a created instance of the CallLine class.
+
+## lineCalled
+
+```ts
+/**
+ * @param args Anything that you want to store
+ */
+lineCalled(...args: unknown[]): void;
+```
+
+This is the main function that should be in your application to store any information you need.
+
+For storing information about the line that was called. If there are more arguments, it will be saved as an array, otherwise it will be stored as a single value.
+
+## lineCalledWithClone
+
+```ts
+lineCalledWithClone(...args: unknown[]): void;
+```
+
+Similar to `lineCalled`, but with cloned arguments. This prevents any changes to object references in the arguments over time.
+
+# Interfaces
+
+### CallLine
+
+```ts
+interface CallLine {
+    /**
+     * Get an instance of the window or an empty array if is not enabled
+     */
+    array: unknown[];
+
+    /**
+     * The last existing entry. It can be `undefined` if there is no entry at
+     * the moment or if `next` has not been called. Otherwise, it always returns
+     * the last entry invoked by `next`.
+     */
+    current: unknown | unknown[] | undefined;
+
+    /**
+     * True if CallLine feature is globally enabled
+     */
+    isEnabled: boolean;
+
+    /**
+     * The number of all entries
+     */
+    length: number;
+
+    /**
+     * Get the next entry. If there is no next entry, it returns `undefined`.
+     *
+     * If the entry was added as a single argument like `lineCalled("something")`,
+     * it will return the single value "something". But if it was added as multiple
+     * arguments like `lineCalled("something", 1, true)`, it will return an array
+     * `["something", 1, true]`.
+     */
+    next: unknown | unknown[] | undefined;
+
+    /**
+     * Clean the CallLine array and start storing the values from the beginning
+     */
+    clean: () => void;
+
+    /**
+     * Resets the counter and starts from the first entry on the next call to `next`
+     */
+    reset: () => void;
 }
 ```

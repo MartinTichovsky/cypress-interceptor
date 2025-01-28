@@ -5,6 +5,7 @@ node_modules
 **/cypress/videos
 lib
 _console*
+_coverage
 _logs
 _stats
 tsconfig.tsbuildinfo

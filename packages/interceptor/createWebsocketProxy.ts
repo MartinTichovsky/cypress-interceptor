@@ -1,4 +1,4 @@
-import { WindowType } from "./WebsocketInterceptor.types";
+import { WindowTypeOfWebsocketProxy } from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
 const getQueryObjectFromString = (url: string) => {
@@ -15,7 +15,7 @@ const getQueryObjectFromString = (url: string) => {
 };
 
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
-    const listener = (win: WindowType) => {
+    const listener = (win: WindowTypeOfWebsocketProxy) => {
         if (win.originWebSocket === undefined) {
             win.originWebSocket = win.WebSocket;
         }
@@ -51,10 +51,6 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                 };
 
                 this.onerror = () => {
-                    //
-                };
-
-                this.onopen = () => {
                     //
                 };
 

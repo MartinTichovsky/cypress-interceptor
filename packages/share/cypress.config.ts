@@ -1,4 +1,5 @@
-import * as webpackPreprocessor from "@cypress/webpack-preprocessor";
+import registerCodeCoverageTasks from "@cypress/code-coverage/task";
+import webpackPreprocessor from "@cypress/webpack-preprocessor";
 import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
 import * as fs from "fs";
 
@@ -13,8 +14,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
         experimentalRunAllSpecs: true,
         setupNodeEvents(on, config) {
             if (codeCoverage) {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                require("@cypress/code-coverage/task")(on, config);
+                registerCodeCoverageTasks(on, config);
             }
 
             on(

@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { objectIncludes, testCaseDescribe } from "../src/utils";

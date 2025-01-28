@@ -1,6 +1,6 @@
 import { blobToObject, fileToObject } from "./common";
 
-export const createReplacer = (window: Cypress.AUTWindow) => (_: string, value: unknown) => {
+export const createReplacer = (win: typeof window) => (_: string, value: unknown) => {
     if (typeof value === "bigint") {
         return `${String(value)}n`;
     }
@@ -16,24 +16,25 @@ export const createReplacer = (window: Cypress.AUTWindow) => (_: string, value: 
     if (
         typeof value === "function" ||
         typeof value === "symbol" ||
-        value instanceof window.RegExp
+        value instanceof win.RegExp ||
+        value instanceof RegExp
     ) {
         return String(value);
     }
 
-    if (value instanceof window.File) {
+    if (value instanceof win.File || value instanceof File) {
         return fileToObject(value);
     }
 
-    if (value instanceof window.Blob) {
+    if (value instanceof win.Blob || value instanceof Blob) {
         return blobToObject(value);
     }
 
-    if (value instanceof window.Map) {
+    if (value instanceof win.Map || value instanceof Map) {
         return Object.fromEntries(value);
     }
 
-    if (value instanceof window.Set) {
+    if (value instanceof win.Set || value instanceof Set) {
         return Array.from(value);
     }
 

@@ -1,19 +1,15 @@
 import { ConsoleProxy } from "./ConsoleProxy";
-import { ConsoleLogType, WindowType } from "./WatchTheConsole.types";
+import { ConsoleLogType, WindowTypeOfConsoleProxy } from "./WatchTheConsole.types";
 
 export const createConsoleProxy = (consoleProxy: ConsoleProxy) => {
-    const listener = (win: WindowType) => {
+    const listener = (win: WindowTypeOfConsoleProxy) => {
         consoleProxy.win = win;
 
-        win.addEventListener("error", (e: ErrorEvent) => {
-            consoleProxy.onLog(ConsoleLogType.Error, e);
-        });
+        const originConsoleError = win.console.error;
 
-        const originConsoleLog = win.console.log;
-
-        win.console.log = (...args) => {
-            consoleProxy.onLog(ConsoleLogType.ConsoleLog, ...args);
-            originConsoleLog(...args);
+        win.console.error = (...args) => {
+            consoleProxy.onLog(ConsoleLogType.ConsoleError, ...args);
+            originConsoleError(...args);
         };
 
         const originConsoleInfo = win.console.info;
@@ -23,6 +19,13 @@ export const createConsoleProxy = (consoleProxy: ConsoleProxy) => {
             originConsoleInfo(...args);
         };
 
+        const originConsoleLog = win.console.log;
+
+        win.console.log = (...args) => {
+            consoleProxy.onLog(ConsoleLogType.ConsoleLog, ...args);
+            originConsoleLog(...args);
+        };
+
         const originConsoleWarn = win.console.warn;
 
         win.console.warn = (...args) => {
@@ -30,12 +33,9 @@ export const createConsoleProxy = (consoleProxy: ConsoleProxy) => {
             originConsoleWarn(...args);
         };
 
-        const originConsoleError = win.console.error;
-
-        win.console.error = (...args) => {
-            consoleProxy.onLog(ConsoleLogType.ConsoleError, ...args);
-            originConsoleError(...args);
-        };
+        win.addEventListener("error", (e: ErrorEvent) => {
+            consoleProxy.onLog(ConsoleLogType.Error, e);
+        });
     };
 
     return listener;

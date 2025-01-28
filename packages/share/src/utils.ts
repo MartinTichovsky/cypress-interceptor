@@ -4,6 +4,17 @@ import {
     ResponseCatchType
 } from "cypress-interceptor-server/src/types";
 
+export enum XMLHttpRequestLoad {
+    AddEventListener_Load = "`addEventListener` - load",
+    AddEventListener_Readystatechange = "`addEventListener` - readystatechange",
+    Onload = "`onreadystatechange`",
+    Onreadystatechange = "`onload`"
+}
+
+type XMLHttpRequestTestFunction = (
+    onResponse: (request: XMLHttpRequest, resolve: VoidFunction) => void
+) => void;
+
 export const createMatcher =
     (subject: Record<string, string | number>, strictMatch = false) =>
     (query: Record<string, string | string[] | number>) =>
@@ -12,6 +23,66 @@ export const createMatcher =
                 ? Object.keys(query).every((key) => key in subject && query[key] === subject[key])
                 : true
             : false;
+
+export const createXMLHttpRequestTest = (
+    testName: string,
+    testFunction: XMLHttpRequestTestFunction,
+    filter?: XMLHttpRequestLoad[]
+) => {
+    Object.values(XMLHttpRequestLoad)
+        .filter((value) => (filter ? filter.includes(value) : true))
+        .forEach((value) => {
+            it(`${testName} - ${value}`, () =>
+                createXMLHttpRequestTestFunction(testFunction, value));
+        });
+};
+
+export const createXMLHttpRequestTestOnly = (
+    testName: string,
+    testFunction: XMLHttpRequestTestFunction,
+    filter?: XMLHttpRequestLoad[]
+) => {
+    Object.values(XMLHttpRequestLoad)
+        .filter((value) => (filter ? filter.includes(value) : true))
+        .forEach((value) => {
+            it["only"](`${testName} - ${value}`, () =>
+                createXMLHttpRequestTestFunction(testFunction, value)
+            );
+        });
+};
+
+const createXMLHttpRequestTestFunction = (
+    testFunction: XMLHttpRequestTestFunction,
+    value: XMLHttpRequestLoad
+) =>
+    testFunction((request, resolve) => {
+        switch (value) {
+            case XMLHttpRequestLoad.AddEventListener_Load:
+                request.addEventListener("load", () => {
+                    resolve();
+                });
+                return;
+            case XMLHttpRequestLoad.AddEventListener_Readystatechange:
+                request.addEventListener("readystatechange", () => {
+                    if (request.readyState === XMLHttpRequest.DONE) {
+                        resolve();
+                    }
+                });
+                return;
+            case XMLHttpRequestLoad.Onload:
+                request.onload = () => {
+                    resolve();
+                };
+                return;
+            case XMLHttpRequestLoad.Onreadystatechange:
+                request.onreadystatechange = () => {
+                    if (request.readyState === XMLHttpRequest.DONE) {
+                        resolve();
+                    }
+                };
+                return;
+        }
+    });
 
 export const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && !Array.isArray(val) && val !== null;
@@ -23,29 +94,6 @@ export const objectIncludes = (
     object2: Record<string, unknown>
 ) =>
     Object.keys(object2).every((key) => object1 && key in object1 && object1[key] === object2[key]);
-
-export const objectToFormData = (data: Record<string, unknown>) => {
-    const formData = new FormData();
-
-    for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-            formData.append(key, data[key] as string | Blob);
-        }
-    }
-
-    return formData;
-};
-
-export const objectToURLSearchParams = (data: Record<string, unknown>) => {
-    const params = new URLSearchParams();
-
-    for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-            params.append(key, data[key] as string);
-        }
-    }
-    return params;
-};
 
 const testCases: {
     bodyFormats: (BodyFormatFetch | BodyFormatXHR)[];

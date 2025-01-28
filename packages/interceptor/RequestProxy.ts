@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 import { IMockResponse, IRequestInit, IResourceType } from "./Interceptor.types";
 
 export type RequestProxyFunction = (
@@ -16,8 +18,8 @@ const emptyFunction = (..._args: unknown[]) => {
     //
 };
 
-export const emptyProxy = {
-    done: emptyFunction,
+export const emptyProxy: RequestProxyFunctionResult = {
+    done: (_response, resolve) => resolve(),
     error: emptyFunction,
     mock: undefined
 };
@@ -26,12 +28,12 @@ export class RequestProxy {
     private _onCreate?: VoidFunction;
     private _requestProxyFunction?: RequestProxyFunction;
 
-    set onCreate(onCreate: VoidFunction | undefined) {
+    set onCreate(onCreate: VoidFunction) {
         this._onCreate = onCreate;
     }
 
     get onCreate() {
-        return this._onCreate;
+        return this._onCreate ?? emptyFunction;
     }
 
     set requestProxyFunction(requestProxyFunction: RequestProxyFunction) {

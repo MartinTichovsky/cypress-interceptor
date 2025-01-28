@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 import { createRequestProxy } from "./createRequestProxy";
 import { Interceptor } from "./Interceptor";
 import {
@@ -6,7 +8,7 @@ import {
     InterceptorOptions,
     IRouteMatcher,
     IThrottleRequestOptions,
-    WindowType,
+    WindowTypeOfRequestProxy,
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./RequestProxy";
@@ -19,7 +21,7 @@ import { RequestProxy } from "./RequestProxy";
     let interceptor = new Interceptor(requestProxy);
 
     // to be able use it without cy.visit
-    createRequestProxy(requestProxy)(window as WindowType);
+    createRequestProxy(requestProxy)(window as WindowTypeOfRequestProxy);
 
     // create the proxy in each window
     Cypress.on("window:before:load", createRequestProxy(requestProxy));

@@ -1,4 +1,7 @@
-import { deepCopy, getFilePath, isNonNullableObject, replacer, testUrlMatch } from "./utils";
+/// <reference types="cypress" />
+
+import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./utils";
+import { getFilePath } from "./utils.cypress";
 import { waitTill } from "./wait";
 import {
     CallStackWebsocket,
@@ -372,7 +375,7 @@ export class WebsocketInterceptor {
         options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
     ) {
         let callStack = options?.matcher
-            ? this.callStack.filter(this.filterItemsByMatcher(options?.matcher))
+            ? this.callStack.filter(this.filterItemsByMatcher(options.matcher))
             : this.callStack;
 
         if (options?.filter) {

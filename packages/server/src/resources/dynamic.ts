@@ -351,9 +351,7 @@ const processEntry = (entry: DynamicRequest) => {
         switch (entry.responseCatchType) {
             case "addEventListener":
                 request.addEventListener("load", () => {
-                    if (request.readyState === XMLHttpRequest.DONE) {
-                        onRequestDone();
-                    }
+                    onRequestDone();
                 });
                 break;
             case undefined:
@@ -366,9 +364,7 @@ const processEntry = (entry: DynamicRequest) => {
                 break;
             case "onload":
                 request.onload = () => {
-                    if (request.readyState === XMLHttpRequest.DONE) {
-                        onRequestDone();
-                    }
+                    onRequestDone();
                 };
                 break;
         }

@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import {
     DEFAULT_WAITTIME,
     generateUrl,

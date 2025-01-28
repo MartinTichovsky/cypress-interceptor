@@ -1,7 +1,9 @@
 {
     "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
         "baseUrl": ".",
         "composite": true,
+        "esModuleInterop": true,
         "strict": true,
         "moduleResolution": "node",
         "target": "ES2021",

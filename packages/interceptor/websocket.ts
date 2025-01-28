@@ -1,6 +1,12 @@
+/// <reference types="cypress" />
+
 import { createWebsocketProxy } from "./createWebsocketProxy";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
-import { IWSMatcher, WindowType, WriteStatsOptions } from "./WebsocketInterceptor.types";
+import {
+    IWSMatcher,
+    WindowTypeOfWebsocketProxy,
+    WriteStatsOptions
+} from "./WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
 export * from "./WebsocketInterceptor";
@@ -10,7 +16,7 @@ export * from "./WebsocketInterceptor";
     let websocketInterceptor = new WebsocketInterceptor(websocketListener);
 
     // to be able use it without cy.visit
-    createWebsocketProxy(websocketListener)(window as WindowType);
+    createWebsocketProxy(websocketListener)(window as WindowTypeOfWebsocketProxy);
 
     // create the proxy in each window
     Cypress.on("window:before:load", createWebsocketProxy(websocketListener));

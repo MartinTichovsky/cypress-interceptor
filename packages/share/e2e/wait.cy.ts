@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { IRequestInit } from "cypress-interceptor/Interceptor.types";
 import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
@@ -1021,12 +1020,20 @@ describe("Wait For Requests", () => {
         });
 
         let envTimeout: unknown;
+        let expectedDuration: number | undefined;
 
         beforeEach(() => {
+            expectedDuration = undefined;
+            cy.startTiming();
             envTimeout = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
         });
 
         afterEach(() => {
+            cy.stopTiming().then((duration) => {
+                if (expectedDuration !== undefined) {
+                    expect(duration).to.be.gte(expectedDuration);
+                }
+            });
             Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
         });
 
@@ -1056,7 +1063,24 @@ describe("Wait For Requests", () => {
             });
         });
 
+        it("Default functionality", () => {
+            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+
+            cy.visit(getDynamicUrl([]));
+
+            expectedErrorMessage =
+                "A wait timed out when waiting for requests to be done (20000ms)";
+
+            cy.waitUntilRequestIsDone({ resourceType: "fetch" });
+
+            cy.wrap(null).then(() => {
+                throw new Error("This line should not be reached");
+            });
+        });
+
         it("Enforce check", () => {
+            expectedDuration = 5000;
+
             cy.visit(getDynamicUrl([]));
 
             expectedErrorMessage = `${errMessage} (5000ms)`;
@@ -1069,6 +1093,8 @@ describe("Wait For Requests", () => {
         });
 
         it("Default timeout", () => {
+            expectedDuration = 10000;
+
             Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
 
             cy.visit(getDynamicUrl([]));
@@ -1083,6 +1109,8 @@ describe("Wait For Requests", () => {
         });
 
         it("Env timeout", () => {
+            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+
             cy.visit(getDynamicUrl([]));
 
             expectedErrorMessage = `${errMessage} (20000ms)`;
@@ -1095,6 +1123,8 @@ describe("Wait For Requests", () => {
         });
 
         it("Action chainable", () => {
+            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+
             cy.visit(getDynamicUrl([]));
 
             expectedErrorMessage = `${errMessage} (20000ms)`;
@@ -1107,6 +1137,8 @@ describe("Wait For Requests", () => {
         });
 
         it("Action void", () => {
+            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+
             cy.visit(getDynamicUrl([]));
 
             expectedErrorMessage = `${errMessage} (20000ms)`;
