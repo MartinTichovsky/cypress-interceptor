@@ -1,4 +1,4 @@
-type Listener = (action: WebSocketAction) => void;
+export type Listener = (action: WebSocketAction) => void;
 
 export interface WSCreate extends WebSocketActionCommon {
     data?: undefined;

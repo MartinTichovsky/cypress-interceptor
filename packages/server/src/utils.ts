@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { DynamicRequest } from "./types";
 
 interface URLOptions {
@@ -10,7 +9,7 @@ interface URLOptions {
 export const DEFAULT_WAITTIME = 500;
 
 export const generateUrl = (path: string, options: URLOptions = {}) => {
-    const searchParams = new URLSearchParams(objectToURLSearch(options));
+    const searchParams = new URLSearchParams(optionsToURLSearch(options));
     const searchString = searchParams.toString();
 
     return `${path}${searchString ? "?" : ""}${searchString}`;
@@ -27,7 +26,7 @@ export const getDelayWait = (delay: number) => delay + DEFAULT_WAITTIME;
 export const getDynamicUrl = (requests: DynamicRequest[]) =>
     generateUrl("/public/dynamic.html", { requests });
 
-const objectToURLSearch = <T>(object: T) => {
+const optionsToURLSearch = <T>(object: T) => {
     const result: Record<string, string> = {};
 
     for (const key in object) {

@@ -47,17 +47,17 @@ const castString = (value: string) => {
 
 export const formDataToObject = <T extends Record<string | number, unknown>>(
     formData: FormData,
-    window: Cypress.AUTWindow
+    win: typeof window
 ): T => {
-    return instanceToObject(formData, window);
+    return instanceToObject(formData, win);
 };
 
-export const formDataToJsonString = (formData: FormData, window: Cypress.AUTWindow) =>
-    JSON.stringify(formDataToObject(formData, window), createReplacer(window));
+export const formDataToJsonString = (formData: FormData, win: typeof window) =>
+    JSON.stringify(formDataToObject(formData, win), createReplacer(win));
 
 export const instanceToObject = <T extends Record<string | number, unknown>>(
     instance: FormData | URLSearchParams,
-    window: Cypress.AUTWindow
+    win: typeof window
 ): T => {
     const result: Record<string, unknown> = {};
 
@@ -87,14 +87,16 @@ export const instanceToObject = <T extends Record<string | number, unknown>>(
             continue;
         }
 
-        if (value instanceof window.File) {
+        const valueAsUnknown: unknown = value;
+
+        if (valueAsUnknown instanceof win.File || valueAsUnknown instanceof File) {
             current[lastKey] = {
-                name: value.name,
-                type: value.type,
-                size: value.size
+                name: valueAsUnknown.name,
+                type: valueAsUnknown.type,
+                size: valueAsUnknown.size
             };
         } else {
-            current[lastKey] = castString(String(value));
+            current[lastKey] = castString(String(valueAsUnknown));
         }
     }
 
@@ -105,12 +107,12 @@ export const isUnsupported = (value: unknown) => value === undefined;
 
 export const objectToFormData = <T extends Record<string, unknown>>(
     data: T,
-    window: Cypress.AUTWindow
+    win: typeof window
 ) => {
-    const result = new window.FormData();
+    const result = new win.FormData();
 
     if (isObject(data)) {
-        objectToInstance_recursive(data, window, result);
+        objectToInstance_recursive(data, win, result);
     }
 
     return result;
@@ -118,13 +120,13 @@ export const objectToFormData = <T extends Record<string, unknown>>(
 
 const objectToInstance_recursive = <Result extends FormData | URLSearchParams>(
     data: Record<string, unknown> | Array<unknown>,
-    window: Cypress.AUTWindow,
+    win: typeof window,
     result: Result,
     parentKey?: string
 ) => {
-    if (data instanceof window.Map) {
+    if (data instanceof win.Map || data instanceof Map) {
         data = Object.fromEntries(data);
-    } else if (data instanceof window.Set) {
+    } else if (data instanceof win.Set || data instanceof Set) {
         data = Array.from(data);
     }
 
@@ -141,42 +143,51 @@ const objectToInstance_recursive = <Result extends FormData | URLSearchParams>(
 
         const fieldKey = parentKey ? `${parentKey}[${key}]` : key;
 
-        if (value instanceof window.Date) {
+        if (value instanceof win.Date || value instanceof Date) {
             result.append(fieldKey, valueToString(value.toISOString()));
             continue;
         }
 
         if (
-            result instanceof window.FormData &&
-            (value instanceof window.File || value instanceof window.Blob)
+            (result instanceof win.FormData || result instanceof FormData) &&
+            (value instanceof win.File ||
+                value instanceof File ||
+                value instanceof win.Blob ||
+                value instanceof Blob)
         ) {
             result.append(fieldKey, value);
             continue;
-        } else if (result instanceof window.URLSearchParams && value instanceof window.File) {
-            objectToInstance_recursive(fileToObject(value), window, result, fieldKey);
+        } else if (
+            (result instanceof win.URLSearchParams || result instanceof URLSearchParams) &&
+            (value instanceof win.File || value instanceof File)
+        ) {
+            objectToInstance_recursive(fileToObject(value), win, result, fieldKey);
             continue;
-        } else if (result instanceof window.URLSearchParams && value instanceof window.Blob) {
-            objectToInstance_recursive(blobToObject(value), window, result, fieldKey);
+        } else if (
+            (result instanceof win.URLSearchParams || result instanceof URLSearchParams) &&
+            (value instanceof win.Blob || value instanceof Blob)
+        ) {
+            objectToInstance_recursive(blobToObject(value), win, result, fieldKey);
             continue;
         }
 
-        if (!isObject(value) || value instanceof window.RegExp) {
+        if (!isObject(value) || value instanceof win.RegExp || value instanceof RegExp) {
             result.append(fieldKey, valueToString(value));
             continue;
         }
 
-        objectToInstance_recursive(value, window, result, fieldKey);
+        objectToInstance_recursive(value, win, result, fieldKey);
     }
 };
 
-export const objectToURLSearchParams = <T extends Record<string, unknown>>(
+export const objectToURLSearchParams = <T extends Record<string | number, unknown>>(
     data: T,
-    window: Cypress.AUTWindow
+    win: typeof window
 ) => {
     const result = new URLSearchParams();
 
     if (isObject(data)) {
-        objectToInstance_recursive(data, window, result);
+        objectToInstance_recursive(data, win, result);
     }
 
     return result;
@@ -184,12 +195,10 @@ export const objectToURLSearchParams = <T extends Record<string, unknown>>(
 
 export const urlSearchParamsToObject = <T extends Record<string | number, unknown>>(
     urlSearchParams: URLSearchParams,
-    window: Cypress.AUTWindow
+    win: typeof window
 ): T => {
-    return instanceToObject(urlSearchParams, window);
+    return instanceToObject(urlSearchParams, win);
 };
 
-export const urlSearchParamsToJsonString = (
-    urlSearchParams: URLSearchParams,
-    window: Cypress.AUTWindow
-) => JSON.stringify(urlSearchParamsToObject(urlSearchParams, window), createReplacer(window));
+export const urlSearchParamsToJsonString = (urlSearchParams: URLSearchParams, win: typeof window) =>
+    JSON.stringify(urlSearchParamsToObject(urlSearchParams, win), createReplacer(win));

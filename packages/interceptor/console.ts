@@ -1,7 +1,13 @@
+/// <reference types="cypress" />
+
 import { ConsoleProxy } from "./ConsoleProxy";
 import { createConsoleProxy } from "./createConsoleProxy";
 import { WatchTheConsole } from "./WatchTheConsole";
-import { WatchTheConsoleOptions, WindowType, WriteLogOptions } from "./WatchTheConsole.types";
+import {
+    WatchTheConsoleOptions,
+    WindowTypeOfConsoleProxy,
+    WriteLogOptions
+} from "./WatchTheConsole.types";
 
 export * from "./WatchTheConsole";
 
@@ -10,7 +16,7 @@ export * from "./WatchTheConsole";
     let watchTheConsole = new WatchTheConsole(consoleProxy);
 
     // to be able use it without cy.visit
-    createConsoleProxy(consoleProxy)(window as WindowType);
+    createConsoleProxy(consoleProxy)(window as WindowTypeOfConsoleProxy);
 
     // create the proxy in each window
     Cypress.on("window:before:load", createConsoleProxy(consoleProxy));

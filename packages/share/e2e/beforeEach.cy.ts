@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import "cypress-interceptor/console";
 import "cypress-interceptor/websocket";
 

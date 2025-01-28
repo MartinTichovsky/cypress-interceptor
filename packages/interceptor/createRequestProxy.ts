@@ -1,10 +1,12 @@
 import { convertInputBodyToString } from "./convert/convert";
-import { WindowType } from "./Interceptor.types";
+import { WindowTypeOfRequestProxy } from "./Interceptor.types";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
+import { CallLineEnum } from "./test.enum";
+import { lineCalled } from "./test.unit";
 
 export const createRequestProxy = (requestProxy: RequestProxy) => {
-    const listener = (win: WindowType) => {
-        requestProxy.onCreate?.();
+    const listener = (win: WindowTypeOfRequestProxy) => {
+        requestProxy.onCreate();
 
         if (win.originFetch === undefined) {
             win.originFetch = win.fetch;
@@ -12,11 +14,13 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
 
         win.fetch = async (input: RequestInfo | URL, init: RequestInit | undefined = {}) => {
             const inputUrl =
-                typeof input === "object" && !(input instanceof win.URL) ? input.url : input;
+                typeof input === "object" && !(input instanceof win.URL || input instanceof URL)
+                    ? input.url
+                    : input;
             const url =
                 typeof inputUrl === "string" ? new win.URL(inputUrl, win.location.href) : inputUrl;
 
-            if (input instanceof win.Request) {
+            if (input instanceof win.Request || input instanceof Request) {
                 init.body = input.body;
                 init.method = input.method;
                 init.headers = input.headers;
@@ -24,16 +28,22 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
 
             const headers = Object.fromEntries(new Headers(init.headers).entries());
 
-            const proxy = await requestProxy.requestStart(
-                {
-                    body: init.body,
-                    headers,
-                    method: init.method ?? "GET",
-                    url
-                },
-                win,
-                "fetch"
-            );
+            const proxy = await requestProxy
+                .requestStart(
+                    {
+                        body: init.body,
+                        headers,
+                        method: init.method ?? "GET",
+                        url
+                    },
+                    win,
+                    "fetch"
+                )
+                .catch(() => {
+                    lineCalled(CallLineEnum.n000001);
+
+                    return emptyProxy;
+                });
 
             return new Promise((resolve, reject) => {
                 const mock = proxy.mock;
@@ -55,6 +65,8 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                                         try {
                                             return JSON.parse(convertedBody);
                                         } catch {
+                                            lineCalled(CallLineEnum.n000004);
+
                                             return convertedBody;
                                         }
                                     }
@@ -87,7 +99,14 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                             return proxy.done(response, () => resolve(response), true);
                         })
                         .catch((error) => {
-                            proxy.error(error);
+                            lineCalled(CallLineEnum.n000002);
+
+                            try {
+                                proxy.error(error);
+                            } catch {
+                                lineCalled(CallLineEnum.n000003);
+                            }
+
                             reject(error);
                         });
                 };
@@ -111,15 +130,36 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                                     mockResponse(responseText);
                                 })
                                 .catch((error) => {
-                                    proxy.error(error);
-                                    reject(error);
+                                    lineCalled(CallLineEnum.n000005);
+
+                                    try {
+                                        proxy.error(error);
+                                    } catch {
+                                        lineCalled(CallLineEnum.n000006);
+                                    }
+
+                                    resolve(response);
                                 });
+                        } else if (proxy) {
+                            try {
+                                proxy.done(response, () => resolve(response));
+                            } catch {
+                                lineCalled(CallLineEnum.n000007);
+                                resolve(response);
+                            }
                         } else {
-                            proxy.done(response, () => resolve(response));
+                            resolve(response);
                         }
                     })
                     .catch((error) => {
-                        proxy.error(error);
+                        lineCalled(CallLineEnum.n000008);
+
+                        try {
+                            proxy.error(error);
+                        } catch {
+                            lineCalled(CallLineEnum.n000009);
+                        }
+
                         reject(error);
                     });
             });
@@ -149,13 +189,15 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         {
                             body: this._convertedBody,
                             headers: this._headers,
-                            method: this._method ?? "GET",
+                            method: this._method,
                             query: Object.fromEntries(this._url.searchParams)
                         },
                         () => {
                             try {
                                 return JSON.parse(this._convertedBody);
                             } catch {
+                                lineCalled(CallLineEnum.n000010);
+
                                 return this._convertedBody;
                             }
                         }
@@ -166,16 +208,21 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             }
 
             _onResponse = (callback: VoidFunction) => {
-                this._proxy.done(
-                    this,
-                    callback,
-                    Boolean(
-                        this._mockBody ||
-                            this._proxy.mock?.headers ||
-                            this._proxy.mock?.statusCode ||
-                            this._proxy.mock?.statusText
-                    )
-                );
+                try {
+                    this._proxy.done(
+                        this,
+                        callback,
+                        Boolean(
+                            this._mockBody ||
+                                this._proxy.mock?.headers ||
+                                this._proxy.mock?.statusCode ||
+                                this._proxy.mock?.statusText
+                        )
+                    );
+                } catch {
+                    lineCalled(CallLineEnum.n000011);
+                    callback();
+                }
             };
 
             get readyState() {
@@ -221,18 +268,19 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an aborted request
             set onabort(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onabort = (ev) => {
-                    this._proxy.error(new Error("AbortError"));
+                    try {
+                        this._proxy.error(new Error("AbortError"));
+                    } catch {
+                        lineCalled(CallLineEnum.n000016);
+                    }
+
                     value.bind(this)(ev);
                 };
             }
 
             set onload(value: (this: XMLHttpRequest, ev: Event) => unknown) {
                 super.onload = (ev) => {
-                    if (this.readyState === XMLHttpRequest.DONE) {
-                        this._onResponse(() => value.bind(this)(ev));
-                    } else {
-                        value.bind(this)(ev);
-                    }
+                    this._onResponse(() => value.bind(this)(ev));
                 };
             }
 
@@ -250,7 +298,12 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             // catch an error of the request
             set onerror(value: (ev: ProgressEvent<EventTarget>) => unknown) {
                 super.onerror = (ev) => {
-                    this._proxy.error(new Error("Error"));
+                    try {
+                        this._proxy.error(new Error(ev.type));
+                    } catch {
+                        lineCalled(CallLineEnum.n000017);
+                    }
+
                     value.bind(this)(ev);
                 };
             }
@@ -336,24 +389,40 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                                 if (proxy.mock?.allowHitTheNetwork) {
                                     return super.send(body);
                                 } else {
-                                    return proxy.done(
-                                        this,
-                                        () => {
-                                            this.dispatchEvent(
-                                                new ProgressEvent("readystatechange")
-                                            );
-                                            this.dispatchEvent(new ProgressEvent("load"));
-                                        },
-                                        true
-                                    );
+                                    try {
+                                        return proxy.done(
+                                            this,
+                                            () => {
+                                                this.dispatchEvent(
+                                                    new ProgressEvent("readystatechange")
+                                                );
+                                                this.dispatchEvent(new ProgressEvent("load"));
+                                            },
+                                            true
+                                        );
+                                    } catch {
+                                        lineCalled(CallLineEnum.n000018);
+
+                                        return super.send(body);
+                                    }
                                 }
                             })
                             .catch(() => {
-                                this.onerror(new ProgressEvent("error"));
+                                lineCalled(CallLineEnum.n000019);
+
+                                try {
+                                    this._proxy.error(new Error("convertInputBodyToString"));
+                                } catch {
+                                    lineCalled(CallLineEnum.n000020);
+                                }
+
+                                return super.send(body);
                             });
                     })
                     .catch(() => {
-                        this.onerror(new ProgressEvent("error"));
+                        lineCalled(CallLineEnum.n000021);
+
+                        return super.send(body);
                     });
             }
 

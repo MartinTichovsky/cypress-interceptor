@@ -1,22 +1,43 @@
-export const createWebpackConfig = (codeCoverage = false) => ({
-    devtool: "source-map",
+import { Configuration, RuleSetRule } from "webpack";
+
+export const createWebpackConfig = (codeCoverage = false): Configuration => ({
+    devtool: "inline-source-map",
     mode: "development",
     module: {
         rules: [
             {
                 exclude: /node_modules/,
                 test: /\.ts/,
-                use: [
-                    ...(codeCoverage ? ["@jsdevtools/coverage-istanbul-loader"] : []),
-                    {
-                        loader: "babel-loader",
-                        options: {
-                            plugins: codeCoverage ? ["istanbul"] : [],
-                            presets: ["@babel/preset-env", "@babel/preset-typescript"]
-                        }
+                use: {
+                    loader: "babel-loader",
+                    options: {
+                        presets: [
+                            ["@babel/preset-env", { targets: { node: "current" } }],
+                            "@babel/preset-typescript"
+                        ],
+                        sourceMaps: "inline",
+                        retainLines: false
                     }
-                ]
-            }
+                }
+            },
+            ...(codeCoverage
+                ? ([
+                      {
+                          test: /\.ts/,
+                          enforce: "post",
+                          exclude: [
+                              /node_modules/,
+                              /\.cy\.[tj]sx?$/,
+                              /\.spec\.[tj]sx?$/,
+                              /server(\\|\/)/,
+                              /share(\\|\/)/
+                          ],
+                          use: {
+                              loader: "@jsdevtools/coverage-istanbul-loader"
+                          }
+                      }
+                  ] as RuleSetRule[])
+                : [])
         ]
     },
     resolve: {

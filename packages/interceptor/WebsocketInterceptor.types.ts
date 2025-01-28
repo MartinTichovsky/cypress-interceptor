@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 import { WebSocketAction } from "./websocketListener";
 
 export type CallStackWebsocket = WebSocketAction & {
@@ -68,7 +70,7 @@ export interface WaitUntilActionOptions {
     timeout?: number;
 }
 
-export type WindowType = Cypress.AUTWindow & {
+export type WindowTypeOfWebsocketProxy = Cypress.AUTWindow & {
     originWebSocket: typeof WebSocket;
 };
 

@@ -1,7 +1,6 @@
-/* istanbul ignore file */
 import "cypress-interceptor/console";
 
-import { getFilePath } from "cypress-interceptor/utils";
+import { getFilePath } from "cypress-interceptor/utils.cypress";
 import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
 import { generateUrl } from "cypress-interceptor-server/src/utils";
 
@@ -380,15 +379,24 @@ describe("JSON.stringify function or recursive object", () => {
     recursiveObject.a = true;
     recursiveObject.arr = [recursiveObject];
 
+    const recursiveArray: Array<unknown> = [];
+
+    recursiveArray[0] = [recursiveArray];
+
+    function abc() {
+        return true;
+    }
+
     const logQueue: LogQueue = [
-        [ConsoleLogType.ConsoleInfo, [{ recursiveObject }]],
+        [ConsoleLogType.ConsoleInfo, [{ recursiveObject }, { recursiveArray }]],
         [
             ConsoleLogType.ConsoleError,
             [
                 {
-                    fnc: function abc() {
-                        return true;
-                    }
+                    fnc: abc,
+                    symbol: Symbol("My"),
+                    weakMap: new WeakMap([[{}, ""]]),
+                    weakSet: new WeakSet([{}, {}])
                 }
             ]
         ]
@@ -398,11 +406,7 @@ describe("JSON.stringify function or recursive object", () => {
         cy.task("clearLogs", [outputDir]);
     });
 
-    beforeEach(() => {
-        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
-    });
-
-    it("Should create a file with filtered entries", () => {
+    const testCase = () => {
         cy.visit("/");
 
         createConsoleLog(logQueue);
@@ -423,6 +427,9 @@ describe("JSON.stringify function or recursive object", () => {
                         a: true,
                         arr: ["[Circular]"]
                     }
+                },
+                {
+                    recursiveArray: [["[Circular]"]]
                 }
             ]);
             expect(log[1].type).to.equal(ConsoleLogType.ConsoleError);
@@ -430,15 +437,34 @@ describe("JSON.stringify function or recursive object", () => {
             expect(log[1].currentTime).to.be.a("string").and.not.to.be.empty;
             expect(log[1].args).to.deep.equal([
                 {
-                    fnc: "function abc() {\n      return true;\n    }"
+                    fnc: String(abc),
+                    symbol: "Symbol",
+                    weakMap: "WeakMap",
+                    weakSet: "WeakSet"
                 }
             ]);
         });
+    };
+
+    it("Should create a file with cloned entries", () => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
+
+        testCase();
+    });
+
+    it("Should create a file with cloned log", () => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: false });
+
+        testCase();
     });
 });
 
 describe("JSON.stringify multiple types and deeply nested objects", () => {
     const recursiveObject: Record<string, unknown> = {};
+
+    function abcd() {
+        return false;
+    }
 
     recursiveObject.abc = "abc";
     recursiveObject.bool = false;
@@ -449,9 +475,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
         obj: {
             ref: recursiveObject
         },
-        p: function abcd() {
-            return false;
-        }
+        p: abcd
     };
 
     const logQueue: LogQueue = [
@@ -494,7 +518,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     }
                 },
@@ -508,7 +532,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     },
                     {
@@ -520,7 +544,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     },
                     {
@@ -532,7 +556,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     }
                 ]
@@ -549,7 +573,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     },
                     {
@@ -561,7 +585,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                             obj: {
                                 ref: "[Circular]"
                             },
-                            p: "function abcd() {\n      return false;\n    }"
+                            p: String(abcd)
                         }
                     }
                 ],
@@ -576,7 +600,7 @@ describe("JSON.stringify multiple types and deeply nested objects", () => {
                                 obj: {
                                     ref: "[Circular]"
                                 },
-                                p: "function abcd() {\n      return false;\n    }"
+                                p: String(abcd)
                             }
                         }
                     }
@@ -591,12 +615,16 @@ describe("Logging various JavaScript objects", () => {
         cy.task("clearLogs", [outputDir]);
     });
 
+    const customFunction = () => {
+        return "Hello";
+    };
+
     const visitAndLog = (extraLog = false) => {
         cy.visit(staticUrl);
 
         cy.window().then(
             (
-                window: Cypress.AUTWindow & {
+                win: Cypress.AUTWindow & {
                     React?: {
                         createElement: (...args: unknown[]) => unknown;
                     };
@@ -615,9 +643,7 @@ describe("Logging various JavaScript objects", () => {
                         [
                             {
                                 message: "Function",
-                                value: function () {
-                                    return "Hello";
-                                }
+                                value: customFunction
                             }
                         ]
                     ],
@@ -628,14 +654,14 @@ describe("Logging various JavaScript objects", () => {
                     [ConsoleLogType.ConsoleLog, [{ message: "RegExp", value: /abc/ }]],
                     [
                         ConsoleLogType.ConsoleLog,
-                        [{ message: "DOM Element", value: window.document.createElement("div") }]
+                        [{ message: "DOM Element", value: win.document.createElement("div") }]
                     ],
                     [
                         ConsoleLogType.ConsoleLog,
                         [
                             {
                                 message: "Button Element",
-                                value: window.document.createElement("button")
+                                value: win.document.createElement("button")
                             }
                         ]
                     ],
@@ -644,14 +670,14 @@ describe("Logging various JavaScript objects", () => {
                         [
                             {
                                 message: "React Element",
-                                value: window.React?.createElement("div", null, "Hello, React!")
+                                value: win.React?.createElement("div", null, "Hello, React!")
                             }
                         ]
                     ]
                 ];
 
                 if (extraLog) {
-                    logQueue.push([ConsoleLogType.ConsoleInfo, [window]]);
+                    logQueue.push([ConsoleLogType.ConsoleInfo, [win]]);
                 }
 
                 createConsoleLog(logQueue);
@@ -722,8 +748,7 @@ describe("Logging various JavaScript objects", () => {
             expect(log[8].args).to.deep.eq([
                 {
                     message: "Function",
-                    // eslint-disable-next-line quotes
-                    value: 'function value() {\n          return "Hello";\n        }'
+                    value: String(customFunction)
                 }
             ]);
 

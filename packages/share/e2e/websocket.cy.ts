@@ -1,7 +1,6 @@
-/* istanbul ignore file */
 import "cypress-interceptor/websocket";
 
-import { getFilePath } from "cypress-interceptor/utils";
+import { getFilePath } from "cypress-interceptor/utils.cypress";
 import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
@@ -422,6 +421,12 @@ describe("Websocket", () => {
                         expect(stats[5].type).to.eq("onmessage");
                     }
                 );
+            });
+        });
+
+        it("Should return null when log is empty", () => {
+            cy.wsInterceptorStatsToLog(outputDir).then((result) => {
+                expect(result).to.be.null;
             });
         });
 

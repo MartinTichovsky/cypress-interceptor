@@ -1,6 +1,6 @@
-import * as cors from "cors";
-import * as express from "express";
-import * as expressWs from "express-ws";
+import cors from "cors";
+import express from "express";
+import expressWs from "express-ws";
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
@@ -126,6 +126,17 @@ app.get(`${resourcesPath}*`, (req, res) => {
 
     res.type("application/javascript");
     res.send(compiled.outputText);
+});
+
+// reading of the response text should fail after calling this endpoint
+app.get("/broken-stream", (req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+
+    res.write("Some partial data...");
+
+    setTimeout(() => {
+        req.socket.destroy();
+    }, 500);
 });
 
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {

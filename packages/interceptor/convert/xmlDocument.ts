@@ -10,7 +10,7 @@ interface ObjectToXMLDocument {
     data: Record<string, unknown> | Array<unknown>;
     document: XMLDocument;
     node: Node;
-    window: Cypress.AUTWindow;
+    win: typeof window;
 }
 
 const castValueFromElement = (element: Element) => {
@@ -58,10 +58,10 @@ const castValueFromElement = (element: Element) => {
 
 export const objectToXMLDocument = <T extends Record<string, unknown>>(
     data: T,
-    window: Cypress.AUTWindow
+    win: typeof window
 ) => {
     const rootElementName = "root";
-    const result = window.document.implementation.createDocument("", rootElementName, null);
+    const result = win.document.implementation.createDocument("", rootElementName, null);
 
     result.getRootNode();
 
@@ -70,17 +70,17 @@ export const objectToXMLDocument = <T extends Record<string, unknown>>(
             data,
             document: result,
             node: result.documentElement,
-            window
+            win
         });
     }
 
     return result;
 };
 
-const objectToXMLDocument_recurisive = ({ data, document, node, window }: ObjectToXMLDocument) => {
-    if (data instanceof window.Map) {
+const objectToXMLDocument_recurisive = ({ data, document, node, win }: ObjectToXMLDocument) => {
+    if (data instanceof win.Map || data instanceof Map) {
         data = Object.fromEntries(data);
-    } else if (data instanceof window.Set) {
+    } else if (data instanceof win.Set || data instanceof Set) {
         data = Array.from(data);
     }
 
@@ -97,7 +97,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
                 node.appendChild(element);
             };
 
-            if (value instanceof window.Date) {
+            if (value instanceof win.Date || value instanceof Date) {
                 appendValue(value.toISOString(), __TYPE_ATTRIBUTE_DATE__);
                 continue;
             }
@@ -107,7 +107,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
                 continue;
             }
 
-            if (value instanceof window.RegExp) {
+            if (value instanceof win.RegExp || value instanceof RegExp) {
                 appendValue(valueToString(value), __TYPE_ATTRIBUTE_REGEXP__);
                 continue;
             }
@@ -116,11 +116,12 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
             isArray && element.setAttribute("index", key);
             node.appendChild(element);
 
-            const nextIsArray = Array.isArray(value) || value instanceof window.Set;
+            const nextIsArray =
+                Array.isArray(value) || value instanceof win.Set || value instanceof Set;
 
             element.setAttribute("type", nextIsArray ? __TYPE_ATTRIBUTE_ARRAY__ : typeof value);
 
-            if (value instanceof window.File) {
+            if (value instanceof win.File || value instanceof File) {
                 objectToXMLDocument_recurisive({
                     data: {
                         name: value.name,
@@ -129,10 +130,10 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
                     },
                     document,
                     node: element,
-                    window
+                    win
                 });
                 continue;
-            } else if (value instanceof window.Blob) {
+            } else if (value instanceof win.Blob || value instanceof Blob) {
                 objectToXMLDocument_recurisive({
                     data: {
                         name: "blob",
@@ -141,7 +142,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
                     },
                     document,
                     node: element,
-                    window
+                    win
                 });
                 continue;
             }
@@ -150,7 +151,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
                 data: value,
                 document,
                 node: element,
-                window
+                win
             });
         } catch {
             // skip invalid key names
@@ -158,17 +159,17 @@ const objectToXMLDocument_recurisive = ({ data, document, node, window }: Object
     }
 };
 
-export const xmlDocumentToJSONString = (xmlDocument: XMLDocument, window: Cypress.AUTWindow) =>
-    JSON.stringify(xmlDocumentToObject(xmlDocument, window), createReplacer(window));
+export const xmlDocumentToJSONString = (xmlDocument: XMLDocument, win: typeof window) =>
+    JSON.stringify(xmlDocumentToObject(xmlDocument, win), createReplacer(win));
 
 export const xmlDocumentToObject = <T extends Record<string | number, unknown>>(
     xmlDocument: XMLDocument,
-    window: Cypress.AUTWindow
+    win: typeof window
 ): T => {
-    return xmlDocumentToObject_recursive(xmlDocument.documentElement, window) as T;
+    return xmlDocumentToObject_recursive(xmlDocument.documentElement, win) as T;
 };
 
-const xmlDocumentToObject_recursive = (element: Element, window: Cypress.AUTWindow) => {
+const xmlDocumentToObject_recursive = (element: Element, win: typeof window) => {
     const result: Record<string | number, unknown> = {};
 
     const children = Array.from(element.children);
@@ -178,8 +179,8 @@ const xmlDocumentToObject_recursive = (element: Element, window: Cypress.AUTWind
 
         if (entry.children.length) {
             result[entry.tagName] = isArray
-                ? xmlDocumentToArray_recursive(entry, window)
-                : xmlDocumentToObject_recursive(entry, window);
+                ? xmlDocumentToArray_recursive(entry, win)
+                : xmlDocumentToObject_recursive(entry, win);
         } else {
             result[entry.tagName] = isArray ? [] : castValueFromElement(entry);
         }
@@ -188,7 +189,7 @@ const xmlDocumentToObject_recursive = (element: Element, window: Cypress.AUTWind
     return result;
 };
 
-const xmlDocumentToArray_recursive = (element: Element, window: Cypress.AUTWindow) => {
+const xmlDocumentToArray_recursive = (element: Element, win: typeof window) => {
     const result: Array<unknown> = [];
     const children = Array.from(element.children);
 
@@ -202,8 +203,8 @@ const xmlDocumentToArray_recursive = (element: Element, window: Cypress.AUTWindo
 
         if (entry.children.length) {
             result[index] = isArray
-                ? xmlDocumentToArray_recursive(entry, window)
-                : xmlDocumentToObject_recursive(entry, window);
+                ? xmlDocumentToArray_recursive(entry, win)
+                : xmlDocumentToObject_recursive(entry, win);
         } else {
             result[index] = isArray ? [] : castValueFromElement(entry);
         }

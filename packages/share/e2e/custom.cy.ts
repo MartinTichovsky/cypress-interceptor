@@ -1,7 +1,6 @@
-/* istanbul ignore file */
 import { convertInputBodyToString } from "cypress-interceptor/convert/convert";
 import { CallStack } from "cypress-interceptor/Interceptor.types";
-import { getFilePath } from "cypress-interceptor/utils";
+import { getFilePath } from "cypress-interceptor/utils.cypress";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { testCaseIt } from "../src/utils";
@@ -372,6 +371,12 @@ describe("Custom", () => {
         it("should return empty string for undefined input", async () => {
             const result = await convertInputBodyToString(undefined, win);
             expect(result).to.equal("");
+        });
+    });
+
+    it("Should return null when log is empty", () => {
+        cy.writeInterceptorStatsToLog("_logs").then((result) => {
+            expect(result).to.be.null;
         });
     });
 });

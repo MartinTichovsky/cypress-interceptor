@@ -3,13 +3,13 @@ import { xmlDocumentToJSONString } from "./xmlDocument";
 
 export const convertInputBodyToString = async (
     input: Document | BodyInit | null | undefined,
-    win: Cypress.AUTWindow
+    win: typeof window
 ) => {
-    if (input instanceof win.Document) {
+    if (input instanceof win.Document || input instanceof Document) {
         return xmlDocumentToJSONString(input, window);
     } else if (typeof input === "string") {
         return input;
-    } else if (input instanceof win.Blob) {
+    } else if (input instanceof win.Blob || input instanceof Blob) {
         return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
 
@@ -17,11 +17,15 @@ export const convertInputBodyToString = async (
             reader.onerror = () => reject(reader.error);
             reader.readAsText(input);
         });
-    } else if (input instanceof win.FormData) {
+    } else if (input instanceof win.FormData || input instanceof FormData) {
         return formDataToJsonString(input, win);
-    } else if (input instanceof win.URLSearchParams) {
+    } else if (input instanceof win.URLSearchParams || input instanceof URLSearchParams) {
         return urlSearchParamsToJsonString(input, window);
-    } else if (input instanceof win.ArrayBuffer || win.ArrayBuffer.isView(input)) {
+    } else if (
+        input instanceof win.ArrayBuffer ||
+        input instanceof ArrayBuffer ||
+        win.ArrayBuffer.isView(input)
+    ) {
         return new TextDecoder().decode(input);
     } else if (typeof input === "object" && input !== null) {
         return JSON.stringify(input);

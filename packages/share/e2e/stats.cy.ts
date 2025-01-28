@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { CallStack } from "cypress-interceptor/Interceptor.types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
