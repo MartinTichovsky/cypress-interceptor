@@ -7,21 +7,19 @@ export type CallLineWindowType<T = unknown> = Window & { [__CALL_LINE__]?: T[] }
 /**
  * Enable the call line in the window object
  *
- * @param parentWindow A window instance. In Cypress, it must be the global window
  * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
  * @example How to enable in Cypress
  * ```ts
  * ·beforeEach(() => {
  * ·   cy.window().then((win) => {
- * ·      enableCallLine(window, win);
+ * ·      enableCallLine(win);
  * ·   });
  * ·});
  * ```
  */
-export const enableCallLine = (
-    parentWindow: CallLineWindowType,
-    childWindow?: CallLineWindowType
-) => {
+export const enableCallLine = (childWindow?: CallLineWindowType) => {
+    const parentWindow: CallLineWindowType = globalThis.window;
+
     if (parentWindow[__CALL_LINE__] === undefined || !Array.isArray(parentWindow[__CALL_LINE__])) {
         parentWindow[__CALL_LINE__] = [];
     }
@@ -109,7 +107,7 @@ export class CallLine {
     }
 
     /**
-     * The number of all entries
+     * Get the number of all entries.
      */
     get length() {
         return getCallLineArray().length;

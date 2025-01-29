@@ -66,10 +66,12 @@ let callLine: CallLine;
 
 beforeEach(() => {
     cy.window().then((win) => {
-        enableCallLine(window, win);
+        enableCallLine(win);
 
         callLine = getCallLine();
         callLine.clean();
+
+        cy.callLineClean();
     });
 });
 
@@ -1938,10 +1940,12 @@ it("test.unit", () => {
     win[__CALL_LINE__] = undefined;
 
     lineCalled("this");
+    lineCalledWithClone("this");
 
     expect(win[__CALL_LINE__]).to.be.undefined;
 
     lineCalled("123");
+    lineCalledWithClone("123");
 
     expect(win[__CALL_LINE__]).to.be.undefined;
 
@@ -2059,6 +2063,12 @@ it("test.unit", () => {
     expect(callLine.current).to.deep.eq([callLine5_arg1, callLine5_arg2]);
     expect((callLine.current as unknown[])[0]).not.to.eq(callLine5_arg1);
     expect((callLine.current as unknown[])[1]).not.to.eq(callLine5_arg2);
+
+    const callLine6 = "simple string";
+
+    lineCalledWithClone(callLine6);
+
+    expect(callLine.next).to.eq(callLine6);
 });
 
 it("cy.callLine", () => {
@@ -2254,4 +2264,33 @@ it("cy.callLine", () => {
     cy.callLine()
         .then((callLine) => (callLine.current as unknown[])[1])
         .should("not.eq", callLine5_arg2);
+
+    const callLine6 = "simple string";
+
+    wrap(() => lineCalledWithClone(callLine6));
+
+    cy.callLineNext().should("eq", callLine6);
+});
+
+it("Should wait for the results", () => {
+    setTimeout(() => {
+        lineCalled(123);
+
+        setTimeout(() => {
+            lineCalled("aaa");
+        }, 2500);
+    }, 2500);
+
+    cy.callLineLength().should("eq", 1);
+    cy.callLineNext().should("eq", 123);
+    cy.callLineNext().should("eq", "aaa");
+});
+
+it("Should wait for the results", () => {
+    setTimeout(() => {
+        lineCalled(999);
+    }, 3000);
+
+    cy.callLineNext().should("not.be.undefined");
+    cy.callLineCurrent().should("eq", 999);
 });

@@ -81,6 +81,12 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
 - [`test.unit`](#testunit)
     - [How to use](#how-to-use)
     - [Cypress Commands](#the-testunit-cypress-commands)
+        - [cy.callLine](#cycallline)
+        - [cy.callLineClean](#cycalllineclean)
+        - [cy.callLineCurrent](#cycalllinecurrent)
+        - [cy.callLineLength](#cycalllinelength)
+        - [cy.callLineNext](#cycalllinenext)
+        - [cy.callLineReset](#cycalllinereset)
     - [Documentation and examples](#documentation-and-examples-of-cypress-interceptortestunit)
         - [enableCallLine](#enablecallline)
         - [isCallLineEnabled](#iscalllineenabled)
@@ -1759,8 +1765,16 @@ import { enableCallLine } from "cypress-interceptor/test.unit";
 
 beforeEach(() => {
     cy.window().then((win) => {
-        enableCallLine(window, win);
+        enableCallLine(win);
     });
+});
+```
+
+Globally in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
+
+```ts
+Cypress.on("window:before:load", (win) => {
+    enableCallLine(win);
 });
 ```
 
@@ -1768,6 +1782,9 @@ And in your tests you will be able to use it as follows:
 
 ```ts
 import "cypress-interceptor/test.unit.commands";
+
+// check that call line is really enabled
+cy.callLine().its('isEnabled').should('be.true');
 
 cy.callLineLength().should("eq", 0);
 // OR cy.callLine().invoke("length").should("eq", 0);
@@ -1783,12 +1800,16 @@ cy.callLineNext().should("eq", "Some value");
 ## The `test.unit` Cypress commands
 
 ```ts
-  /**
+/**
  * Get a created instance of the CallLine class
  *
  * @returns An instance of the CallLine class
  */
 callLine(): Chainable<CallLine>;
+/**
+ * Clean the CallLine array and start storing the values from the beginning
+ */
+callLineClean(): void;
 /**
  * The last existing entry. It can be `undefined` if there is no entry at
  * the moment or `next` has not been called. Otherwise it always returns
@@ -1796,7 +1817,7 @@ callLine(): Chainable<CallLine>;
  */
 callLineCurrent(): Chainable<unknown | unknown[] | undefined>;
 /**
- * The number of all entries
+ * Get the number of all entries.
  */
 callLineLength(): Chainable<number>;
 /**
@@ -1808,7 +1829,95 @@ callLineLength(): Chainable<number>;
  * `["something", 1, true]`.
  */
 callLineNext(): Chainable<unknown | unknown[] | undefined>;
+/**
+ * Resets the counter and starts from the first entry on the next call to `cy.callLineNext`
+ */
+callLineReset(): void;
 ```
+
+## cy.callLine
+
+```ts
+callLine(): Chainable<CallLine>;
+```
+
+Get a created instance of the CallLine class
+
+### Example
+
+
+```ts
+// check that call line is really enabled
+cy.callLine().its('isEnabled').should('be.true');
+```
+
+## cy.callLineClean
+
+```ts
+callLineClean(): void;
+```
+
+Clean the CallLine array and start storing the values from the beginning
+
+## cy.callLineCurrent
+
+```ts
+callLineCurrent(): Chainable<unknown | unknown[] | undefined>;
+```
+
+The last existing entry. It can be `undefined` if there is no entry at the moment or `next` has not been called. Otherwise it always returns the last entry invoked by `next`.
+
+### Example
+
+```ts
+// wait for the next entry
+cy.callLineNext().should("not.be.undefined");
+// do some checking
+cy.callLineCurrent().should("eq", "my custom string");
+// do more checkings with the last entry
+cy.callLineCurrent().should("eq", ...);
+```
+
+## cy.callLineLength
+
+```ts
+callLineLength(): Chainable<number>;
+```
+
+Get the number of all entries.
+
+### Example
+
+```ts
+// uses a Cypress query to check the total number of entries
+cy.callLineLength().should("eq", 1);
+```
+
+## cy.callLineNext
+
+```ts
+callLineNext(): Chainable<unknown | unknown[] | undefined>;
+```
+
+Get the next entry. If there is no next entry, it returns undefined. It is a Cypress query.
+
+If the entry was added as a single argument like `lineCalled("something")`, it will return the single value "something". But if it was added as multiple arguments like `lineCalled("something", 1, true)`, it will return an array `["something", 1, true]`.
+
+### Example
+
+```ts
+// uses a Cypress query to check if the next entry (different from undefined) is `123`
+// in combination with `should` it tries to call `callLine.next` until it is not undefined
+cy.callLineNext().should("eq", 123);
+```
+
+## cy.callLineReset
+
+```ts
+callLineReset(): void;
+```
+
+Resets the counter and starts from the first entry on the next call to `cy.callLineNext`
 
 # Documentation and examples of `cypress-interceptor/test.unit`
 
@@ -1816,10 +1925,9 @@ callLineNext(): Chainable<unknown | unknown[] | undefined>;
 
 ```ts
 /**
- * @param parentWindow A window instance. In Cypress, it must be the global window
  * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
  */
-enableCallLine(parentWindow: CallLineWindowType, childWindow?: CallLineWindowType): void;
+enableCallLine(childWindow?: CallLineWindowType): void;
 ```
 
 Enable the call line in the window object.
@@ -1828,13 +1936,19 @@ Enable the call line in the window object.
 
 ```ts
 // to enable it in the current run only outside the web browser
-enableCallLine(window);
+enableCallLine();
 ```
 
 ```ts
 // to enable it in the current run and the web browser
 cy.window().then((win) => {
-    enableCallLine(window, win);
+    enableCallLine(win);
+});
+```
+
+```ts
+Cypress.on("window:before:load", (win) => {
+    enableCallLine(win);
 });
 ```
 
@@ -1909,7 +2023,7 @@ interface CallLine {
     isEnabled: boolean;
 
     /**
-     * The number of all entries
+     * Get the number of all entries.
      */
     length: number;
 
