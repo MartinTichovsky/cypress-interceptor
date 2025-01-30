@@ -137,7 +137,12 @@ export class CallLine {
      * Clean the CallLine array and start storing the values from the beginning
      */
     clean() {
-        (window as CallLineWindowType)[__CALL_LINE__] = [];
+        const parentWindow: CallLineWindowType = window;
+
+        if (Array.isArray(parentWindow[__CALL_LINE__])) {
+            parentWindow[__CALL_LINE__].splice(0, parentWindow[__CALL_LINE__].length);
+        }
+
         this.reset();
     }
 

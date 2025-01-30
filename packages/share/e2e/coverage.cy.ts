@@ -2110,6 +2110,10 @@ it("cy.callLine", () => {
         .should("be.true");
     cy.callLineNext().should("be.undefined");
 
+    cy.callLineClean();
+
+    wrap(() => win[__CALL_LINE__] === undefined).should("be.true");
+
     // enabled
 
     wrap(() => enableCallLine(win));
@@ -2284,6 +2288,16 @@ it("Should wait for the results", () => {
     cy.callLineLength().should("eq", 1);
     cy.callLineNext().should("eq", 123);
     cy.callLineNext().should("eq", "aaa");
+
+    cy.callLineClean();
+
+    cy.wrap(null).then(() => {
+        setTimeout(() => {
+            lineCalled("111");
+        }, 3000);
+    });
+
+    cy.callLineNext().should("eq", "111");
 });
 
 it("Should wait for the results", () => {
@@ -2293,4 +2307,15 @@ it("Should wait for the results", () => {
 
     cy.callLineNext().should("not.be.undefined");
     cy.callLineCurrent().should("eq", 999);
+
+    cy.callLineClean();
+
+    cy.wrap(null).then(() => {
+        setTimeout(() => {
+            lineCalled("555");
+        }, 3000);
+    });
+
+    cy.callLineNext().should("not.be.undefined");
+    cy.callLineCurrent().should("eq", "555");
 });
