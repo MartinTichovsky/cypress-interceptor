@@ -230,6 +230,8 @@ export class Interceptor {
         };
 
         requestProxy.requestProxyFunction = async (request, win, resourceType) => {
+            const _headerProcessStart = performance.now();
+
             this.win = win;
             const crossDomain = request.url.host !== document.location.host;
             // the pending status is not logged in cross-domain requests when ignoreCrossDomain is `true`
@@ -247,7 +249,7 @@ export class Interceptor {
                     query: deepCopy(query)
                 },
                 resourceType,
-                timeStart: new Date(),
+                timeStart: new Date("0000-00-00"),
                 url: request.url
             };
 
@@ -255,13 +257,18 @@ export class Interceptor {
 
             const throttle = this.getThrottle(item);
             const mock = this.getMock(item) ?? throttle.mockResponse;
-            const startTime = performance.now();
+            const durationStart = performance.now();
 
             item.delay = throttle.delay;
+            item.timeStart = new Date();
+            item._headerProcessDuration = performance.now() - _headerProcessStart;
 
             const onRequestDone = async (response: XMLHttpRequest | Response, isMock = false) => {
                 try {
-                    item.duration = performance.now() - startTime;
+                    const _responseProcessDuration = performance.now();
+
+                    item.duration = performance.now() - durationStart;
+                    const timeEnd = new Date();
 
                     let body = "";
 
@@ -294,8 +301,10 @@ export class Interceptor {
                         isMock,
                         statusCode: response.status,
                         statusText: response.statusText,
-                        timeEnd: new Date()
+                        timeEnd
                     };
+
+                    item._responseProcessDuration = performance.now() - _responseProcessDuration;
                 } catch (e) {
                     console.error(e);
                 }
