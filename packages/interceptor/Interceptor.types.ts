@@ -3,6 +3,8 @@
 import { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
 export interface CallStack {
+    _headerProcessDuration?: number;
+    _responseProcessDuration?: number;
     /**
      * Cross-domain requests will have this property set to `true`.
      */
