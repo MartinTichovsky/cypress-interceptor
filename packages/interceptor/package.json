@@ -30,5 +30,5 @@
     "lint": "eslint .",
     "tsc": "tsc --noEmit"
   },
-  "types": "interceptor.d.ts"
+  "types": "Interceptor.d.ts"
 }

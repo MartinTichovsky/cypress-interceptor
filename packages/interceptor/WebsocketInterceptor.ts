@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./utils";
 import { getFilePath } from "./utils.cypress";

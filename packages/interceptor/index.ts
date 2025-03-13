@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 import { createRequestProxy } from "./createRequestProxy";
 import { Interceptor } from "./Interceptor";

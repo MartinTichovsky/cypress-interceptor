@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference preserve="true" types="cypress" />
 
 import { StringMatcher } from "cypress/types/net-stubbing";
 

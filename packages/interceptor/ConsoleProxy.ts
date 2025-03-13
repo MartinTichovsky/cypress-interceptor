@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 import { ConsoleLogType } from "./WatchTheConsole.types";
 

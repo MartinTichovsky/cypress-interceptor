@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 export const getFileNameFromCurrentTest = () => {
     const currentTest = Cypress.currentTest;

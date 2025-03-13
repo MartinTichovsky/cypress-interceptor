@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 import { ConsoleProxy } from "./ConsoleProxy";
 import { deepCopy, removeUndefinedFromObject } from "./utils";

@@ -1,4 +1,4 @@
-/// <reference types="cypress" />
+/// <reference types="cypress" preserve="true" />
 
 import { ConsoleProxy } from "./ConsoleProxy";
 import { createConsoleProxy } from "./createConsoleProxy";
