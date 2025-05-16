@@ -274,13 +274,17 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         lineCalled(CallLineEnum.n000016);
                     }
 
-                    value.bind(this)(ev);
+                    if (typeof value === "function") {
+                        value.bind(this)(ev);
+                    }
                 };
             }
 
             set onload(value: (this: XMLHttpRequest, ev: Event) => unknown) {
                 super.onload = (ev) => {
-                    this._onResponse(() => value.bind(this)(ev));
+                    this._onResponse(() =>
+                        typeof value === "function" ? value.bind(this)(ev) : value
+                    );
                 };
             }
 
@@ -288,8 +292,10 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
             set onreadystatechange(value: (this: XMLHttpRequest, ev: Event) => unknown) {
                 super.onreadystatechange = (ev) => {
                     if (this.readyState === XMLHttpRequest.DONE) {
-                        this._onResponse(() => value.bind(this)(ev));
-                    } else {
+                        this._onResponse(() =>
+                            typeof value === "function" ? value.bind(this)(ev) : value
+                        );
+                    } else if (typeof value === "function") {
                         value.bind(this)(ev);
                     }
                 };
@@ -304,7 +310,9 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         lineCalled(CallLineEnum.n000017);
                     }
 
-                    value.bind(this)(ev);
+                    if (typeof value === "function") {
+                        value.bind(this)(ev);
+                    }
                 };
             }
 
