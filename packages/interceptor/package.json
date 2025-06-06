@@ -3,7 +3,7 @@
   "version": "3.8.2",
   "description": "A helper for better Cypress testing; mocking, throttling and waiting for requests with advanced statistics",
   "devDependencies": {
-    "cypress": "14.0.0"
+    "cypress": "14.4.1"
   },
   "author": "Martin Tichovsky",
   "files": [

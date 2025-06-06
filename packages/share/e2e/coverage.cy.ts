@@ -38,6 +38,7 @@ import {
 } from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { WebSocketAction, WebsocketListener } from "cypress-interceptor/websocketListener";
+import { SERVER_URL } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
 
@@ -60,7 +61,7 @@ const createDeeplyNestedObject = (depth: number) => {
 const wait = async (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout));
 
 const url = "http://localhost:3000/test";
-const urlBrokenStream = "http://localhost:3000/broken-stream";
+const urlBrokenStream = `http://localhost:3000/${SERVER_URL.BrokenStream}`;
 
 let callLine: CallLine;
 
@@ -1085,6 +1086,72 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 expect(onerror).to.be.undefined;
                 expect(callLine.length).to.eq(0);
             }
+        );
+
+        createXMLHttpRequestTest(
+            "Should work when passing null - without error",
+            async (onResponse) => {
+                const request = new XMLHttpRequest();
+
+                request.open("GET", url);
+                request.responseType = "json";
+                request.setRequestHeader("Content-Type", "application/json");
+
+                request.onabort = null;
+                request.onerror = null;
+                request.onload = null;
+                request.onloadstart = null;
+                request.onprogress = null;
+                request.onreadystatechange = null;
+                request.ontimeout = null;
+
+                await new Promise((resolve) => {
+                    onResponse(request, () => {
+                        setTimeout(() => {
+                            resolve(null);
+                        }, 500);
+                    });
+
+                    request.send();
+                }).then(() => {
+                    expect(request.response).to.deep.eq({});
+                    expect(callLine.length).to.eq(0);
+                });
+            }
+        );
+
+        createXMLHttpRequestTest(
+            "Should work when passing null - with error",
+            async (onResponse) => {
+                const request = new XMLHttpRequest();
+
+                request.open("GET", urlBrokenStream);
+
+                request.onabort = null;
+                request.onerror = null;
+                request.onload = null;
+                request.onloadstart = null;
+                request.onprogress = null;
+                request.onreadystatechange = null;
+                request.ontimeout = null;
+
+                await new Promise((resolve) => {
+                    onResponse(request, () => {
+                        // a delay for `onerror` to be called
+                        setTimeout(() => {
+                            resolve(null);
+                        }, 500);
+                    });
+
+                    request.send();
+                }).then(() => {
+                    expect(callLine.length).to.eq(0);
+                });
+            },
+            [
+                XMLHttpRequestLoad.AddEventListener_Readystatechange,
+                XMLHttpRequestLoad.Onreadystatechange
+            ]
         );
     });
 

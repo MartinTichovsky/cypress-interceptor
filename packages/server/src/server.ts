@@ -2,22 +2,24 @@ import cors from "cors";
 import express from "express";
 import expressWs from "express-ws";
 import * as fs from "fs";
+import multer from "multer";
 import * as path from "path";
 import * as ts from "typescript";
 import { WebSocket } from "ws";
 
 import { bigDataGenerator } from "./bigDataGenerator";
 import { getExampleResponse } from "./exampleResponse";
+import { SERVER_URL } from "./resources/constants";
 import { WSMessage } from "./types";
 
 const app = expressWs(express()).app;
+const upload = multer();
 const port = 3000;
 
 const wait = async (timeout: number) => new Promise((executor) => setTimeout(executor, timeout));
 
 app.use(cors());
 app.use(express.json());
-
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
 
 interface TestingEndpointRequest {
@@ -54,7 +56,7 @@ const getResponseBody = (
 
 const getNumberFomString = (num: string | undefined, defaultNumber = 0) => {
     const result = parseInt(num ?? defaultNumber.toString());
-    return result ? result : defaultNumber;
+    return !isNaN(result) ? result : defaultNumber;
 };
 
 const XHRContentType = "application/json";
@@ -75,8 +77,18 @@ const executeAutoResponse = async (ws: WebSocket, autoResponse: WSMessage[]) => 
     void executeAutoResponse(ws, autoResponse);
 };
 
-app.ws("/*", (ws, req) => {
+app.ws(`/${SERVER_URL.WebSocketClose}`, (ws) => {
+    ws.close(1000, "Closing connection");
+});
+
+app.ws("/{*splat}", (ws, req) => {
     ws.on("message", (msg: string) => {
+        if (req.url.includes(`/${SERVER_URL.WebSocketArrayBuffer}`)) {
+            ws.binaryType = "arraybuffer";
+            ws.send(msg);
+            return;
+        }
+
         try {
             const data = JSON.parse(msg);
 
@@ -106,7 +118,7 @@ app.ws("/*", (ws, req) => {
 const cypressInterceptorString = "cypress-interceptor";
 const resourcesPath = "/public/resources/";
 
-app.get(`${resourcesPath}*`, (req, res) => {
+app.get(`${resourcesPath}{*splat}`, (req, res) => {
     const scriptPath = `${req.url.replace(resourcesPath, "").replace(".js", "")}.ts`;
     const tsFilePath = scriptPath.includes(cypressInterceptorString)
         ? path.join(
@@ -128,8 +140,44 @@ app.get(`${resourcesPath}*`, (req, res) => {
     res.send(compiled.outputText);
 });
 
+app.post(`/${SERVER_URL.AutoResponseFormData}`, upload.any(), (req, res) => {
+    const files = req.files;
+    const fields = req.body;
+
+    res.json({
+        receivedFields: fields,
+        receivedFiles: (files as Express.Multer.File[]).map((file) => ({
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+            buffer: file.buffer.toString("base64").slice(0, 100) + "..." // for preview only
+        }))
+    });
+});
+
+app.get(`/${SERVER_URL.BlobResponse}`, (_req, res) => {
+    // Create sample data for the blob
+    const sampleData = {
+        message: "This is a sample blob response",
+        timestamp: new Date().toISOString(),
+        data: Array.from({ length: 1000 }, (_, i) => i) // Generate some sample data
+    };
+
+    // Convert the data to a Buffer
+    const buffer = Buffer.from(JSON.stringify(sampleData));
+
+    // Set appropriate headers
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${"sample.blob"}"`);
+    res.setHeader("Content-Length", buffer.length);
+
+    // Send the blob response
+    res.send(buffer);
+});
+
 // reading of the response text should fail after calling this endpoint
-app.get("/broken-stream", (req, res) => {
+app.get(`/${SERVER_URL.BrokenStream}`, (req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
 
     res.write("Some partial data...");
@@ -137,6 +185,35 @@ app.get("/broken-stream", (req, res) => {
     setTimeout(() => {
         req.socket.destroy();
     }, 500);
+});
+
+app.get(`/${SERVER_URL.InvalidJson}`, (_req, res) => {
+    res.type(XHRContentType);
+    res.send("Invalid JSON");
+});
+
+app.get(`/${SERVER_URL.ResponseWithProgress}`, async (_req, res) => {
+    res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked" // Enables streaming response
+    });
+
+    // Simulate sending data in chunks
+    res.write(`{"${"data"}":[`);
+
+    const total = 4;
+
+    for (let i = 0; i < total; i++) {
+        await wait(1000);
+
+        res.write(`{"id":${i}}`);
+
+        if (i < total - 1) {
+            res.write(",");
+        }
+    }
+
+    res.end();
 });
 
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
