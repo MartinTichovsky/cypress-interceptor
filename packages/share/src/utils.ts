@@ -140,6 +140,34 @@ export const resourceTypeDescribe = (
     });
 };
 
+export const resourceTypeDescribeOnly = (
+    name: string,
+    execution: (
+        resourceType: "fetch" | "xhr",
+        resourceTypeSecondary: "fetch" | "xhr",
+        testName: (name: string) => string
+    ) => void,
+    filter?: ("fetch" | "xhr")[]
+) => {
+    let resourceTypes: ("fetch" | "xhr")[] = ["fetch", "xhr"];
+
+    if (filter) {
+        resourceTypes = resourceTypes.filter((value) => filter.includes(value));
+    }
+
+    resourceTypes.forEach((resourceType, index) => {
+        const testName = (name: string) => `${name} [resourceType='${resourceType}']`;
+
+        describe.only(testName(name), () =>
+            execution(
+                resourceType,
+                resourceTypes[index === 0 ? resourceTypes.length - 1 : index - 1],
+                testName
+            )
+        );
+    });
+};
+
 export const resourceTypeIt = (
     name: string,
     execution: (resourceType: "fetch" | "xhr", resourceTypeSecondary: "fetch" | "xhr") => void
@@ -150,6 +178,29 @@ export const resourceTypeIt = (
         const testName = (name: string) => `${name} [resourceType='${resourceType}']`;
 
         it(testName(name), () =>
+            execution(
+                resourceType,
+                resourceTypes[index === 0 ? resourceTypes.length - 1 : index - 1]
+            )
+        );
+    });
+};
+
+export const resourceTypeOnly = (
+    name: string,
+    execution: (resourceType: "fetch" | "xhr", resourceTypeSecondary: "fetch" | "xhr") => void,
+    filter?: ("fetch" | "xhr")[]
+) => {
+    let resourceTypes: ("fetch" | "xhr")[] = ["fetch", "xhr"];
+
+    if (filter) {
+        resourceTypes = resourceTypes.filter((value) => filter.includes(value));
+    }
+
+    resourceTypes.forEach((resourceType, index) => {
+        const testName = (name: string) => `${name} [resourceType='${resourceType}']`;
+
+        it.only(testName(name), () =>
             execution(
                 resourceType,
                 resourceTypes[index === 0 ? resourceTypes.length - 1 : index - 1]
