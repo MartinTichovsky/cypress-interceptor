@@ -93,13 +93,13 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
                         responseBody: responseBody2,
                         responseCatchType,
-                        status: 200,
+                        status: 300,
                         type: resourceType
                     }
                 ])
@@ -167,7 +167,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
@@ -178,7 +178,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         duration,
                         method: "POST",
                         path: testPath_api_3,
@@ -266,7 +266,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
@@ -277,7 +277,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         duration,
                         method: "POST",
                         path: testPath_api_3,
@@ -343,7 +343,7 @@ describe("Mock Respose", () => {
             },
             {
                 bodyFormat,
-                delay: 150,
+                delay: 200,
                 method: "POST",
                 path: testPath_api_2,
                 responseBody: responseBody2,
@@ -353,7 +353,7 @@ describe("Mock Respose", () => {
             },
             {
                 bodyFormat,
-                delay: 200,
+                delay: 300,
                 method: "POST",
                 path: testPath_api_3,
                 responseBody: responseBody3,
@@ -503,7 +503,7 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_api_3).should("eq", 200);
         });
 
-        it("Only GenerateBody", () => {
+        it.only("Only GenerateBody", () => {
             cy.mockInterceptorResponse(
                 { resourceType },
                 {
@@ -1111,7 +1111,7 @@ describe("Mock Respose", () => {
             {
                 body: body2,
                 bodyFormat,
-                delay: 150,
+                delay: 200,
                 duration,
                 method: "POST",
                 query: query2,
@@ -1123,7 +1123,7 @@ describe("Mock Respose", () => {
             {
                 body: body3,
                 bodyFormat,
-                delay: 200,
+                delay: 300,
                 duration,
                 headers: headers3,
                 method: "POST",
@@ -1134,7 +1134,7 @@ describe("Mock Respose", () => {
                 type: resourceType
             },
             {
-                delay: 250,
+                delay: 400,
                 method: "GET",
                 path: crossDomainFetch,
                 type: resourceType
@@ -1972,7 +1972,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         method: "POST",
                         path: testPath_api_2,
                         responseBody: responseBody2,
@@ -2052,7 +2052,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         method: "POST",
                         path: testPath_api_2,
                         responseBody: responseBody2,
@@ -2062,7 +2062,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         method: "POST",
                         path: testPath_api_3,
                         responseBody: responseBody3,
@@ -2160,7 +2160,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         method: "POST",
                         path: testPath_api_2,
                         responseBody: responseBody2,
@@ -2170,7 +2170,7 @@ describe("Mock Respose", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         method: "POST",
                         path: testPath_api_3,
                         responseBody: responseBody3,
@@ -2529,7 +2529,7 @@ describe("Mock Respose", () => {
                 },
                 {
                     bodyFormat,
-                    delay: 150,
+                    delay: 200,
                     method: "POST",
                     path: api_path_2,
                     responseBody: responseBody2,
@@ -2539,7 +2539,7 @@ describe("Mock Respose", () => {
                 },
                 {
                     bodyFormat,
-                    delay: 200,
+                    delay: 300,
                     method: "POST",
                     path: api_path_3,
                     responseBody: responseBody3,

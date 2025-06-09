@@ -38,6 +38,7 @@ import {
 } from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { WebSocketAction, WebsocketListener } from "cypress-interceptor/websocketListener";
+import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
 
@@ -59,8 +60,8 @@ const createDeeplyNestedObject = (depth: number) => {
 
 const wait = async (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout));
 
-const url = "http://localhost:3000/test";
-const urlBrokenStream = "http://localhost:3000/broken-stream";
+const url = `http://${HOST}/test`;
+const urlBrokenStream = `http://${HOST}/${SERVER_URL.BrokenStream}`;
 
 let callLine: CallLine;
 
@@ -1086,6 +1087,72 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 expect(callLine.length).to.eq(0);
             }
         );
+
+        createXMLHttpRequestTest(
+            "Should work when passing null - without error",
+            async (onResponse) => {
+                const request = new XMLHttpRequest();
+
+                request.open("GET", url);
+                request.responseType = "json";
+                request.setRequestHeader("Content-Type", "application/json");
+
+                request.onabort = null;
+                request.onerror = null;
+                request.onload = null;
+                request.onloadstart = null;
+                request.onprogress = null;
+                request.onreadystatechange = null;
+                request.ontimeout = null;
+
+                await new Promise((resolve) => {
+                    onResponse(request, () => {
+                        setTimeout(() => {
+                            resolve(null);
+                        }, 500);
+                    });
+
+                    request.send();
+                }).then(() => {
+                    expect(request.response).to.deep.eq({});
+                    expect(callLine.length).to.eq(0);
+                });
+            }
+        );
+
+        createXMLHttpRequestTest(
+            "Should work when passing null - with error",
+            async (onResponse) => {
+                const request = new XMLHttpRequest();
+
+                request.open("GET", urlBrokenStream);
+
+                request.onabort = null;
+                request.onerror = null;
+                request.onload = null;
+                request.onloadstart = null;
+                request.onprogress = null;
+                request.onreadystatechange = null;
+                request.ontimeout = null;
+
+                await new Promise((resolve) => {
+                    onResponse(request, () => {
+                        // a delay for `onerror` to be called
+                        setTimeout(() => {
+                            resolve(null);
+                        }, 500);
+                    });
+
+                    request.send();
+                }).then(() => {
+                    expect(callLine.length).to.eq(0);
+                });
+            },
+            [
+                XMLHttpRequestLoad.AddEventListener_Readystatechange,
+                XMLHttpRequestLoad.Onreadystatechange
+            ]
+        );
     });
 
     createXMLHttpRequestTest("Should mock the correct JSON body", async (onResponse) => {
@@ -1881,7 +1948,7 @@ it("createWebsocketProxy ", async () => {
 
     expect(OriginWebsocket).not.to.eq(window.WebSocket);
 
-    const websocket = new WebSocket("ws://localhost:3000/test");
+    const websocket = new WebSocket(`${WS_HOST}/test`);
 
     await new Promise((resolve) => {
         websocket.onopen = () => {
@@ -1906,29 +1973,29 @@ it("createWebsocketProxy ", async () => {
             protocols: undefined,
             type: "create",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "onopen",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "send",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "close",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         }
     ]);
 });

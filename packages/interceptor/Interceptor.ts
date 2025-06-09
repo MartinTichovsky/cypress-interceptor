@@ -322,12 +322,15 @@ export class Interceptor {
                             await onRequestDone(response, isMock);
                         }
 
-                        resolve();
-
-                        // set isPending with a delay to let the JavaScript finish processing the response
-                        setTimeout(() => {
-                            item.isPending = false;
-                        }, 100);
+                        try {
+                            resolve();
+                        } finally {
+                            // set isPending with a delay to let JavaScript finish processing the response
+                            // set isPending with a delay to let JavaScript finish processing the response
+                            setTimeout(() => {
+                                item.isPending = false;
+                            }, 100);
+                        }
                     })();
                 },
                 error: (error) => {

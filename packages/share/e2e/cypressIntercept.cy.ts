@@ -166,7 +166,7 @@ testCaseDescribe(
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         headers,
                         method: "GET",
@@ -179,7 +179,7 @@ testCaseDescribe(
                     {
                         body: body2,
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         duration,
                         headers,
                         method: "POST",
@@ -192,7 +192,7 @@ testCaseDescribe(
                     {
                         body: body3,
                         bodyFormat,
-                        delay: 250,
+                        delay: 400,
                         duration,
                         headers,
                         method: "POST",
@@ -205,7 +205,7 @@ testCaseDescribe(
                     {
                         body: body4,
                         bodyFormat,
-                        delay: 250,
+                        delay: 500,
                         duration,
                         headers,
                         method: "POST",

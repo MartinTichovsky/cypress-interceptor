@@ -1,3 +1,4 @@
+import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import {
     DEFAULT_WAITTIME,
     generateUrl,
@@ -26,14 +27,14 @@ describe("Testing that the Interceptor logs requests correctly", () => {
             expect(stats[0]).not.to.be.undefined;
             expect(stats[0].delay).to.be.undefined;
             expect(stats[0].resourceType).to.eq("fetch");
-            expect(stats[0].url.toString()).to.eq("http://localhost:3000/fetch");
+            expect(stats[0].url.toString()).to.eq(`http://${HOST}/fetch`);
         });
 
         cy.interceptorStats({ method: "POST", resourceType: "fetch" }).then((stats) => {
             expect(stats[0]).not.to.be.undefined;
             expect(stats[0].delay).to.be.undefined;
             expect(stats[0].resourceType).to.eq("fetch");
-            expect(stats[0].url.toString()).to.eq("http://localhost:3000/fetch");
+            expect(stats[0].url.toString()).to.eq(`http://${HOST}/fetch`);
         });
     });
 });

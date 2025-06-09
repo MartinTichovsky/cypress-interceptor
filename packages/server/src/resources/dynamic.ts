@@ -8,7 +8,7 @@ import {
     WSCommunication,
     WSMessage
 } from "../types";
-import { crossDomainFetch } from "./constants";
+import { crossDomainFetch, WS_HOST } from "./constants";
 
 const createRequestBodyForFetch = (
     data: Record<string, unknown>,
@@ -136,6 +136,107 @@ const requestQueue: DynamicRequest[] = [];
     }
 };
 
+interface DynamicRequestParams {
+    body?: Record<string, unknown>;
+    cancelIn?: number;
+    headers?: Record<string, string>;
+    jsonResponse: boolean;
+    method?: string;
+    requests?: DynamicRequest[];
+    url: string;
+}
+
+interface InitParams {
+    controller?: AbortController;
+    isCrossDomainScriptFetch?: boolean;
+    requestInit?: RequestInit;
+}
+
+export const getInitForFetchFromParams = (
+    entry: DynamicRequest,
+    { body, method, headers, jsonResponse, url }: DynamicRequestParams,
+    { isCrossDomainScriptFetch = false, controller = undefined, requestInit = {} }: InitParams = {
+        isCrossDomainScriptFetch: false,
+        controller: undefined,
+        requestInit: {}
+    }
+): Parameters<typeof fetch> => {
+    const init = {
+        body:
+            body && method === "POST"
+                ? createRequestBodyForFetch(
+                      body,
+                      "bodyFormat" in entry ? entry.bodyFormat : undefined
+                  )
+                : undefined,
+        headers:
+            jsonResponse && !("bodyFormat" in entry && entry.bodyFormat === "formdata")
+                ? {
+                      "Content-Type": getContentType(
+                          isCrossDomainScriptFetch,
+                          "bodyFormat" in entry ? entry.bodyFormat : undefined
+                      ),
+                      ...(headers ? headers : {}),
+                      ...requestInit.headers
+                  }
+                : {
+                      ...(headers ? headers : {}),
+                      ...requestInit.headers
+                  },
+        method: method ?? "GET",
+        signal: controller?.signal
+    };
+
+    return "fetchObjectInit" in entry && entry.fetchObjectInit
+        ? [new Request(new URL(url), { ...init, ...requestInit })]
+        : [url, { ...init, ...requestInit }];
+};
+
+export const getParamsFromDynamicRequest = (entry: DynamicRequest): DynamicRequestParams => {
+    const type = entry.type;
+    const path = entry.path;
+
+    const params = {
+        ...(typeof entry.query === "object" ? entry.query : undefined),
+        ...("bigData" in entry && entry.bigData ? { bigData: true } : undefined),
+        duration: "duration" in entry ? entry.duration : undefined,
+        enableCache: "enableCache" in entry ? entry.enableCache : undefined,
+        path,
+        responseBody:
+            "responseBody" in entry && entry.responseBody
+                ? type === "fetch" || type === "xhr"
+                    ? JSON.stringify(entry.responseBody)
+                    : entry.responseBody
+                : undefined,
+        status: "status" in entry ? entry.status : undefined
+    };
+
+    const body = "body" in entry ? entry.body : undefined;
+    const cancelIn = "cancelIn" in entry ? entry.cancelIn : undefined;
+    const headers = "headers" in entry ? entry.headers : undefined;
+    const jsonResponse = ("jsonResponse" in entry ? entry.jsonResponse : undefined) ?? true;
+    const method = "method" in entry ? entry.method : undefined;
+    const requests = "requests" in entry ? entry.requests : undefined;
+
+    return {
+        body,
+        cancelIn,
+        headers,
+        jsonResponse,
+        method,
+        requests,
+        url:
+            type === "websocket"
+                ? getSrc(`${WS_HOST}/${path}`, {
+                      ...entry.query,
+                      autoResponse: entry.autoResponse
+                          ? JSON.stringify(entry.autoResponse)
+                          : undefined
+                  })
+                : getSrc(path, params)
+    };
+};
+
 const getSrc = (path: string, params: Record<string, unknown>) => {
     const searchParams = new URLSearchParams(objectToURLSearch(params));
     const searchString = searchParams.toString();
@@ -181,33 +282,12 @@ const processEntry = (entry: DynamicRequest) => {
     const path = entry.path;
 
     if (!type || !path) {
-        console.warn("Type or path is missing");
-        return;
+        throw "Type or path is missing";
     }
 
-    const params = {
-        ...(typeof entry.query === "object" ? entry.query : undefined),
-        ...("bigData" in entry && entry.bigData ? { bigData: true } : undefined),
-        duration: "duration" in entry ? entry.duration : undefined,
-        enableCache: "enableCache" in entry ? entry.enableCache : undefined,
-        path,
-        responseBody:
-            "responseBody" in entry && entry.responseBody
-                ? type === "fetch" || type === "xhr"
-                    ? JSON.stringify(entry.responseBody)
-                    : entry.responseBody
-                : undefined,
-        status: "status" in entry ? entry.status : undefined
-    };
+    const params = getParamsFromDynamicRequest(entry);
 
-    const body = "body" in entry ? entry.body : undefined;
-    const cancelIn = "cancelIn" in entry ? entry.cancelIn : undefined;
-    const headers = "headers" in entry ? entry.headers : undefined;
-    const jsonResponse = ("jsonResponse" in entry ? entry.jsonResponse : undefined) ?? true;
-    const method = "method" in entry ? entry.method : undefined;
-    const requests = "requests" in entry ? entry.requests : undefined;
-
-    const url = getSrc(path, params);
+    const { body, cancelIn, headers, jsonResponse, method, requests, url } = params;
 
     const isCrossDomainScriptFetch = url.startsWith(crossDomainFetch);
 
@@ -215,24 +295,7 @@ const processEntry = (entry: DynamicRequest) => {
         const startTime = performance.now();
         const controller = new AbortController();
 
-        const init = {
-            body:
-                body && method === "POST"
-                    ? createRequestBodyForFetch(body, entry.bodyFormat)
-                    : undefined,
-            headers: jsonResponse
-                ? {
-                      "Content-Type": getContentType(isCrossDomainScriptFetch, entry.bodyFormat),
-                      ...(headers ? headers : {})
-                  }
-                : {
-                      ...(headers ? headers : {})
-                  },
-            method: method ?? "GET",
-            signal: controller.signal
-        };
-
-        (entry.fetchObjectInit ? fetch(new Request(new URL(url), init)) : fetch(url, init))
+        fetch(...getInitForFetchFromParams(entry, params, { isCrossDomainScriptFetch, controller }))
             .then(async (response) => {
                 const duration = performance.now() - startTime;
 
@@ -395,15 +458,7 @@ const processEntry = (entry: DynamicRequest) => {
             }, cancelIn);
         }
     } else if (type === "websocket") {
-        const params = {
-            ...entry.query,
-            autoResponse: entry.autoResponse ? JSON.stringify(entry.autoResponse) : undefined
-        };
-
-        const webSocket = new WebSocket(
-            getSrc(`ws://localhost:3000/${path}`, params),
-            entry.protocols
-        );
+        const webSocket = new WebSocket(url, entry.protocols);
 
         const div = document.createElement("div");
 

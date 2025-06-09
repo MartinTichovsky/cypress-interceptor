@@ -18,7 +18,7 @@ describe("Before and BeforeEach", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_1,
@@ -34,7 +34,7 @@ describe("Before and BeforeEach", () => {
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "GET",
                         path: testPath_api_3,
@@ -76,7 +76,7 @@ describe("Before and BeforeEach", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_1,
@@ -92,7 +92,7 @@ describe("Before and BeforeEach", () => {
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "GET",
                         path: testPath_api_3,
