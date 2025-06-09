@@ -38,7 +38,7 @@ import {
 } from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { WebSocketAction, WebsocketListener } from "cypress-interceptor/websocketListener";
-import { SERVER_URL } from "cypress-interceptor-server/src/resources/constants";
+import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
 
@@ -60,8 +60,8 @@ const createDeeplyNestedObject = (depth: number) => {
 
 const wait = async (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout));
 
-const url = "http://localhost:3000/test";
-const urlBrokenStream = `http://localhost:3000/${SERVER_URL.BrokenStream}`;
+const url = `http://${HOST}/test`;
+const urlBrokenStream = `http://${HOST}/${SERVER_URL.BrokenStream}`;
 
 let callLine: CallLine;
 
@@ -1948,7 +1948,7 @@ it("createWebsocketProxy ", async () => {
 
     expect(OriginWebsocket).not.to.eq(window.WebSocket);
 
-    const websocket = new WebSocket("ws://localhost:3000/test");
+    const websocket = new WebSocket(`${WS_HOST}/test`);
 
     await new Promise((resolve) => {
         websocket.onopen = () => {
@@ -1973,29 +1973,29 @@ it("createWebsocketProxy ", async () => {
             protocols: undefined,
             type: "create",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "onopen",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "send",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         },
         {
             protocols: undefined,
             type: "close",
             query: {},
-            url: "ws://localhost:3000/test",
-            urlQuery: "ws://localhost:3000/test"
+            url: `${WS_HOST}/test`,
+            urlQuery: `${WS_HOST}/test`
         }
     ]);
 });

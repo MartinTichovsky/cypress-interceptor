@@ -513,6 +513,7 @@ describe("Edge Cases and Error Scenarios", () => {
     describe("Request/Response Transformation", () => {
         it("should handle fetch with FormData", () => {
             const entry: DynamicRequest = {
+                bodyFormat: "formdata",
                 method: "POST",
                 path: SERVER_URL.AutoResponseFormData,
                 status: 200,

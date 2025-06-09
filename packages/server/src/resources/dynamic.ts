@@ -8,7 +8,7 @@ import {
     WSCommunication,
     WSMessage
 } from "../types";
-import { crossDomainFetch } from "./constants";
+import { crossDomainFetch, WS_HOST } from "./constants";
 
 const createRequestBodyForFetch = (
     data: Record<string, unknown>,
@@ -169,19 +169,20 @@ export const getInitForFetchFromParams = (
                       "bodyFormat" in entry ? entry.bodyFormat : undefined
                   )
                 : undefined,
-        headers: jsonResponse
-            ? {
-                  "Content-Type": getContentType(
-                      isCrossDomainScriptFetch,
-                      "bodyFormat" in entry ? entry.bodyFormat : undefined
-                  ),
-                  ...(headers ? headers : {}),
-                  ...requestInit.headers
-              }
-            : {
-                  ...(headers ? headers : {}),
-                  ...requestInit.headers
-              },
+        headers:
+            jsonResponse && !("bodyFormat" in entry && entry.bodyFormat === "formdata")
+                ? {
+                      "Content-Type": getContentType(
+                          isCrossDomainScriptFetch,
+                          "bodyFormat" in entry ? entry.bodyFormat : undefined
+                      ),
+                      ...(headers ? headers : {}),
+                      ...requestInit.headers
+                  }
+                : {
+                      ...(headers ? headers : {}),
+                      ...requestInit.headers
+                  },
         method: method ?? "GET",
         signal: controller?.signal
     };
@@ -226,7 +227,7 @@ export const getParamsFromDynamicRequest = (entry: DynamicRequest): DynamicReque
         requests,
         url:
             type === "websocket"
-                ? getSrc(`ws://localhost:3000/${path}`, {
+                ? getSrc(`${WS_HOST}/${path}`, {
                       ...entry.query,
                       autoResponse: entry.autoResponse
                           ? JSON.stringify(entry.autoResponse)

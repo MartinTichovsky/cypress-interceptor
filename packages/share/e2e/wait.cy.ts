@@ -1,5 +1,5 @@
 import { IRequestInit } from "cypress-interceptor/Interceptor.types";
-import { crossDomainFetch } from "cypress-interceptor-server/src/resources/constants";
+import { crossDomainFetch, HOST } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
@@ -98,7 +98,7 @@ describe("Wait For Requests", () => {
                 expect(spy.func).to.be.called;
                 expect(init).not.to.be.undefined;
                 expect(init.url.toString()).to.eq(
-                    `http://localhost:3000/${testPath_api_1}?duration=1500&path=${encodeURIComponent(testPath_api_1)}`
+                    `http://${HOST}/${testPath_api_1}?duration=1500&path=${encodeURIComponent(testPath_api_1)}`
                 );
                 expect(error).not.to.be.undefined;
             });
