@@ -50,7 +50,7 @@ describe("Hooks - Case 1", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         method: "POST",
                         path: testPath_api_1,
                         requests: [
@@ -65,7 +65,7 @@ describe("Hooks - Case 1", () => {
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         method: "GET",
                         path: testPath_api_3,
                         type: "xhr"
@@ -76,7 +76,7 @@ describe("Hooks - Case 1", () => {
                         sendQueue: [
                             {
                                 data: "send data",
-                                delay: 150
+                                delay: 200
                             }
                         ],
                         type: "websocket"

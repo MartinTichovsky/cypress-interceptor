@@ -73,7 +73,7 @@ describe("Throttle Request", () => {
                         type: resourceType
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
@@ -120,14 +120,14 @@ describe("Throttle Request", () => {
                         type: resourceType
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
                         type: resourceType
                     },
                     {
-                        delay: 200,
+                        delay: 300,
                         duration,
                         method: "POST",
                         path: testPath_api_3,
@@ -183,14 +183,14 @@ describe("Throttle Request", () => {
                         type: resourceType
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
                         type: resourceType
                     },
                     {
-                        delay: 200,
+                        delay: 300,
                         duration,
                         method: "POST",
                         path: testPath_api_3,
@@ -239,7 +239,7 @@ describe("Throttle Request", () => {
                 type: resourceType
             },
             {
-                delay: 150,
+                delay: 200,
                 duration,
                 method: "POST",
                 path: testPath_api_1,
@@ -514,7 +514,7 @@ describe("Throttle Request", () => {
             },
             {
                 body: body2,
-                delay: 150,
+                delay: 200,
                 duration,
                 method: "POST",
                 query: query2,
@@ -523,7 +523,7 @@ describe("Throttle Request", () => {
             },
             {
                 body: body3,
-                delay: 200,
+                delay: 300,
                 duration,
                 headers: headers3,
                 method: "POST",
@@ -532,7 +532,7 @@ describe("Throttle Request", () => {
                 type: resourceType
             },
             {
-                delay: 250,
+                delay: 400,
                 method: "GET",
                 path: crossDomainFetch,
                 type: resourceTypeSecondary

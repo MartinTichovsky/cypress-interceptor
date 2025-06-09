@@ -239,7 +239,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         cancelIn: 100,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "GET",
                         path: testPath_api_3,
@@ -254,7 +254,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         cancelIn: 100,
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "GET",
                         path: testPath_api_4,
@@ -286,7 +286,7 @@ describe("Wait For Requests", () => {
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         fetchObjectInit: true,
                         jsonResponse: false,
@@ -305,7 +305,7 @@ describe("Wait For Requests", () => {
                         type: "xhr"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         fetchObjectInit: true,
                         jsonResponse: false,
@@ -355,7 +355,7 @@ describe("Wait For Requests", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         duration: timeout * 2,
                         method: "POST",
                         path: testPath_api_1,
@@ -386,14 +386,14 @@ describe("Wait For Requests", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         duration: timeout * 2,
                         method: "POST",
                         path: testPath_api_1,
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration: timeout * 2,
                         method: "POST",
                         path: testPath_api_2,
@@ -427,14 +427,14 @@ describe("Wait For Requests", () => {
             cy.visit(
                 getDynamicUrl([
                     {
-                        delay: 150,
+                        delay: 200,
                         duration: doubleDuration,
                         method: "POST",
                         path: testPath_api_1,
                         type: "fetch"
                     },
                     {
-                        delay: 150,
+                        delay: 200,
                         duration,
                         method: "POST",
                         path: testPath_api_2,
@@ -582,7 +582,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         method: "POST",
                         path: testPath_api_2,
                         responseCatchType,
@@ -651,7 +651,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
+                        delay: 200,
                         duration: tripleDuration * 2,
                         method: "POST",
                         path: testPath_api_1,
@@ -660,7 +660,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 200,
+                        delay: 300,
                         duration: tripleDuration * 3,
                         method: "POST",
                         path: testPath_api_3,
@@ -714,15 +714,6 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 150,
-                        duration: tripleDuration * 2,
-                        method: "POST",
-                        path: testPath_api_2,
-                        responseCatchType,
-                        type: resourceType
-                    },
-                    {
-                        bodyFormat,
                         delay: 200,
                         duration: tripleDuration * 2,
                         method: "POST",
@@ -732,7 +723,16 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 250,
+                        delay: 300,
+                        duration: tripleDuration * 2,
+                        method: "POST",
+                        path: testPath_api_2,
+                        responseCatchType,
+                        type: resourceType
+                    },
+                    {
+                        bodyFormat,
+                        delay: 400,
                         duration: tripleDuration * 3,
                         method: "POST",
                         path: testPath_api_3,
@@ -741,7 +741,7 @@ describe("Wait For Requests", () => {
                     },
                     {
                         bodyFormat,
-                        delay: 300,
+                        delay: 500,
                         duration: tripleDuration * 3,
                         method: "POST",
                         path: testPath_api_3,
