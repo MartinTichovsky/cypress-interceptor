@@ -322,7 +322,7 @@ afterEach(function() {
 
 ## Example Report
 
-You can find a sample of a generated report [here](./report-sample/report.html).
+You can find a sample of a generated report [here](https://martintichovsky.github.io/cypress-interceptor/report-sample/report.html).
 
 The sample report demonstrates all the features including:
 - Interactive performance charts
