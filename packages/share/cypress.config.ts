@@ -57,26 +57,28 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
 
                     return fileName;
                 },
+                createReportFromFile(fileName?: string, highDuration?: number) {
+                    createNetworkReportFromFile(`${mockFolderPath}/sources.stats.json`, {
+                        fileName,
+                        outputDir: fixturesFolder,
+                        highDuration
+                    });
+
+                    return `${fileName || "sources"}.html`;
+                },
+                createReportFromFolder() {
+                    createNetworkReportFromFolder(mockFolderPath, {
+                        outputDir: fixturesFolder
+                    });
+
+                    return fs.readdirSync(fixturesFolder);
+                },
                 doesFileExist(filePath) {
                     return fs.existsSync(filePath);
                 },
                 log(message) {
                     console.log(message);
                     return null;
-                },
-                createReportFromFile(fileName?: string) {
-                    createNetworkReportFromFile(
-                        `${mockFolderPath}/sources.stats.json`,
-                        fixturesFolder,
-                        fileName
-                    );
-
-                    return `${fileName || "sources"}.html`;
-                },
-                createReportFromFolder() {
-                    createNetworkReportFromFolder(mockFolderPath, fixturesFolder);
-
-                    return fs.readdirSync(fixturesFolder);
                 }
             });
 

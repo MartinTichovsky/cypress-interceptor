@@ -6,6 +6,7 @@ The **Network Report** feature is a powerful enhancement for analyzing network r
 
 - 📊 **Visual Charts**: Interactive charts showing request duration over time
 - 📈 **Performance Metrics**: Min, max, and average request durations
+- 🎯 **Performance Threshold**: Highlight requests exceeding configurable duration thresholds
 - 📋 **Detailed Tables**: Complete request/response data including headers, bodies, and status codes
 - 🎯 **Flexible Generation**: Create reports during test execution or from existing statistics files
 - 📁 **Batch Processing**: Generate multiple reports from folders containing statistics files
@@ -17,10 +18,12 @@ The **Network Report** feature is a powerful enhancement for analyzing network r
   - [Generate Reports for All Tests](#generate-reports-for-all-tests)
   - [Generate Reports Only for Failed Tests](#generate-reports-only-for-failed-tests)
   - [Custom File Names](#custom-file-names)
+  - [Performance Threshold Configuration](#performance-threshold-configuration)
 - [API Reference](#api-reference)
   - [`createNetworkReport(options)`](#createnetworkreportoptions)
-  - [`createNetworkReportFromFile(filePath, outputDir, fileName?)`](#createnetworkreportfromfilefilepath-outputdir-filename)
-  - [`createNetworkReportFromFolder(folderPath, outputDir)`](#createnetworkreportfromfolderfolderpath-outputdir)
+  - [`createNetworkReportFromFile(filePath, options)`](#createnetworkreportfromfilefilepath-options)
+  - [`createNetworkReportFromFolder(folderPath, options)`](#createnetworkreportfromfolderfolderpath-options)
+  - [ReportHtmlOptions Interface](#reporthtmloptions-interface)
 - [Advanced Usage Examples](#advanced-usage-examples)
   - [Conditional Report Generation](#conditional-report-generation)
   - [Integration with CI/CD](#integration-with-cicd)
@@ -80,8 +83,21 @@ You can specify custom file names for your reports:
 ```typescript
 afterEach(() => {
     createNetworkReport({
-        outputDir: 'reports',
-        fileName: 'my-custom-report-name'
+        fileName: 'my-custom-report-name',
+        outputDir: 'reports'
+    });
+});
+```
+
+### Performance Threshold Configuration
+
+Set a custom threshold for highlighting slow requests (default is 3000ms):
+
+```typescript
+afterEach(() => {
+    createNetworkReport({
+        highDuration: 2000,  // Highlight requests taking longer than 2 seconds
+        outputDir: 'reports'
     });
 });
 ```
@@ -93,25 +109,24 @@ afterEach(() => {
 Creates an HTML report from the current Cypress test execution. This function must be called within a Cypress test context.
 
 **Parameters:**
-- `options.outputDir` (string, required): Directory where the HTML report will be saved
-- `options.fileName` (string, optional): Custom name for the report file (without extension)
+- `options` (ReportHtmlOptions, required): Configuration object for report generation
 
 **Example:**
 ```typescript
 createNetworkReport({
-    outputDir: './test-reports',
-    fileName: 'api-performance-report'
+    fileName: 'api-performance-report',
+    highDuration: 2500,
+    outputDir: './test-reports'
 });
 ```
 
-### `createNetworkReportFromFile(filePath, outputDir, fileName?)`
+### `createNetworkReportFromFile(filePath, options)`
 
 Creates an HTML report from an existing `.stats.json` file. This function must be called from Node.js context (not within Cypress tests), typically in Cypress tasks or Node.js scripts.
 
 **Parameters:**
 - `filePath` (string, required): Path to the `.stats.json` file
-- `outputDir` (string, required): Directory where the HTML report will be saved
-- `fileName` (string, optional): Custom name for the report file (without extension)
+- `options` (ReportHtmlOptions, required): Configuration object for report generation
 
 **Example:**
 ```typescript
@@ -122,21 +137,24 @@ on('task', {
     generateReportFromStats() {
         createNetworkReportFromFile(
             './cypress/fixtures/test-results.stats.json',
-            './reports',
-            'custom-report-name'
+            {
+                fileName: 'custom-report-name',
+                highDuration: 5000,
+                outputDir: './reports',
+            }
         );
         return null;
     }
 });
 ```
 
-### `createNetworkReportFromFolder(folderPath, outputDir)`
+### `createNetworkReportFromFolder(folderPath, options)`
 
 Creates HTML reports for all `.stats.json` files found in a folder. This function must be called from Node.js context.
 
 **Parameters:**
 - `folderPath` (string, required): Path to the folder containing `.stats.json` files
-- `outputDir` (string, required): Directory where the HTML reports will be saved
+- `options` (Exclude<ReportHtmlOptions, "fileName">, required): Configuration object without fileName (auto-generated from file names)
 
 **Example:**
 ```typescript
@@ -145,8 +163,23 @@ import { createNetworkReportFromFolder } from "cypress-interceptor/report";
 // Generate reports for all stats files in a directory
 createNetworkReportFromFolder(
     './cypress/stats-files',
-    './batch-reports'
+    {
+        highDuration: 2000,
+        outputDir: './batch-reports'
+    }
 );
+```
+
+### ReportHtmlOptions Interface
+
+The configuration object used by all report generation functions:
+
+```typescript
+interface ReportHtmlOptions {
+    fileName?: string;        // Optional: Custom name for the report file (without extension)
+    highDuration?: number;    // Optional: Threshold in milliseconds for highlighting slow requests (default: 3000)
+    outputDir: string;        // Required: Directory where the HTML report will be saved
+}
 ```
 
 ## Advanced Usage Examples
@@ -162,8 +195,9 @@ afterEach(function() {
     
     if (isApiTest || this.currentTest?.state === "failed") {
         createNetworkReport({
-            outputDir: 'conditional-reports',
-            fileName: `${testTitle.replace(/\s+/g, '-').toLowerCase()}`
+            fileName: `${testTitle.replace(/\s+/g, '-').toLowerCase()}`,
+            highDuration: 1500,  // More strict threshold for API tests
+            outputDir: 'conditional-reports'
         });
     }
 });
@@ -183,7 +217,10 @@ export default defineConfig({
                 if (process.env.CI) {
                     createNetworkReportFromFolder(
                         './cypress/logs',
-                        './ci-reports'
+                        {
+                            highDuration: 5000,  // More lenient in CI environment
+                            outputDir: './ci-reports'
+                        }
                     );
                 }
             });
@@ -200,12 +237,15 @@ Using Cypress tasks for more control:
 // In cypress.config.js
 on('task', {
     generateCustomReport(options) {
-        const { statsFile, outputDir, testName } = options;
+        const { outputDir, statsFile, testName, threshold } = options;
         
         createNetworkReportFromFile(
             statsFile,
-            outputDir,
-            `report-${testName}-${Date.now()}`
+            {
+                fileName: `report-${testName}-${Date.now()}`,
+                highDuration: threshold || 3000,
+                outputDir
+            }
         );
         
         return `Report generated for ${testName}`;
@@ -214,9 +254,10 @@ on('task', {
 
 // In your test file
 cy.task('generateCustomReport', {
-    statsFile: './path/to/stats.json',
     outputDir: './custom-reports',
-    testName: 'user-authentication'
+    statsFile: './path/to/stats.json',
+    testName: 'user-authentication',
+    threshold: 2000
 });
 ```
 
@@ -229,11 +270,12 @@ Each generated HTML report includes:
 - **Average Duration**: Mean response time across all requests
 - **Min/Max Duration**: Fastest and slowest request times
 - **Generation Date**: When the report was created
+- **Performance Threshold**: Configured threshold for highlighting slow requests
 
 ### Interactive Chart
 - Visual timeline of request durations
 - Hover for detailed information
-- Color-coded performance indicators
+- Color-coded performance indicators (requests exceeding highDuration threshold are highlighted)
 
 ### Detailed Data Table
 For each request:
@@ -250,16 +292,27 @@ For each request:
 
 ### 1. Organize Reports by Test Type
 ```typescript
-const getOutputDir = (testTitle: string) => {
-    if (testTitle.includes('API')) return 'reports/api-tests';
-    if (testTitle.includes('UI')) return 'reports/ui-tests';
-    return 'reports/general';
+const getReportConfig = (testTitle: string) => {
+    if (testTitle.includes('API')) {
+        return {
+            highDuration: 1000,  // Strict threshold for API tests
+            outputDir: 'reports/api-tests'
+        };
+    }
+    if (testTitle.includes('UI')) {
+        return {
+            highDuration: 5000,  // More lenient for UI tests
+            outputDir: 'reports/ui-tests'
+        };
+    }
+    return {
+        highDuration: 3000,
+        outputDir: 'reports/general'
+    };
 };
 
 afterEach(function() {
-    createNetworkReport({
-        outputDir: getOutputDir(this.currentTest?.title || '')
-    });
+    createNetworkReport(getReportConfig(this.currentTest?.title || ''));
 });
 ```
 
@@ -279,6 +332,7 @@ on('task', {
         if (fs.existsSync(reportsDir)) {
             fs.rmSync(reportsDir, { recursive: true });
         }
+
         fs.mkdirSync(reportsDir, { recursive: true });
         
         return null;
@@ -297,6 +351,7 @@ afterEach(function() {
         // Generate report only for tests that took longer than 5 seconds
         if (duration && duration > 5000) {
             createNetworkReport({
+                highDuration: Math.floor(duration * 0.1), // 10% of total test duration,
                 outputDir: 'slow-test-reports'
             });
         }
@@ -320,12 +375,16 @@ afterEach(function() {
 **Node.js context errors:**
 - `createNetworkReportFromFile` and `createNetworkReportFromFolder` must be called from Node.js context (Cypress tasks, not test code)
 
+**Performance threshold not working:**
+- Ensure `highDuration` is set as a number (in milliseconds)
+- Check that the threshold value is reasonable for your application's performance characteristics
+
 ## Example Report
 
 You can find a sample of a generated report [here](https://martintichovsky.github.io/cypress-interceptor/report-sample/report.html).
 
 The sample report demonstrates all the features including:
-- Interactive performance charts
+- Interactive performance charts with configurable thresholds
 - Detailed request/response tables
 - Performance statistics
 - Professional styling and responsive design

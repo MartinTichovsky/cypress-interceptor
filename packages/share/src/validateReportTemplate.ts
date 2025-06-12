@@ -9,7 +9,7 @@
  * This function tests all major functionality of the report template
  * and can be reused multiple times without being tied to specific URLs or times
  */
-export const validateReportTemplate = () => {
+export const validateReportTemplate = (shouldContainSlowRequests = true) => {
     // Wait for page to fully load
     cy.get("body").should("be.visible");
     cy.wait(1000); // Allow time for JavaScript to initialize
@@ -63,7 +63,7 @@ export const validateReportTemplate = () => {
 
     // Test 7: Verify there are both fast (green) and slow (red) requests
     cy.get('[data-duration-type="fast"]').should("exist"); // At least one fast request
-    cy.get('[data-duration-type="slow"]').should("exist"); // At least one slow request
+    cy.get('[data-duration-type="slow"]').should(shouldContainSlowRequests ? "exist" : "not.exist"); // At least one slow request
 
     // Test 8: Test row expansion/collapse functionality
     cy.get('[data-testid^="table-row-"]').first().as("firstRow");
@@ -244,14 +244,18 @@ export const validateReportTemplate = () => {
                 });
 
                 // Check that slow durations are at or above threshold
-                cy.get('[data-duration-type="slow"]').each(($cell) => {
-                    cy.wrap($cell)
-                        .invoke("text")
-                        .then((text) => {
-                            const duration = parseFloat(text.replace("ms", ""));
-                            expect(duration).to.be.at.least(threshold);
-                        });
-                });
+                if (shouldContainSlowRequests) {
+                    cy.get('[data-duration-type="slow"]').each(($cell) => {
+                        cy.wrap($cell)
+                            .invoke("text")
+                            .then((text) => {
+                                const duration = parseFloat(text.replace("ms", ""));
+                                expect(duration).to.be.at.least(threshold);
+                            });
+                    });
+                } else {
+                    cy.get('[data-duration-type="slow"]').should("not.exist");
+                }
             }
         });
 

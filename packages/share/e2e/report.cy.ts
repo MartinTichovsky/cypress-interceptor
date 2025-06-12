@@ -7,9 +7,6 @@ import { validateReportTemplate } from "../src/validateReportTemplate";
 
 const outputDir = "_network_report";
 
-// Universal configuration constant - adjust this to change the number of entries
-const ENTRY_COUNT = 20;
-
 /**
  * Generates random HTTP status codes
  */
@@ -73,19 +70,19 @@ const getRandomResponseBody = (index: number): Record<string, unknown> => {
  * @param count - Number of entries to generate
  * @returns Array of network request configurations
  */
-const generateNetworkEntries = (count: number) => {
+const generateNetworkEntries = (count: number, highDuration: number = 3000) => {
     const entries: DynamicRequest[] = [];
 
-    // Randomly select 2 positions for the special 3200ms duration entries
+    // Randomly select 2 positions for the special entries
     const specialDurationIndices = new Set<number>();
+
     while (specialDurationIndices.size < 2) {
         specialDurationIndices.add(Math.floor(Math.random() * count));
     }
 
     for (let i = 0; i < count; i++) {
-        // Set duration: either 3200ms for special entries or random between 100-1500ms
         const duration = specialDurationIndices.has(i)
-            ? 3200
+            ? highDuration
             : Math.floor(Math.random() * (1500 - 100 + 1)) + 100;
 
         // Calculate delay based on previous item's duration + delay
@@ -93,6 +90,7 @@ const generateNetworkEntries = (count: number) => {
 
         if (i > 0) {
             const previousItem = entries[i - 1];
+
             delay =
                 (previousItem.delay ?? 0) +
                 ((previousItem && "duration" in previousItem ? previousItem.duration : 0) ?? 0);
@@ -126,37 +124,68 @@ const generateNetworkEntries = (count: number) => {
 };
 
 describe("Report", () => {
-    before(() => {
-        cy.task("clearLogs", [outputDir]);
+    describe("With default settings", () => {
+        before(() => {
+            cy.task("clearLogs", [outputDir]);
+        });
+
+        let fileName = "";
+        const testName = "Should create a report after the test";
+
+        after(() => {
+            createNetworkReport({
+                outputDir
+            });
+
+            cy.task("copyToFixtures", fileName).then((htmlName) => {
+                cy.visit(`/fixtures/${htmlName}`);
+
+                validateReportTemplate();
+
+                cy.get("body").contains(testName).should("be.visible");
+            });
+        });
+
+        it(testName, () => {
+            cy.visit(getDynamicUrl(generateNetworkEntries(20)));
+
+            cy.waitUntilRequestIsDone({
+                timeout: 60000
+            });
+
+            fileName = getFilePath(undefined, outputDir, undefined, "html");
+        });
     });
 
-    let fileName = "";
-    const testName = "Should create a report after the test";
-
-    after(() => {
-        createNetworkReport({
-            outputDir
+    describe("With custom settings", () => {
+        before(() => {
+            cy.task("clearLogs", [outputDir]);
         });
 
-        cy.task("copyToFixtures", fileName).then((htmlName) => {
-            cy.visit(`/fixtures/${htmlName}`);
+        let fileName = "";
+        const testName = "Should create a report with custom settings";
 
-            validateReportTemplate();
+        after(() => {
+            createNetworkReport({
+                highDuration: 5000,
+                outputDir
+            });
 
-            cy.get("body").contains(testName).should("be.visible");
+            cy.task("copyToFixtures", fileName).then((htmlName) => {
+                cy.visit(`/fixtures/${htmlName}`);
+
+                validateReportTemplate(false);
+
+                cy.get("body").contains(testName).should("be.visible");
+            });
         });
-    });
 
-    it(testName, () => {
-        // Generate network entries using the universal logic
-        const networkEntries = generateNetworkEntries(ENTRY_COUNT);
+        it(testName, () => {
+            cy.visit(getDynamicUrl(generateNetworkEntries(10, 1000)));
 
-        cy.visit(getDynamicUrl(networkEntries));
+            cy.waitUntilRequestIsDone();
 
-        cy.waitUntilRequestIsDone({
-            timeout: 60000
+            fileName = getFilePath(undefined, outputDir, undefined, "html");
         });
-
-        fileName = getFilePath(undefined, outputDir, undefined, "html");
     });
 });
