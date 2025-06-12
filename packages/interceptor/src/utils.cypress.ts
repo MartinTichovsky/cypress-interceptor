@@ -2,22 +2,30 @@
 
 export const getFileNameFromCurrentTest = () => {
     const currentTest = Cypress.currentTest;
-    const filePath = Cypress.spec.relative.replace(/^(cypress\\(\w+)\\)|(cypress\/(\w+)\/)/i, "");
 
-    return `${normalizeFileName(filePath)} (${normalizeFileName(
-        currentTest.titlePath.length ? currentTest.titlePath.join(" - ") : currentTest.title
-    )})`;
+    return currentTest.titlePath.length ? currentTest.titlePath.join(" - ") : currentTest.title;
 };
 
-export const getFilePath = (fileName: string | undefined, outputDir: string, type: string) => {
+export const getFilePath = (
+    fileName: string | undefined,
+    outputDir: string,
+    type?: string,
+    extension = "json"
+) => {
     if (outputDir && !outputDir.endsWith("/")) {
         outputDir += "/";
     }
 
     return maxLengthFileName(
-        `${outputDir}${fileName ? fileName : getFileNameFromCurrentTest()}`,
-        `.${type}.json`
+        `${outputDir}${fileName ? fileName : getNormalizedFileNameFromCurrentTest()}`,
+        `.${type ? `${type}.` : ""}${extension}`
     );
+};
+
+export const getNormalizedFileNameFromCurrentTest = () => {
+    const filePath = Cypress.spec.relative.replace(/^(cypress\\(\w+)\\)|(cypress\/(\w+)\/)/i, "");
+
+    return `${normalizeFileName(filePath)} (${normalizeFileName(getFileNameFromCurrentTest())})`;
 };
 
 export const maxLengthFileName = (fileName: string, extension: string) => {

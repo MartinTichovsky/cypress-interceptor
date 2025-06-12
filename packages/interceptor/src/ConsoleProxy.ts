@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { ConsoleLogType } from "./WatchTheConsole.types";
+import { ConsoleLogType } from "../types/WatchTheConsole.types";
 
 export type OnLogFunction = (type: ConsoleLogType, ...args: unknown[]) => void;
 

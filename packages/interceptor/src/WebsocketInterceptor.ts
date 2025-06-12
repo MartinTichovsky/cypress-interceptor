@@ -1,15 +1,15 @@
 /// <reference types="cypress" preserve="true" />
 
-import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./src/utils";
-import { getFilePath } from "./src/utils.cypress";
-import { waitTill } from "./src/wait";
-import { WebsocketListener } from "./src/websocketListener";
 import {
     CallStackWebsocket,
     IWSMatcher,
     WaitUntilActionOptions,
     WriteStatsOptions
-} from "./types/WebsocketInterceptor.types";
+} from "../types/WebsocketInterceptor.types";
+import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./utils";
+import { getFilePath } from "./utils.cypress";
+import { waitTill } from "./wait";
+import { WebsocketListener } from "./websocketListener";
 
 declare global {
     namespace Cypress {

@@ -1,6 +1,6 @@
 import { convertInputBodyToString } from "cypress-interceptor/convert/convert";
-import { CallStack } from "cypress-interceptor/Interceptor.types";
-import { getFilePath } from "cypress-interceptor/utils.cypress";
+import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { CallStack } from "cypress-interceptor/types/Interceptor.types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { testCaseIt } from "../src/utils";

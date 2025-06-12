@@ -1,8 +1,8 @@
-import { convertInputBodyToString } from "./convert/convert";
-import { WindowTypeOfRequestProxy } from "./Interceptor.types";
+import { convertInputBodyToString } from "../convert/convert";
+import { CallLineEnum } from "../src/test.enum";
+import { lineCalled } from "../test.unit";
+import { WindowTypeOfRequestProxy } from "../types/Interceptor.types";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
-import { CallLineEnum } from "./test.enum";
-import { lineCalled } from "./test.unit";
 
 export const createRequestProxy = (requestProxy: RequestProxy) => {
     const listener = (win: WindowTypeOfRequestProxy) => {

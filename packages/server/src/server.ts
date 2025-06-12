@@ -21,6 +21,7 @@ const wait = async (timeout: number) => new Promise((executor) => setTimeout(exe
 app.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
+app.use("/fixtures", express.static(path.join(__dirname, "../fixtures"), { redirect: false }));
 
 interface TestingEndpointRequest {
     enableCache?: boolean;

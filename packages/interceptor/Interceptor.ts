@@ -3,6 +3,10 @@
 import { StringMatcher } from "cypress/types/net-stubbing";
 
 import { convertInputBodyToString } from "./convert/convert";
+import { RequestProxy } from "./src/RequestProxy";
+import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./src/utils";
+import { getFilePath } from "./src/utils.cypress";
+import { waitTill } from "./src/wait";
 import {
     CallStack,
     IMockResponse,
@@ -13,11 +17,7 @@ import {
     OnRequestError,
     WaitUntilRequestOptions,
     WriteStatsOptions
-} from "./Interceptor.types";
-import { RequestProxy } from "./RequestProxy";
-import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./utils";
-import { getFilePath } from "./utils.cypress";
-import { waitTill } from "./wait";
+} from "./types/Interceptor.types";
 
 declare global {
     namespace Cypress {

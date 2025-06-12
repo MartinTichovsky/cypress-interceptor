@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { IMockResponse, IRequestInit, IResourceType } from "./Interceptor.types";
+import { IMockResponse, IRequestInit, IResourceType } from "../types/Interceptor.types";
 
 export type RequestProxyFunction = (
     request: IRequestInit,

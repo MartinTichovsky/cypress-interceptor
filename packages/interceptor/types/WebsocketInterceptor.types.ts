@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { WebSocketAction } from "./websocketListener";
+import { WebSocketAction } from "../src/websocketListener";
 
 export type CallStackWebsocket = WebSocketAction & {
     /**
