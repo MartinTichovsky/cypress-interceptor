@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./src/utils";
+import { deepCopy, isNonNullableObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
 import { waitTill } from "./src/wait";
 import { WebsocketListener } from "./src/websocketListener";
@@ -41,7 +41,7 @@ declare global {
             /**
              * Write the logged requests' information (or those filtered by the provided matcher) to a file
              *
-             * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+             * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/[Description] It.stats.json"
              * @example cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
              * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
              * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
@@ -167,6 +167,7 @@ export class WebsocketInterceptor {
                                     ? 1
                                     : 0;
                         }
+
                         break;
                     }
                     case "send": {
@@ -390,7 +391,7 @@ export class WebsocketInterceptor {
             getFilePath(options?.fileName, outputDir, "ws.stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
-                replacer,
+                undefined,
                 options?.prettyOutput ? 4 : undefined
             ),
             options

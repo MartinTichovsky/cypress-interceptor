@@ -146,59 +146,6 @@ export const createXMLHttpRequestProxy = (
                 writable: true,
                 configurable: true
             });
-
-            // Handle different response types correctly
-            const currentResponseType = this.shadowXhr.responseType || "";
-
-            // Only set responseText if responseType is '' or 'text'
-            if (currentResponseType === "" || currentResponseType === "text") {
-                Object.defineProperty(this.shadowXhr, "responseText", {
-                    get: () => {
-                        const mockBody = this._getMockBody(); // Lazy evaluation - error thrown here if _getMockBody fails
-                        if (mockBody) {
-                            return typeof mockBody === "object"
-                                ? JSON.stringify(mockBody)
-                                : String(mockBody);
-                        } else {
-                            // Safely get responseText from super, avoiding our getter
-                            try {
-                                return super.responseText;
-                            } catch {
-                                return "";
-                            }
-                        }
-                    },
-                    configurable: true
-                });
-            }
-
-            // Set response property with lazy evaluation
-            Object.defineProperty(this.shadowXhr, "response", {
-                get: () => {
-                    const mockBody = this._getMockBody(); // Lazy evaluation - error thrown here if _getMockBody fails
-                    if (mockBody !== undefined) {
-                        switch (currentResponseType) {
-                            case "json":
-                                return typeof mockBody === "object" ? mockBody : mockBody;
-                            case "text":
-                            case "":
-                                return typeof mockBody === "object"
-                                    ? JSON.stringify(mockBody)
-                                    : String(mockBody);
-                            case "arraybuffer":
-                            case "blob":
-                            case "document":
-                                // For these types, use the actual response from the main XMLHttpRequest
-                                return this.response;
-                            default:
-                                return this.response;
-                        }
-                    } else {
-                        return this.response;
-                    }
-                },
-                configurable: true
-            });
         }
 
         private syncToShadow() {
@@ -317,6 +264,7 @@ export const createXMLHttpRequestProxy = (
                     const originalEvent = args[0] as Event;
                     // loadstart happens at the beginning, so no need to wait for response
                     const newEvent = this.createProgressEvent("loadstart", originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             } else {
@@ -324,6 +272,7 @@ export const createXMLHttpRequestProxy = (
                 proxyListener = (...args) => {
                     const originalEvent = args[0] as Event;
                     const newEvent = this.createEvent(originalEvent.type, originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             }
@@ -452,6 +401,7 @@ export const createXMLHttpRequestProxy = (
         get responseText() {
             // Check if responseType allows access to responseText
             const currentResponseType = this.responseType || "";
+
             if (currentResponseType !== "" && currentResponseType !== "text") {
                 throw new win.DOMException(
                     `Failed to read the 'responseText' property from 'XMLHttpRequest': The value is only accessible if the object's 'responseType' is '' or 'text' (was '${currentResponseType}').`,

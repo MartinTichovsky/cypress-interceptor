@@ -1,7 +1,7 @@
 import "cypress-interceptor/console";
 
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
-import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/src/WatchTheConsole.types";
+import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
 import { generateUrl } from "cypress-interceptor-server/src/utils";
 
 type LogQueue = [ConsoleLogType, unknown[]][];
@@ -406,12 +406,12 @@ describe("JSON.stringify function or recursive object", () => {
         cy.task("clearLogs", [outputDir]);
     });
 
-    const testCase = () => {
+    const testCase = (prettyOutput = true) => {
         cy.visit("/");
 
         createConsoleLog(logQueue);
 
-        cy.writeConsoleLogToFile(outputDir, { prettyOutput: true });
+        cy.writeConsoleLogToFile(outputDir, { prettyOutput });
 
         const outputFileName = createOutputFileName(outputDir);
 
@@ -446,16 +446,28 @@ describe("JSON.stringify function or recursive object", () => {
         });
     };
 
-    it("Should create a file with cloned entries", () => {
+    it("Should create a file with cloned entries - with pretty output", () => {
         cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
 
         testCase();
     });
 
-    it("Should create a file with cloned log", () => {
+    it("Should create a file with cloned entries - without pretty output", () => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: true });
+
+        testCase(false);
+    });
+
+    it("Should create a file with cloned log - with pretty output", () => {
         cy.watchTheConsoleOptions({ cloneConsoleArguments: false });
 
         testCase();
+    });
+
+    it("Should create a file with cloned log - without pretty output", () => {
+        cy.watchTheConsoleOptions({ cloneConsoleArguments: false });
+
+        testCase(false);
     });
 });
 

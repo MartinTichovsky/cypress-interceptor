@@ -10,13 +10,13 @@
 
 Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to log all fetch or XHR requests, which can be analyzed in case of failure. It provides extended ways to log these statistics, including the ability to mock or throttle requests easily. Cypress Interceptor is better than `cy.intercept` because it can avoid issues, especially when using global request catching.
 
-There is also an option to monitor the web browser console output and log it to a file or work with websockets. For more details, refer to the [Watch The Console](#watch-the-console) or [websocket section](#websocket-interceptor).
+There is also an option to monitor the web browser console output and log it to a file or work with WebSockets. For more details, refer to the [Watch The Console](#watch-the-console) or [WebSocket section](#websocket-interceptor).
 
 For detailed information about generating beautiful HTML reports with network analysis, see the [Network Report Generation documentation](./README.report.md).
 
 ## Motivation
 
-This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren't tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren't tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
 
 Beyond logging, Cypress Interceptor now includes [**Network Report Generation**](./README.report.md) that transforms raw network data into beautiful, interactive HTML reports. These reports feature performance charts, detailed request/response tables, and comprehensive statistics, making it easier than ever to analyze and understand your application's network behavior. [See an example report here](https://martintichovsky.github.io/cypress-interceptor/report-example/report.html) to experience the visual power of network analysis.
 
@@ -30,8 +30,8 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
 - The improved [Watch The Console](#watch-the-console) now safely logs objects and functions, with an added filtering option
 - Added [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog) and [`cy.wsInterceptorStatsToLog`](#cywsinterceptorstatstolog)
 - Complete rework, exclude `cy.intercept` as the main tool of logging, stabilizing runs, support all fetch and XHR body types
-- Work with canceled and aborted requests
-- Add support for Websockets
+- Work with cancelled and aborted requests
+- Add support for WebSockets
 
 ## Table of contents
 
@@ -89,26 +89,30 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
     - [Interfaces](#interfaces-2)
 - [`test.unit`](#testunit)
     - [How to use](#how-to-use)
-    - [Cypress Commands](#the-testunit-cypress-commands)
+    - [`test.unit` Cypress commands](#testunit-cypress-commands)
+    - [Documentation and examples](#documentation-and-examples-3)
         - [cy.callLine](#cycallline)
         - [cy.callLineClean](#cycalllineclean)
         - [cy.callLineCurrent](#cycalllinecurrent)
+        - [cy.callLineDisable](#cycalllinedisable)
+        - [cy.callLineEnable](#cycalllineenable)
         - [cy.callLineLength](#cycalllinelength)
         - [cy.callLineNext](#cycalllinenext)
         - [cy.callLineReset](#cycalllinereset)
-    - [Documentation and examples](#documentation-and-examples-of-cypress-interceptortestunit)
-        - [enableCallLine](#enablecallline)
-        - [isCallLineEnabled](#iscalllineenabled)
-        - [getCallLine](#getcallline)
+        - [cy.callLineToFile](#cycalllinetofile)
+    - [The main functions intended to be used on the front-end](#the-main-functions-intended-to-be-used-on-the-front-end)
         - [lineCalled](#linecalled)
         - [lineCalledWithClone](#linecalledwithclone)
     - [Interfaces](#interfaces-3)
 - [Network Report Generation](./README.report.md)
+- [Other commands](#other-commands)
+    - [cy.startTiming](#cystarttiming)
+    - [cy.stopTiming](#cystoptiming)
 
 
 ## Getting started
 
-It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js`, `cypress/support/e2e.ts` or in any of your test files:
+It is very simple, just install the package using `yarn` or `npm` and import the package in your `cypress/support/e2e.js`, `cypress/support/e2e.ts`, or in any of your test files:
 
 ```js
 import "cypress-interceptor";
@@ -126,38 +130,38 @@ import "cypress-interceptor";
 
 ```ts
 /**
- * Destroy the interceptor by restoring the original fetch and XMLHttpRequest implementations
+ * Destroy the interceptor by restoring the original fetch and
+ * XMLHttpRequest implementations. This command removes all proxy
+ * functionality and restores the browser's native implementations.
  */
-destroyInterceptor: () => Chainable<null>;
+destroyInterceptor(): Chainable<void>;
 /**
- * Get an instance of Interceptor
+ * Get an instance of the Interceptor
  *
- * @returns An instance of Interceptor
+ * @returns An instance of the Interceptor
  */
-interceptor: () => Chainable<Interceptor>;
+interceptor(): Chainable<Interceptor>;
 /**
  * Get the last call matching the provided route matcher.
  *
  * @param routeMatcher A route matcher
  * @returns The last call information or `undefined` if none matches.
  */
-interceptorLastRequest: (
-    routeMatcher?: IRouteMatcher
-) => Chainable<CallStack | undefined>;
+interceptorLastRequest(routeMatcher?: IRouteMatcher): Chainable<CallStack | undefined>;
 /**
  * Set the Interceptor options. This must be called before a request occurs.
  *
  * @param options Options
  * @returns The current Interceptor options
  */
-interceptorOptions: (options?: InterceptorOptions) => Chainable<InterceptorOptions>;
+interceptorOptions(options?: InterceptorOptions): Chainable<InterceptorOptions>;
 /**
  * Get the number of requests matching the provided route matcher.
  *
  * @param routeMatcher A route matcher
  * @returns The number of requests matching the provided route matcher since the current test started.
  */
-interceptorRequestCalls: (routeMatcher?: IRouteMatcher) => Chainable<number>;
+interceptorRequestCalls(routeMatcher?: IRouteMatcher): Chainable<number>;
 /**
  * Get the statistics for all requests matching the provided route matcher since the beginning
  * of the current test.
@@ -166,7 +170,7 @@ interceptorRequestCalls: (routeMatcher?: IRouteMatcher) => Chainable<number>;
  * @returns It returns all requests matching the provided route matcher with detailed information.
  * If none match, it returns an empty array.
  */
-interceptorStats: (routeMatcher?: IRouteMatcher) => Chainable<CallStack[]>;
+interceptorStats(routeMatcher?: IRouteMatcher): Chainable<CallStack[]>;
 /**
  * Mock the response of requests matching the provided route matcher. By default, it mocks the
  * first matching request, and then the mock is removed. Set `times` in the options to change
@@ -183,9 +187,9 @@ mockInterceptorResponse(
     options?: IMockResponseOptions
 ): Chainable<number>;
 /**
- * Recreate the interceptor with a new instance
+ * Recreate the Interceptor instance.
  */
-recreateInterceptor: () => Chainable<null>;
+recreateInterceptor(): Chainable<void>;
 /**
  * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
  * is necessary when you want to wait for certain requests.
@@ -200,14 +204,14 @@ resetInterceptorWatch: VoidFunction;
  *
  * @returns performance.now() when the code is executed
  */
-startTiming: () => Chainable<number>;
+startTiming(): Chainable<number>;
 /**
  * Stop the time measurement (a helper function)
  *
  * @returns If `cy.startTiming` was called, it returns the time difference since startTiming was
  * called (in ms); otherwise, it returns `undefined`.
  */
-stopTiming: () => Chainable<number | undefined>;
+stopTiming(): Chainable<number | undefined>;
 /**
  * Throttle requests matching the provided route matcher by setting a delay. By default, it throttles
  * the first matching request, and then the throttle is removed. Set times in the options to change
@@ -223,7 +227,7 @@ throttleInterceptorRequest(
     delay: number,
     options?: IThrottleRequestOptions
 ): Chainable<number>;
-  /**
+/**
  * The method will wait until all requests matching the provided route matcher are finished or until
  * the maximum waiting time (`timeout` in options) is reached.
  *
@@ -264,15 +268,19 @@ waitUntilRequestIsDone(
 /**
  * Write the logged requests' information (or those filtered by the provided route matcher) to a file
  *
- * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
- * @example cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
- * @example cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
- * @example cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+ * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/[Description] It.stats.json"
+ * @example cy.writeInterceptorStatsToLog("./out", { fileName:  "file_name" }) =>  the output file will be "./out/file_name. stats.json"
+ * @example cy.writeInterceptorStatsToLog("./out", {  routeMatcher: { method: "GET" } }) => write only "GET" requests  to the output file
+ * @example cy.writeInterceptorStatsToLog("./out", { mapper:  (callStack) => ({ type: callStack.type, url: callStack.url }) })  => map the output that will be written to the output file
  *
  * @param outputDir The path for the output folder
  * @param options Options
  */
-writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
+writeInterceptorStatsToLog(
+    outputDir: string,
+    options?: WriteStatsOptions &
+        Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+): Chainable<null>;
 ```
 
 # Cypress environment variables
@@ -296,7 +304,7 @@ In almost all methods, there is a route matcher ([`IRouteMatcher`](#iroutematche
 ## cy.destroyInterceptor
 
 ```ts
-destroyInterceptor: () => Chainable<null>;
+destroyInterceptor: () => Chainable<void>;
 ```
 
 Destroy the interceptor by restoring the original fetch and XMLHttpRequest implementations. This command removes all proxy functionality and restores the browser's native implementations.
@@ -311,6 +319,9 @@ cy.destroyInterceptor();
 ## cy.interceptor
 
 ```ts
+/**
+ * @returns An instance of Interceptor
+ */
 interceptor: () => Chainable<Interceptor>;
 ```
 
@@ -329,7 +340,13 @@ cy.interceptor().then(interceptor => {
 ## cy.interceptorLastRequest
 
 ```ts
-interceptorLastRequest: (routeMatcher?: IRouteMatcher) => Chainable<CallStack | undefined>;
+/**
+ * @param routeMatcher A route matcher
+ * @returns The last call information or `undefined` if none matches.
+ */
+interceptorLastRequest: (
+    routeMatcher?: IRouteMatcher
+) => Chainable<CallStack | undefined>;
 ```
 
 _References:_
@@ -349,6 +366,10 @@ cy.interceptorLastRequest({ resourceType: "fetch" }).then((stats) => {
 ## cy.interceptorOptions
 
 ```ts
+/**
+ * @param options Options
+ * @returns The current Interceptor options
+ */
 interceptorOptions: (options?: InterceptorOptions) => Chainable<InterceptorOptions>;
 ```
 
@@ -373,6 +394,10 @@ cy.interceptorOptions({
 ## cy.interceptorRequestCalls
 
 ```ts
+/**
+ * @param routeMatcher A route matcher
+ * @returns The number of requests matching the provided route matcher since the current test started.
+ */
 interceptorRequestCalls: (routeMatcher?: IRouteMatcher) => Chainable<number>;
 ```
 
@@ -380,6 +405,8 @@ _References:_
   - [`IRouteMatcher`](#iroutematcher)
 
 Get the number of requests matching the provided route matcher.
+
+### Example
 
 ```ts
 // There should be only one call logged to a URL ending with `/api/getOrder`
@@ -394,6 +421,11 @@ cy.interceptorRequestCalls({ resourceType: ["fetch"] }).should("eq", 4);
 ## cy.interceptorStats
 
 ```ts
+/**
+ * @param routeMatcher A route matcher
+ * @returns It returns all requests matching the provided route matcher with detailed information.
+ * If none match, it returns an empty array.
+ */
 interceptorStats: (routeMatcher?: IRouteMatcher) => Chainable<CallStack[]>;
 ```
 
@@ -428,6 +460,12 @@ cy.interceptorStats("**/getUser").then((stats) => {
 ## cy.mockInterceptorResponse
 
 ```ts
+/**
+ * @param routeMatcher A route matcher
+ * @param mock The response mock
+ * @param options The mock options
+ * @returns The ID of the created mock. This is needed if you want to remove the mock manually.
+ */
 mockInterceptorResponse(
     routeMatcher: IRouteMatcher,
     mock: IMockResponse,
@@ -561,14 +599,14 @@ Recreate the interceptor with a new instance. This command creates a fresh inter
 ### Example
 
 ```ts
-// Recreate the interceptor to get a fresh instance
+// Recreate the interceptor to get a fresh instance or when it was destroyed
 cy.recreateInterceptor();
 ```
 
 ## cy.resetInterceptorWatch
 
 ```ts
-resetInterceptorWatch: () => void;
+resetInterceptorWatch: VoidFunction;
 ```
 
 Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer is necessary when you want to wait for certain requests.
@@ -594,6 +632,12 @@ cy.waitUntilRequestIsDone("**/api/getUser");
 ## cy.throttleInterceptorRequest
 
 ```ts
+/**
+ * @param routeMatcher A route matcher
+ * @param delay The delay in ms
+ * @param options The throttle options (which can include mocking the response).
+ * @returns The ID of the created throttle. This is needed if you want to remove the throttle manually.
+ */
 throttleInterceptorRequest(
     routeMatcher: IRouteMatcher,
     delay: number,
@@ -657,31 +701,31 @@ cy.throttleInterceptorRequest(
  * @param errorMessage An error message when the maximum waiting time is reached
  * @returns The result from the action
  */
-public waitUntilRequestIsDone<T>(
+waitUntilRequestIsDone<T>(
     action: () => Cypress.Chainable<T>,
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
-): Cypress.Chainable<T>;
+): Chainable<T>;
 /**
  * @param action An action which should trigger a request
  * @param stringMatcherOrOptions A string matcher OR options with a route matcher
  * @param errorMessage An error message when the maximum waiting time is reached
  * @returns The result from the action
  */
-public waitUntilRequestIsDone<T>(
+waitUntilRequestIsDone<T>(
     action: () => T,
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
-): Cypress.Chainable<T>;
+): Chainable<T>;
 /**
  * @param stringMatcherOrOptions A string matcher OR options with a route matcher
  * @param errorMessage An error message when the maximum waiting time is reached
  * @returns An instance of the Interceptor
  */
-public waitUntilRequestIsDone(
+waitUntilRequestIsDone(
     stringMatcherOrOptions?: StringMatcher | WaitUntilRequestOptions,
     errorMessage?: string
-): Cypress.Chainable<Interceptor>;
+): Chainable<Interceptor>;
 ```
 
 _References:_
@@ -782,31 +826,35 @@ cy.waitUntilRequestIsDone(outputDir, {
 ## cy.writeInterceptorStatsToLog
 
 ```ts
-writeInterceptorStatsToLog(outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>): Chainable<null>
+/**
+ * @param outputDir The path for the output folder
+ * @param options Options
+ */
+writeInterceptorStatsToLog: (outputDir: string, options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>) => Chainable<null>;
 ```
 
-_References:_
-  - [`WriteStatsOptions`](#writestatsoptions)
-
-Write the logged requests' information (or those filtered by the provided route matcher) to a file. The file will contain the JSON.stringify of [`callStack`](#callstack).
+Write the logged requests' information (or those filtered by the provided route matcher) to a file
 
 ### Example
 
 ```ts
-afterAll(() => {
-    // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
-    cy.writeInterceptorStatsToLog("./out");
-    // increase the timeout for `cy.writeFile` when you expect a big output
-    cy.writeInterceptorStatsToLog("./out", { timeout: 120000 });
-    // the output file will be "./out/file_name.stats.json"
-    cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" });
-    // write only "fetch" requests to the output file
-    cy.writeInterceptorStatsToLog("./out", { routeMatcher: { resourceType: "fetch" }});
-    // write only "POST" requests to the output file
-    cy.writeInterceptorStatsToLog("./out", { filter: (entry) => entry.method === "POST" });
-    // map the output that will be written to the output file
-    cy.writeInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) });
-});
+// the output file will be "./out/[Description] - It.stats.json"
+cy.writeInterceptorStatsToLog("./out");
+```
+
+```ts
+// the output file will be "./out/file_name.stats.json"
+cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" });
+```
+
+```ts
+// write only "GET" requests to the output file
+cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } });
+```
+
+```ts
+// map the output that will be written to the output file
+cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) });
 ```
 
 # Interceptor public methods
@@ -1147,7 +1195,7 @@ export default defineConfig({
 
 # Watch The Console
 
-Watch The Console is a helper function for logging the browser's console to a file. It provides a class which observes the web browser console output. This output is possible to log to a file.
+Watch The Console is a helper function for logging the browser's console to a file. It provides a class which observes the web browser console output. This output can be logged to a file.
 
 ## Getting started
 
@@ -1178,7 +1226,7 @@ watchTheConsoleOptions: (
 /**
  * Write the logged console output to a file
  *
- * @example cy.writeConsoleLogToFile("./out") => the output file will be "./out/Description - It.stats.json"
+ * @example cy.writeConsoleLogToFile("./out") => the output file will be "./out/[Description] It.stats.json"
  * @example cy.writeConsoleLogToFile("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
  * @example cy.writeConsoleLogToFile("./out", { types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error] }) => write only the
  * console errors and unhandled JavaScript errors to the output file
@@ -1422,7 +1470,7 @@ wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
 /**
  * Write the logged requests' information (or those filtered by the provided matcher) to a file
  *
- * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+ * @example cy.wsInterceptorStatsToLog("./out") => the output file will be "./out/[Description] It.stats.json"
  * @example cy.wsInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
  * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
  * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
@@ -1567,7 +1615,7 @@ Write the logged requests' information (or those filtered by the provided matche
 
 ```ts
 afterAll(() => {
-    // the output file will be "./out/test.cy.ts (Description - It).stats.json" (the name of the file `test.cy.ts (Description - It)` will be generated from the running test)
+    // the output file will be "./out/test.cy.ts [Description] It).stats.json" (the name of the file `test.cy.ts [Description] It` will be generated from the running test)
     cy.wsInterceptorStatsToLog("./out");
     // increase the timeout for `cy.writeFile` when you expect a big output
     cy.wsInterceptorStatsToLog("./out", { timeout: 120000 });
@@ -1806,14 +1854,23 @@ This is a simple helper designed to store arguments passed to [`lineCalled`](#li
 
 ## How to use
 
-In your application, you can call [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone). anywhere you need. Then, enable it in your Cypress test setup before running the test:
+In your application, you can call [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone) anywhere you need:
 
 ```ts
-import { enableCallLine } from "cypress-interceptor/test.unit";
+import { lineCalled, lineCalledWithClone } from "cypress-interceptor/test.unit";
 
+// anywhere in your application
+lineCalled("any argument, object, etc.");
+// or with clone, this is important for objects they can change
+lineCalledWithClone(yourObject);
+```
+
+Then, enable it in your Cypress test setup before running the test:
+
+```ts
 beforeEach(() => {
     cy.window().then((win) => {
-        enableCallLine(win);
+        cy.callLineEnable(win);
     });
 });
 ```
@@ -1822,8 +1879,9 @@ Globally in your `cypress/support/e2e.js` or `cypress/support/e2e.ts`:
 
 ```ts
 Cypress.on("window:before:load", (win) => {
-    enableCallLine(win);
+    cy.callLineEnable(win);
 });
+// or use `beforeEach` hook
 ```
 
 And in your tests you will be able to use it as follows:
@@ -1843,9 +1901,14 @@ cy.contains("button", "Add").click();
 cy.callLineNext().should("eq", "Some value");
 // OR cy.callLineNext().should("deep.eq", ["some Value", { } ]);
 // OR cy.callLine().then(callLine => expect(callLine.next).to.eq("something"));
+
+// or at the end you can log all the entries into a file
+afterEach(() => {
+    cy.callLineToFile("output_dir");
+})
 ```
 
-## The `test.unit` Cypress commands
+## `test.unit` Cypress commands
 
 ```ts
 /**
@@ -1865,6 +1928,14 @@ callLineClean(): void;
  */
 callLineCurrent(): Chainable<unknown | unknown[] | undefined>;
 /**
+ * Disable the call line
+ */
+callLineDisable(): void;
+/**
+ * Enable the call line
+ */
+callLineEnable(): void;
+/**
  * Get the number of all entries.
  */
 callLineLength(): Chainable<number>;
@@ -1881,18 +1952,33 @@ callLineNext(): Chainable<unknown | unknown[] | undefined>;
  * Resets the counter and starts from the first entry on the next call to `cy.callLineNext`
  */
 callLineReset(): void;
+/**
+ * Save CallLine entries to a file
+ *
+ * @param outputDir - The folder to save the call line
+ * @param options - Options for the file
+ */
+callLineToFile(
+    outputDir: string,
+    options?: CallLineToFileOptions &
+        Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+): Chainable<null>;
 ```
+
+## Documentation and examples
 
 ## cy.callLine
 
 ```ts
+/**
+ * @returns An instance of the CallLine class
+ */
 callLine(): Chainable<CallLine>;
 ```
 
 Get a created instance of the CallLine class
 
 ### Example
-
 
 ```ts
 // check that call line is really enabled
@@ -1924,6 +2010,30 @@ cy.callLineNext().should("not.be.undefined");
 cy.callLineCurrent().should("eq", "my custom string");
 // do more checkings with the last entry
 cy.callLineCurrent().should("eq", ...);
+```
+
+## cy.callLineDisable
+
+```ts
+callLineDisable(): void;
+```
+
+Disable the call line feature. After calling this, calls to `lineCalled` or `lineCalledWithClone` will not be recorded until re-enabled.
+
+## cy.callLineEnable
+
+```ts
+callLineEnable(): void;
+```
+
+Enable the call line feature. This allows calls to `lineCalled` or `lineCalledWithClone` to be recorded.
+
+### Example
+
+```ts
+beforeEach(() => {
+    cy.callLineEnable();
+})
 ```
 
 ## cy.callLineLength
@@ -1965,66 +2075,36 @@ cy.callLineNext().should("eq", 123);
 callLineReset(): void;
 ```
 
-Resets the counter and starts from the first entry on the next call to `cy.callLineNext`
+Resets the counter and starts from the first entry on the next call to `cy.callLineNext`.
 
-# Documentation and examples of `cypress-interceptor/test.unit`
-
-## enableCallLine
+## cy.callLineToFile
 
 ```ts
-/**
- * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
- */
-enableCallLine(childWindow?: CallLineWindowType): void;
+callLineToFile(
+    outputDir: string,
+    options?: CallLineToFileOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+): Chainable<null>;
 ```
 
-Enable the call line in the window object.
+_References:_
+- [CallLineToFileOptions](#CallLineToFileOptions)
+
+Save CallLine entries to a file. Arguments passed to `lineCalled` are stored as arrays.
 
 ### Example
 
 ```ts
-// to enable it in the current run only outside the web browser
-enableCallLine();
-```
+// Save all call line entries to a file
+cy.callLineToFile("_callLine");
 
-```ts
-// to enable it in the current run and the web browser
-cy.window().then((win) => {
-    enableCallLine(win);
+// Save only entries where the first argument is "abc", with pretty output
+cy.callLineToFile("_callLine", {
+    filter: (entry) => entry.args[0] === "abc",
+    prettyOutput: true
 });
 ```
 
-```ts
-Cypress.on("window:before:load", (win) => {
-    enableCallLine(win);
-});
-```
-
-## isCallLineEnabled
-
-```ts
-/**
- * @returns True if the call line is enabled
- */
-isCallLineEnabled(): boolean;
-```
-
-Check if the call line is enabled.
-
-
-## getCallLine
-
-```ts
-/**
- * @returns An instance of the CallLine class
- */
-getCallLine(): CallLine;
-```
-
-_References:_
-  - [`CallLine`](#callline)
-
-Get a created instance of the CallLine class.
+## The main functions intended to be used on the front-end
 
 ## lineCalled
 
@@ -2035,9 +2115,9 @@ Get a created instance of the CallLine class.
 lineCalled(...args: unknown[]): void;
 ```
 
-This is the main function that should be in your application to store any information you need.
+This function is intended to be used in the application code to store any information that you want to store and read in Cypress tests.
 
-For storing information about the line that was called. If there are more arguments, it will be saved as an array, otherwise it will be stored as a single value.
+If the call line is not enabled, it does nothing. [Enable it](#cycalllineenable) in Cypress tests in `beforeEach` hook.
 
 ## lineCalledWithClone
 
@@ -2045,54 +2125,71 @@ For storing information about the line that was called. If there are more argume
 lineCalledWithClone(...args: unknown[]): void;
 ```
 
-Similar to `lineCalled`, but with cloned arguments. This prevents any changes to object references in the arguments over time.
+This function is the same as [`lineCalled`](#linecalled) but it clones the arguments before storing them.
 
 # Interfaces
 
-### CallLine
+## CallLineToFileOptions
 
 ```ts
-interface CallLine {
+interface CallLineToFileOptions {
     /**
-     * Get an instance of the window or an empty array if is not enabled
+     * The name of the file. If `undefined`, it will be generated from the running test.
      */
-    array: unknown[];
+    fileName?: string;
 
     /**
-     * The last existing entry. It can be `undefined` if there is no entry at
-     * the moment or if `next` has not been called. Otherwise, it always returns
-     * the last entry invoked by `next`.
+     * Filter the entries to save
      */
-    current: unknown | unknown[] | undefined;
+    filter?: (callLine: CallLineStack) => boolean;
 
     /**
-     * True if CallLine feature is globally enabled
+     * When set to `true`, the output JSON will be formatted with tabs
      */
-    isEnabled: boolean;
-
-    /**
-     * Get the number of all entries.
-     */
-    length: number;
-
-    /**
-     * Get the next entry. If there is no next entry, it returns `undefined`.
-     *
-     * If the entry was added as a single argument like `lineCalled("something")`,
-     * it will return the single value "something". But if it was added as multiple
-     * arguments like `lineCalled("something", 1, true)`, it will return an array
-     * `["something", 1, true]`.
-     */
-    next: unknown | unknown[] | undefined;
-
-    /**
-     * Clean the CallLine array and start storing the values from the beginning
-     */
-    clean: () => void;
-
-    /**
-     * Resets the counter and starts from the first entry on the next call to `next`
-     */
-    reset: () => void;
+    prettyOutput?: boolean;
 }
+```
+
+# Other commands
+
+## cy.startTiming
+
+```ts
+/**
+ * @returns The value of `performance.now()` at the time the command is executed.
+ */
+startTiming: () => Chainable<number>;
+```
+
+Start the time measurement (a helper function).
+
+### Example
+
+```ts
+cy.startTiming();
+```
+
+## cy.stopTiming
+
+```ts
+/**
+ * @returns If `cy.startTiming` was called, it returns the time difference since startTiming was
+ * called (in ms); otherwise, it returns `undefined`.
+ */
+stopTiming: () => Chainable<number | undefined>;
+```
+
+Stop the time measurement (a helper function).
+
+### Example
+
+```ts
+cy.startTiming();
+// do some action
+cy.stopTiming().then((duration) => {
+    /**
+     * here you have the duration since `cy.startTiming` has been called. You
+     * can generate reports or put some warning, etc.
+     */
+});
 ```

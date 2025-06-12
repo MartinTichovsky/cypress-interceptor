@@ -2,14 +2,14 @@
 
 import { ConsoleProxy } from "./src/ConsoleProxy";
 import { createConsoleProxy } from "./src/createConsoleProxy";
-import { WatchTheConsole } from "./src/WatchTheConsole";
+import { WatchTheConsole } from "./WatchTheConsole";
 import {
     WatchTheConsoleOptions,
     WindowTypeOfConsoleProxy,
     WriteLogOptions
-} from "./src/WatchTheConsole.types";
+} from "./WatchTheConsole.types";
 
-export * from "./src/WatchTheConsole";
+export * from "./WatchTheConsole";
 
 (() => {
     const consoleProxy = new ConsoleProxy();

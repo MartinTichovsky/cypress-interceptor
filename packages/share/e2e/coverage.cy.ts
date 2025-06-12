@@ -1,15 +1,21 @@
 import "cypress-interceptor/test.unit.commands";
 
+import { xmlDocumentToObject } from "cypress-interceptor/convert/xmlDocument";
 import {
     IMockResponse,
     IRequestInit,
     IResourceType,
     WindowTypeOfRequestProxy
 } from "cypress-interceptor/Interceptor.types";
+import {
+    createNetworkReportFromFile,
+    createNetworkReportFromFolder
+} from "cypress-interceptor/report";
 import { ConsoleProxy } from "cypress-interceptor/src/ConsoleProxy";
 import { createConsoleProxy } from "cypress-interceptor/src/createConsoleProxy";
 import { createRequestProxy } from "cypress-interceptor/src/createRequestProxy";
 import { createWebsocketProxy } from "cypress-interceptor/src/createWebsocketProxy";
+import { writeFileSync } from "cypress-interceptor/src/envUtils";
 import {
     RequestProxy,
     RequestProxyFunction,
@@ -22,27 +28,23 @@ import {
     getNormalizedFileNameFromCurrentTest,
     normalizeFileName
 } from "cypress-interceptor/src/utils.cypress";
-import { WatchTheConsole } from "cypress-interceptor/src/WatchTheConsole";
+import { WebSocketAction, WebsocketListener } from "cypress-interceptor/src/websocketListener";
+import { lineCalled } from "cypress-interceptor/test.unit";
+import { enableCallLine } from "cypress-interceptor/test.unit.internal";
+import { WatchTheConsole } from "cypress-interceptor/WatchTheConsole";
 import {
     ConsoleLogType,
     WindowTypeOfConsoleProxy
-} from "cypress-interceptor/src/WatchTheConsole.types";
-import { WebSocketAction, WebsocketListener } from "cypress-interceptor/src/websocketListener";
-import {
-    __CALL_LINE__,
-    CallLine,
-    CallLineWindowType,
-    enableCallLine,
-    getCallLine,
-    lineCalled,
-    lineCalledWithClone
-} from "cypress-interceptor/test.unit";
+} from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
+import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
-import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
+import { mockNodeEnvironment, mockRequire } from "../src/mock";
+import { createXMLHttpRequestTest, wait, XMLHttpRequestLoad } from "../src/utils";
 
 const circularObj: Record<string, unknown> = {};
+
 circularObj.self = circularObj;
 
 const createDeeplyNestedObject = (depth: number) => {
@@ -51,6 +53,7 @@ const createDeeplyNestedObject = (depth: number) => {
 
     for (let i = depth; i >= 0; i--) {
         const nestedObject: Record<string, unknown> = i === 0 ? { end: "end" } : { nested: {} };
+
         current.nested = nestedObject;
         current = nestedObject;
     }
@@ -58,22 +61,11 @@ const createDeeplyNestedObject = (depth: number) => {
     return result;
 };
 
-const wait = async (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout));
-
 const url = `http://${HOST}/test`;
 const urlBrokenStream = `http://${HOST}/${SERVER_URL.BrokenStream}`;
 
-let callLine: CallLine;
-
 beforeEach(() => {
-    cy.window().then((win) => {
-        enableCallLine(win);
-
-        callLine = getCallLine();
-        callLine.clean();
-
-        cy.callLineClean();
-    });
+    enableCallLine();
 });
 
 it("ConsoleProxy", () => {
@@ -165,7 +157,7 @@ it("WatchTheConsole", () => {
 
 it("getFileNameFromCurrentTest", () => {
     expect(getNormalizedFileNameFromCurrentTest()).to.eq(
-        "coverage.cy.ts (getFileNameFromCurrentTest)"
+        "coverage.cy.ts getFileNameFromCurrentTest"
     );
 });
 
@@ -362,19 +354,19 @@ describe("Utils", () => {
 
     it("getFileNameFromCurrentTest", () => {
         expect(getNormalizedFileNameFromCurrentTest()).to.eq(
-            "coverage.cy.ts (Utils - getFileNameFromCurrentTest)"
+            "coverage.cy.ts [Utils] getFileNameFromCurrentTest"
         );
     });
 
     it("getFilePath", () => {
         expect(getFilePath(undefined, "", "type")).to.eq(
-            "coverage.cy.ts (Utils - getFilePath).type.json"
+            "coverage.cy.ts [Utils] getFilePath.type.json"
         );
         expect(getFilePath(undefined, "output", "type")).to.eq(
-            "output/coverage.cy.ts (Utils - getFilePath).type.json"
+            "output/coverage.cy.ts [Utils] getFilePath.type.json"
         );
         expect(getFilePath(undefined, "output/", "type")).to.eq(
-            "output/coverage.cy.ts (Utils - getFilePath).type.json"
+            "output/coverage.cy.ts [Utils] getFilePath.type.json"
         );
         expect(getFilePath("file name", "", "type")).to.eq("file name.type.json");
     });
@@ -384,7 +376,7 @@ describe("Utils", () => {
             normalizeFileName(
                 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?`~ ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿ ØøÞþßŒœŠšŽžÐðΓΔΘΛΞΠΣΦΨΩαβγδθλξπσφψω АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя عـبـتـثـجـحـخـدـذـرـزـسـشـصـضـطـظـعـغـفـقـكـلـمـنـهـوـي ❤☯☆🐱‍👤"
             )
-        ).to.eq("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_-.- -");
+        ).to.eq("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz()-_. ");
     });
 
     it("removeUndefinedFromObject", () => {
@@ -495,7 +487,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
             });
 
             expect(await request.json()).to.deep.eq({});
-            expect(callLine.length).to.eq(0);
+            cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
         });
 
         it("Should fail when reading text from a broken strem", async () => {
@@ -511,7 +503,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
             }
 
             expect(error).not.to.be.undefined;
-            expect(callLine.length).to.eq(0);
+            cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
         });
 
         it("Should fail with the correct error message when cancelled", async () => {
@@ -538,8 +530,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
             expect(error).not.to.be.undefined;
             expect(error!.name).to.eq("AbortError");
-            expect(callLine.length).to.eq(1);
-            expect(callLine.next).to.eq(CallLineEnum.n000008);
+            cy.callLine().then((callLine) => {
+                expect(callLine.length).to.eq(1);
+                expect(callLine.next).to.eq(CallLineEnum.n000008);
+            });
         });
     });
 
@@ -561,7 +555,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         const request = await fetch(url);
 
         expect(await request.json()).to.deep.eq(responseBody);
-        expect(callLine.length).to.eq(0);
+        cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
     });
 
     it("Shold mock an incorrect JSON body", async () => {
@@ -580,7 +574,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         const request = await fetch(url);
 
         expect(await request.text()).to.deep.eq(responseBody);
-        expect(callLine.length).to.eq(0);
+        cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
     });
 
     it("Should work when an error in `requestProxyFunction`", async () => {
@@ -593,8 +587,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         });
 
         expect(await request.json()).to.deep.eq({});
-        expect(callLine.length).to.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000001);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000001);
+        });
     });
 
     it("Should work when an error in `done`", async () => {
@@ -613,8 +609,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         });
 
         expect(await request.json()).to.deep.eq({});
-        expect(callLine.length).to.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000007);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000007);
+        });
     });
 
     it("Should work when an error in `error` but never triggered", async () => {
@@ -636,7 +634,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(await request.json()).to.deep.eq({});
         expect(requestProxyFunctionObject.error).not.to.be.called;
-        expect(callLine.length).to.eq(0);
+        cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
     });
 
     it("Should fail the request when an error in `error` and triggered by `generateBody`", async () => {
@@ -669,9 +667,11 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(2);
-        expect(callLine.next).to.eq(CallLineEnum.n000002);
-        expect(callLine.next).to.eq(CallLineEnum.n000003);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(2);
+            expect(callLine.next).to.eq(CallLineEnum.n000002);
+            expect(callLine.next).to.eq(CallLineEnum.n000003);
+        });
     });
 
     it("Should work when an error in `error` triggered by broken stream", async () => {
@@ -704,9 +704,11 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(2);
-        expect(callLine.next).to.eq(CallLineEnum.n000005);
-        expect(callLine.next).to.eq(CallLineEnum.n000006);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(2);
+            expect(callLine.next).to.eq(CallLineEnum.n000005);
+            expect(callLine.next).to.eq(CallLineEnum.n000006);
+        });
     });
 
     it("Should return the correct cancelled message when an error in `error` and the request is canceled", async () => {
@@ -746,9 +748,11 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         expect(error).not.to.be.undefined;
         expect(error!.name).to.eq("AbortError");
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(2);
-        expect(callLine.next).to.eq(CallLineEnum.n000008);
-        expect(callLine.next).to.eq(CallLineEnum.n000009);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(2);
+            expect(callLine.next).to.eq(CallLineEnum.n000008);
+            expect(callLine.next).to.eq(CallLineEnum.n000009);
+        });
     });
 
     it("Should fail when reading `text` or `json` of the original `fetch` return when an error in stream and mock provided", async () => {
@@ -780,8 +784,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         // be sure that `catch` above has been called
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000005);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000005);
+        });
     });
 
     it("Should fail when reading `text` or `json` of the original `fetch` return when an error in stream and mock not provided", async () => {
@@ -806,7 +812,7 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         // be sure that `catch` above has been called
         expect(error).not.to.be.undefined;
-        expect(callLine.length).to.eq(0);
+        cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
     });
 
     it("Should fail in `fetch` when an error in `generateBody` and `allowHitTheNetwork` set to `false``", async () => {
@@ -834,8 +840,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000002);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000002);
+        });
     });
 
     it("Should fail in `fetch` when an error in `generateBody` and `allowHitTheNetwork` set to `true`", async () => {
@@ -864,8 +872,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000002);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000002);
+        });
     });
 
     it("Should fail during stringify the input body", async () => {
@@ -900,9 +910,11 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(error).not.to.be.undefined;
         expect(requestProxyFunctionObject.error).to.be.called;
-        expect(callLine.length).to.eq(2);
-        expect(callLine.next).to.eq(CallLineEnum.n000002);
-        expect(callLine.next).to.eq(CallLineEnum.n000003);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.eq(2);
+            expect(callLine.next).to.eq(CallLineEnum.n000002);
+            expect(callLine.next).to.eq(CallLineEnum.n000003);
+        });
     });
 
     it("Should fail during calling `getJsonRequestBody` but return a correct mocked resposne body", async () => {
@@ -935,8 +947,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(await request.json()).to.be.deep.eq(responseBody);
         expect(requestProxyFunctionObject.error).not.to.be.called;
-        expect(callLine.length).to.be.eq(1);
-        expect(callLine.next).to.eq(CallLineEnum.n000004);
+        cy.callLine().then((callLine) => {
+            expect(callLine.length).to.be.eq(1);
+            expect(callLine.next).to.eq(CallLineEnum.n000004);
+        });
     });
 });
 
@@ -975,7 +989,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 request.send();
             }).then(() => {
                 expect(request.response).to.deep.eq({});
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         });
 
@@ -1010,7 +1024,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 expect(request.response).to.deep.eq({});
                 expect(betweenStateCalledCount).to.be.above(0);
                 expect(loadCalled).to.be.true;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         });
 
@@ -1038,7 +1052,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                     request.send();
                 }).then(() => {
                     expect(onerror).not.to.be.undefined;
-                    expect(callLine.length).to.eq(0);
+                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
                 });
             },
             [
@@ -1086,7 +1100,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 expect(onabort).not.to.be.undefined;
                 expect(onabort).to.eq("abort");
                 expect(onerror).to.be.undefined;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             }
         );
 
@@ -1117,7 +1131,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                     request.send();
                 }).then(() => {
                     expect(request.response).to.deep.eq({});
-                    expect(callLine.length).to.eq(0);
+                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
                 });
             }
         );
@@ -1147,7 +1161,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                     request.send();
                 }).then(() => {
-                    expect(callLine.length).to.eq(0);
+                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
                 });
             },
             [
@@ -1184,7 +1198,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             request.send();
         }).then(() => {
             expect(request.response).to.deep.eq(responseBody1);
-            expect(callLine.length).to.eq(0);
+            cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
         });
     });
 
@@ -1213,7 +1227,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             request.send();
         }).then(() => {
             expect(request.response).to.deep.eq(responseBody);
-            expect(callLine.length).to.eq(0);
+            cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
         });
     });
 
@@ -1236,8 +1250,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 request.send();
             }).then(() => {
                 expect(request.response).to.deep.eq({});
-                expect(callLine.length).to.eq(1);
-                expect(callLine.next).to.eq(CallLineEnum.n000021);
+                cy.callLine().then((callLine) => {
+                    expect(callLine.length).to.eq(1);
+                    expect(callLine.next).to.eq(CallLineEnum.n000021);
+                });
             });
         }
     );
@@ -1267,8 +1283,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             expect(request.response).to.deep.eq({});
             // when `onload` and `addEventListener` provided, there is an extra call
             // which is optimized in proxy.done, but the proxy.error can be called twice
-            expect(callLine.length).to.above(0);
-            expect(callLine.next).to.eq(CallLineEnum.n000011);
+            cy.callLine().then((callLine) => {
+                expect(callLine.length).to.above(0);
+                expect(callLine.next).to.eq(CallLineEnum.n000011);
+            });
         });
     });
 
@@ -1300,7 +1318,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             }).then(() => {
                 expect(request.response).to.deep.eq({});
                 expect(requestProxyFunctionObject.error).not.to.be.called;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         }
     );
@@ -1346,7 +1364,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                 expect(error).not.to.be.undefined;
                 expect(requestProxyFunctionObject.error).not.to.be.called;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         }
     );
@@ -1391,7 +1409,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                 expect(error).not.to.be.undefined;
                 expect(requestProxyFunctionObject.error).not.to.be.called;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         }
     );
@@ -1436,8 +1454,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             });
 
             expect(onerror).not.to.be.undefined;
-            expect(callLine.length).to.eq(1);
-            expect(callLine.next).to.eq(CallLineEnum.n000017);
+            cy.callLine().then((callLine) => {
+                expect(callLine.length).to.eq(1);
+                expect(callLine.next).to.eq(CallLineEnum.n000017);
+            });
         },
         [
             XMLHttpRequestLoad.AddEventListener_Readystatechange,
@@ -1497,8 +1517,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             expect(onabort).to.eq("abort");
             expect(onerror).to.be.undefined;
             expect(requestProxyFunctionObject.error).to.be.called;
-            expect(callLine.length).to.eq(1);
-            expect(callLine.next).to.eq(CallLineEnum.n000016);
+            cy.callLine().then((callLine) => {
+                expect(callLine.length).to.eq(1);
+                expect(callLine.next).to.eq(CallLineEnum.n000016);
+            });
         }
     );
 
@@ -1546,7 +1568,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
                 expect(onerror).not.to.be.undefined;
                 expect(readError).to.be.undefined;
                 expect(requestProxyFunctionObject.error).to.be.called;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         },
         [
@@ -1594,7 +1616,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                 expect(onerror).not.to.be.undefined;
                 expect(readError).to.be.undefined;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         },
         [
@@ -1648,7 +1670,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                 expect(onerror).to.be.undefined;
                 expect(readError).not.to.be.undefined;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         }
     );
@@ -1699,7 +1721,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
                 expect(onerror).to.be.undefined;
                 expect(readError).not.to.be.undefined;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         }
     );
@@ -1724,6 +1746,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             proxy.requestProxyFunction = async () => requestProxyFunctionObject;
 
             const request = new XMLHttpRequest();
+
             request.responseType = "json";
 
             let onerror: unknown;
@@ -1747,8 +1770,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             }).then(() => {
                 expect(onerror).to.be.undefined;
                 expect(request.response).to.deep.eq(responseBody);
-                expect(callLine.length).to.be.above(0);
-                expect(callLine.next).to.eq(CallLineEnum.n000018);
+                cy.callLine().then((callLine) => {
+                    expect(callLine.length).to.be.above(0);
+                    expect(callLine.next).to.eq(CallLineEnum.n000018);
+                });
             });
         }
     );
@@ -1773,6 +1798,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             proxy.requestProxyFunction = async () => requestProxyFunctionObject;
 
             const request = new XMLHttpRequest();
+
             request.responseType = "json";
 
             let onerror: unknown;
@@ -1797,9 +1823,11 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             }).then(() => {
                 expect(onerror).to.be.undefined;
                 expect(request.response).to.deep.eq(responseBody);
-                expect(callLine.length).to.be.above(1);
-                expect(callLine.next).to.eq(CallLineEnum.n000019);
-                expect(callLine.next).to.eq(CallLineEnum.n000020);
+                cy.callLine().then((callLine) => {
+                    expect(callLine.length).to.be.above(1);
+                    expect(callLine.next).to.eq(CallLineEnum.n000019);
+                    expect(callLine.next).to.eq(CallLineEnum.n000020);
+                });
             });
         }
     );
@@ -1828,6 +1856,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             proxy.requestProxyFunction = async () => requestProxyFunctionObject;
 
             const request = new XMLHttpRequest();
+
             request.responseType = "json";
 
             let onerror: unknown;
@@ -1852,8 +1881,10 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             }).then(() => {
                 expect(onerror).to.be.undefined;
                 expect(request.response).to.deep.eq(responseBody);
-                expect(callLine.length).to.be.eq(1);
-                expect(callLine.next).to.eq(CallLineEnum.n000010);
+                cy.callLine().then((callLine) => {
+                    expect(callLine.length).to.be.eq(1);
+                    expect(callLine.next).to.eq(CallLineEnum.n000010);
+                });
             });
         }
     );
@@ -1888,7 +1919,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
         }).then(() => {
             expect(request.response).to.deep.eq(JSON.stringify(responseBody));
             expect(request.responseText).to.deep.eq(JSON.stringify(responseBody));
-            expect(callLine.length).to.be.eq(0);
+            cy.callLine().then((callLine) => expect(callLine.length).to.be.eq(0));
         });
     });
 
@@ -1922,7 +1953,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
             }).then(() => {
                 expect(request.responseText).to.eq("");
                 expect(readError).to.be.undefined;
-                expect(callLine.length).to.eq(0);
+                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
             });
         },
         [
@@ -2002,349 +2033,6 @@ it("createWebsocketProxy ", async () => {
     ]);
 });
 
-it("test.unit", () => {
-    const win: CallLineWindowType = window;
-
-    // disable call line
-    win[__CALL_LINE__] = undefined;
-
-    lineCalled("this");
-    lineCalledWithClone("this");
-
-    expect(win[__CALL_LINE__]).to.be.undefined;
-
-    lineCalled("123");
-    lineCalledWithClone("123");
-
-    expect(win[__CALL_LINE__]).to.be.undefined;
-
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.isEnabled).to.be.false;
-    expect(callLine.length).to.eq(0);
-    expect(callLine.next).to.be.undefined;
-    expect(callLine.next).to.be.undefined;
-
-    // enabled
-
-    enableCallLine(win);
-
-    const callLine1 = "this line has been called";
-
-    lineCalled(callLine1);
-
-    expect(callLine.isEnabled).to.be.true;
-    expect(callLine.length).to.eq(1);
-
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.next).to.eq(callLine1);
-    expect(callLine.current).to.eq(callLine1);
-    expect(callLine.next).to.be.undefined;
-    expect(callLine.current).to.eq(callLine1);
-
-    callLine.reset();
-
-    expect(win[__CALL_LINE__]).to.deep.eq([callLine1]);
-    expect(callLine.array).to.deep.eq([callLine1]);
-
-    const callLine2 = "321";
-
-    lineCalled(callLine2);
-
-    expect(win[__CALL_LINE__]).to.deep.eq([callLine1, callLine2]);
-    expect(callLine.array).to.deep.eq([callLine1, callLine2]);
-
-    expect(callLine.isEnabled).to.be.true;
-    expect(callLine.length).to.eq(2);
-
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.next).to.eq(callLine1);
-    expect(callLine.current).to.eq(callLine1);
-    expect(callLine.next).to.eq(callLine2);
-    expect(callLine.current).to.eq(callLine2);
-    expect(callLine.next).to.be.undefined;
-    expect(callLine.current).to.eq(callLine2);
-    expect(callLine.next).to.be.undefined;
-
-    const callLine3 = "--";
-
-    lineCalled(callLine3);
-
-    expect(win[__CALL_LINE__]).to.deep.eq([callLine1, callLine2, callLine3]);
-    expect(callLine.array).to.deep.eq([callLine1, callLine2, callLine3]);
-
-    expect(callLine.isEnabled).to.be.true;
-    expect(callLine.length).to.eq(3);
-
-    expect(callLine.current).to.eq(callLine2);
-    expect(callLine.next).to.eq(callLine3);
-    expect(callLine.current).to.eq(callLine3);
-    expect(callLine.next).to.be.undefined;
-    expect(callLine.current).to.eq(callLine3);
-
-    callLine.reset();
-
-    expect(win[__CALL_LINE__]).to.deep.eq([callLine1, callLine2, callLine3]);
-    expect(callLine.array).to.deep.eq([callLine1, callLine2, callLine3]);
-
-    expect(callLine.isEnabled).to.be.true;
-    expect(callLine.length).to.eq(3);
-
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.next).to.eq(callLine1);
-    expect(callLine.current).to.eq(callLine1);
-    expect(callLine.next).to.eq(callLine2);
-    expect(callLine.current).to.eq(callLine2);
-    expect(callLine.next).to.eq(callLine3);
-    expect(callLine.current).to.eq(callLine3);
-    expect(callLine.next).to.be.undefined;
-    expect(callLine.current).to.eq(callLine3);
-
-    callLine.clean();
-
-    expect(win[__CALL_LINE__]).to.deep.eq([]);
-    expect(callLine.array).to.deep.eq([]);
-
-    expect(callLine.current).to.be.undefined;
-    expect(callLine.length).to.eq(0);
-    expect(callLine.next).to.be.undefined;
-
-    // call with multiple arguments
-    const callLine4_arg1 = "arg1";
-    const callLine4_arg2 = { obj: 987, arr: [9, false, null, ""] };
-    const callLine4_arg3 = false;
-
-    lineCalled(callLine4_arg1, callLine4_arg2, callLine4_arg3);
-
-    expect(callLine.next).to.deep.eq([callLine4_arg1, callLine4_arg2, callLine4_arg3]);
-    expect(callLine.current).to.deep.eq([callLine4_arg1, callLine4_arg2, callLine4_arg3]);
-    expect((callLine.current as unknown[])[0]).to.eq(callLine4_arg1);
-    expect((callLine.current as unknown[])[1]).to.eq(callLine4_arg2);
-    expect((callLine.current as unknown[])[2]).to.eq(callLine4_arg3);
-
-    // call with multiple arguments and clone
-    const callLine5_arg1 = { l: "string", n: 999, b: true, a: [9, 8, [1, 2]] };
-    const callLine5_arg2 = [9, 8, 7, { ea: ["y", 0, false, null] }];
-
-    lineCalledWithClone(callLine5_arg1, callLine5_arg2);
-
-    expect(callLine.next).to.deep.eq([callLine5_arg1, callLine5_arg2]);
-    expect(callLine.current).to.deep.eq([callLine5_arg1, callLine5_arg2]);
-    expect((callLine.current as unknown[])[0]).not.to.eq(callLine5_arg1);
-    expect((callLine.current as unknown[])[1]).not.to.eq(callLine5_arg2);
-
-    const callLine6 = "simple string";
-
-    lineCalledWithClone(callLine6);
-
-    expect(callLine.next).to.eq(callLine6);
-});
-
-it("cy.callLine", () => {
-    const wrap = (fnc: VoidFunction) => cy.wrap(null).then(fnc);
-
-    const win: CallLineWindowType = window;
-
-    // disable call line
-    win[__CALL_LINE__] = undefined;
-
-    wrap(() => lineCalled("this"));
-
-    wrap(() => win[__CALL_LINE__] === undefined).should("be.true");
-
-    wrap(() => lineCalled("123"));
-
-    wrap(() => win[__CALL_LINE__] === undefined).should("be.true");
-
-    cy.callLine()
-        .then((callLine) => callLine.current === undefined)
-        .should("be.true");
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLine()
-        .then((callLine) => callLine.current === undefined)
-        .should("be.true");
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.false");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 0);
-    cy.callLineLength().should("eq", 0);
-    cy.callLine()
-        .then((callLine) => callLine.next === undefined)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.next === undefined)
-        .should("be.true");
-    cy.callLineNext().should("be.undefined");
-
-    cy.callLineClean();
-
-    wrap(() => win[__CALL_LINE__] === undefined).should("be.true");
-
-    // enabled
-
-    wrap(() => enableCallLine(win));
-
-    const callLine1 = "this line has been called";
-
-    wrap(() => lineCalled(callLine1));
-
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 1);
-    cy.callLineLength().should("eq", 1);
-
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLineNext().should("eq", callLine1);
-    cy.callLineCurrent().should("eq", callLine1);
-    cy.callLineNext().should("be.undefined");
-    cy.callLineCurrent().should("eq", callLine1);
-
-    cy.callLine().then((callLine) => callLine.reset());
-
-    wrap(() => win[__CALL_LINE__]).should("deep.equal", [callLine1]);
-    cy.callLine()
-        .then((callLine) => callLine.array)
-        .should("deep.equal", [callLine1]);
-
-    const callLine2 = "321";
-
-    wrap(() => lineCalled(callLine2));
-
-    wrap(() => win[__CALL_LINE__]).should("deep.equal", [callLine1, callLine2]);
-    cy.callLine()
-        .then((callLine) => callLine.array)
-        .should("deep.equal", [callLine1, callLine2]);
-
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 2);
-    cy.callLineLength().should("eq", 2);
-
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLineNext().should("eq", callLine1);
-    cy.callLineCurrent().should("eq", callLine1);
-    cy.callLineNext().should("eq", callLine2);
-    cy.callLineCurrent().should("eq", callLine2);
-    cy.callLineNext().should("be.undefined");
-    cy.callLineCurrent().should("eq", callLine2);
-    cy.callLineNext().should("be.undefined");
-
-    const callLine3 = "--";
-
-    wrap(() => lineCalled(callLine3));
-
-    wrap(() => win[__CALL_LINE__]).should("deep.equal", [callLine1, callLine2, callLine3]);
-    cy.callLine()
-        .then((callLine) => callLine.array)
-        .should("deep.equal", [callLine1, callLine2, callLine3]);
-
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 3);
-    cy.callLineLength().should("eq", 3);
-
-    cy.callLineCurrent().should("eq", callLine2);
-    cy.callLineNext().should("eq", callLine3);
-    cy.callLineCurrent().should("eq", callLine3);
-    cy.callLineNext().should("be.undefined");
-    cy.callLineCurrent().should("eq", callLine3);
-
-    cy.callLine().then((callLine) => callLine.reset());
-
-    wrap(() => win[__CALL_LINE__]).should("deep.equal", [callLine1, callLine2, callLine3]);
-    cy.callLine()
-        .then((callLine) => callLine.array)
-        .should("deep.equal", [callLine1, callLine2, callLine3]);
-
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 3);
-    cy.callLineLength().should("eq", 3);
-
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLineNext().should("eq", callLine1);
-    cy.callLineCurrent().should("eq", callLine1);
-    cy.callLineNext().should("eq", callLine2);
-    cy.callLineCurrent().should("eq", callLine2);
-    cy.callLineNext().should("eq", callLine3);
-    cy.callLineCurrent().should("eq", callLine3);
-    cy.callLineNext().should("be.undefined");
-    cy.callLineCurrent().should("eq", callLine3);
-
-    cy.callLine().then((callLine) => callLine.clean());
-
-    wrap(() => win[__CALL_LINE__]).should("deep.equal", []);
-    cy.callLine()
-        .then((callLine) => callLine.array)
-        .should("deep.equal", []);
-
-    cy.callLine()
-        .then((callLine) => callLine.isEnabled)
-        .should("be.true");
-    cy.callLine()
-        .then((callLine) => callLine.length)
-        .should("eq", 0);
-    cy.callLineLength().should("eq", 0);
-
-    cy.callLineCurrent().should("be.undefined");
-    cy.callLineNext().should("be.undefined");
-
-    // call with multiple arguments
-    const callLine4_arg1 = "arg1";
-    const callLine4_arg2 = { obj: 987, arr: [9, false, null, ""] };
-    const callLine4_arg3 = false;
-
-    wrap(() => lineCalled(callLine4_arg1, callLine4_arg2, callLine4_arg3));
-
-    cy.callLineNext().should("deep.eq", [callLine4_arg1, callLine4_arg2, callLine4_arg3]);
-    cy.callLineCurrent().should("deep.eq", [callLine4_arg1, callLine4_arg2, callLine4_arg3]);
-    cy.callLine()
-        .then((callLine) => (callLine.current as unknown[])[0])
-        .should("eq", callLine4_arg1);
-    cy.callLine()
-        .then((callLine) => (callLine.current as unknown[])[1])
-        .should("eq", callLine4_arg2);
-    cy.callLine()
-        .then((callLine) => (callLine.current as unknown[])[2])
-        .should("eq", callLine4_arg3);
-
-    // call with multiple arguments and clone
-    const callLine5_arg1 = { l: "string", n: 999, b: true, a: [9, 8, [1, 2]] };
-    const callLine5_arg2 = [9, 8, 7, { ea: ["y", 0, false, null] }];
-
-    wrap(() => lineCalledWithClone(callLine5_arg1, callLine5_arg2));
-
-    cy.callLineNext().should("deep.eq", [callLine5_arg1, callLine5_arg2]);
-    cy.callLineCurrent().should("deep.eq", [callLine5_arg1, callLine5_arg2]);
-    cy.callLine()
-        .then((callLine) => (callLine.current as unknown[])[0])
-        .should("not.eq", callLine5_arg1);
-    cy.callLine()
-        .then((callLine) => (callLine.current as unknown[])[1])
-        .should("not.eq", callLine5_arg2);
-
-    const callLine6 = "simple string";
-
-    wrap(() => lineCalledWithClone(callLine6));
-
-    cy.callLineNext().should("eq", callLine6);
-});
-
 it("Should wait for the results", () => {
     setTimeout(() => {
         lineCalled(123);
@@ -2387,4 +2075,182 @@ it("Should wait for the results", () => {
 
     cy.callLineNext().should("not.be.undefined");
     cy.callLineCurrent().should("eq", "555");
+});
+
+describe("Generate report", () => {
+    beforeEach(() => {
+        // mock node environment
+        mockNodeEnvironment();
+    });
+
+    it("createNetworkReportFromFile - without fileName", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const { mockFs } = mockRequire({
+                readFileSync: JSON.stringify(stats)
+            });
+
+            createNetworkReportFromFile("_network_report/stats.json", {
+                outputDir: "_output"
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.called;
+                expect(mockFs.writeFileSync.lastCall.args[0].includes(".html")).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("createNetworkReportFromFile - with fileName", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const { mockFs } = mockRequire({
+                readFileSync: JSON.stringify(stats)
+            });
+            const fileName = "test-report";
+
+            createNetworkReportFromFile("_network_report/stats.json", {
+                outputDir: "_output",
+                fileName
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.called;
+                expect(
+                    mockFs.writeFileSync.lastCall.args[0].includes(fileName) &&
+                        mockFs.writeFileSync.lastCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("createNetworkReportFromFolder", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const fileName1 = "stats-1";
+            const fileName2 = "stats-2";
+
+            const { mockFs } = mockRequire({
+                readdirSync: [`${fileName1}.json`, `${fileName2}.json`],
+                readFileSync: JSON.stringify(stats)
+            });
+
+            createNetworkReportFromFolder("_network_report", {
+                outputDir: "_output"
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.calledTwice;
+                expect(
+                    mockFs.writeFileSync.firstCall.args[0].includes(fileName1) &&
+                        mockFs.writeFileSync.firstCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(
+                    mockFs.writeFileSync.secondCall.args[0].includes(fileName2) &&
+                        mockFs.writeFileSync.secondCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("writeFileSync", () => {
+        const win = window as Window & {
+            cy?: Cypress.cy;
+            Cypress?: Cypress.Cypress;
+            process?: unknown;
+        };
+
+        const cy = win.cy;
+        const Cypress = win.Cypress;
+        const process = win.process;
+
+        win.cy = undefined;
+        win.Cypress = undefined;
+        win.process = undefined;
+
+        expect(() => writeFileSync("test.txt", "test")).to.throw(
+            "File system operations not available"
+        );
+
+        win.cy = cy;
+        win.Cypress = Cypress;
+        win.process = process;
+    });
+});
+
+it("Code branches", () => {
+    // Test castValueFromElement when textContent is undefined or null
+    const doc1 = document.implementation.createDocument("", "root", null);
+
+    // Element with textContent = undefined
+    const el1 = document.createElement("test1");
+
+    Object.defineProperty(el1, "textContent", { value: undefined });
+    doc1.documentElement.appendChild(el1);
+
+    // Element with textContent = null
+    const el2 = document.createElement("test2");
+
+    Object.defineProperty(el2, "textContent", { value: null });
+    doc1.documentElement.appendChild(el2);
+
+    const result = xmlDocumentToObject(doc1, window);
+
+    expect(result.test1).to.eq("");
+    expect(result.test2).to.eq("");
+
+    const doc2 = document.implementation.createDocument("", "root", null);
+
+    const el3 = document.createElement("test3");
+
+    el3.setAttribute("type", "array");
+    doc2.documentElement.appendChild(el3);
+
+    const el4 = document.createElement("test4");
+
+    el4.setAttribute("type", "array");
+    el3.appendChild(el4);
+
+    const result2 = xmlDocumentToObject(doc2, window);
+
+    expect(result2.test3).to.deep.eq([[]]);
 });

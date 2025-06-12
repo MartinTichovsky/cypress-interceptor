@@ -336,7 +336,7 @@ describe("Testing that the server works correctly", () => {
             expect(stats[2].delay).to.be.undefined;
             expect(stats[2].duration).to.be.gte(duration4);
             expect(stats[2].isPending).to.be.false;
-            console.log(stats[2].url);
+
             expect(stats[2].url.pathname.endsWith(testPath4)).to.be.true;
         });
 

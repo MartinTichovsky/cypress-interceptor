@@ -39,6 +39,19 @@ export interface CallStack {
      */
     response?: IResponse;
     /**
+     * The runtime of the test in milliseconds
+     */
+    runtime: number;
+    /**
+     * The runtime of the test in format `H m s ms`
+     */
+    runtimeString: string;
+    /**
+     * The sequence id of the request, starts from 1 and increments
+     * by 1 for each request
+     */
+    sequenceId: number;
+    /**
      * The time when the request started
      */
     timeStart: Date;
@@ -47,6 +60,12 @@ export interface CallStack {
      */
     url: URL;
 }
+
+export type CallStackJson = Omit<CallStack, "response" | "timeStart" | "url"> & {
+    response?: Omit<IResponse, "timeEnd"> & { timeEnd: string };
+    timeStart: string;
+    url: string;
+};
 
 export type RequestMethod =
     | "CONNECT"
@@ -246,7 +265,6 @@ export interface IThrottleRequestOptions {
 }
 
 export type OnRequestError = (request: IRequestInit, error: Error) => void;
-
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**
      * The value is `true` by default. If set to `true`, a request matching the provided

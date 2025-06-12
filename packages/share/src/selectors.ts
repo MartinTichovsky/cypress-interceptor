@@ -1,3 +1,6 @@
+export const byDataTestId = (testId: string, suffix?: string) =>
+    `[data-testid="${testId}${suffix ? `-${suffix}` : ""}"]`;
+
 export const getResponseBody = (id: string, plain = false) =>
     getLoadedSectorWithCheck(id)
         .find("[data-response-type=body]")

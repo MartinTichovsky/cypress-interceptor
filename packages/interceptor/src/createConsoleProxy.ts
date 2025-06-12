@@ -1,5 +1,5 @@
+import { ConsoleLogType, WindowTypeOfConsoleProxy } from "../WatchTheConsole.types";
 import { ConsoleProxy } from "./ConsoleProxy";
-import { ConsoleLogType, WindowTypeOfConsoleProxy } from "./WatchTheConsole.types";
 
 export const createConsoleProxy = (consoleProxy: ConsoleProxy) => {
     const listener = (win: WindowTypeOfConsoleProxy) => {

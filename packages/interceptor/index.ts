@@ -14,11 +14,12 @@ import { createRequestProxy } from "./src/createRequestProxy";
 import { RequestProxy } from "./src/RequestProxy";
 
 (() => {
+    const startTime = new Date().getTime();
     let timeStart: number | undefined = undefined;
     let timeStop: number | undefined = undefined;
 
     const requestProxy = new RequestProxy();
-    let interceptor = new Interceptor(requestProxy);
+    let interceptor = new Interceptor(requestProxy, startTime);
 
     // to be able use it without cy.visit
     createRequestProxy(requestProxy)(window as WindowTypeOfRequestProxy);
@@ -61,16 +62,18 @@ import { RequestProxy } from "./src/RequestProxy";
             cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
     );
     Cypress.Commands.add("recreateInterceptor", () => {
-        interceptor = new Interceptor(requestProxy);
+        interceptor = new Interceptor(requestProxy, startTime);
         cy.window().then((win) => createRequestProxy(requestProxy)(win));
     });
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
         timeStart = performance.now();
+
         return cy.wrap(timeStart, { timeout: 0 });
     });
     Cypress.Commands.add("stopTiming", () => {
         timeStop = performance.now();
+
         return cy.wrap(timeStart !== undefined ? timeStop - timeStart : undefined, {
             timeout: 0
         });
@@ -95,7 +98,7 @@ import { RequestProxy } from "./src/RequestProxy";
 
     // reset the instance in each run
     Cypress.on("test:before:run", () => {
-        interceptor = new Interceptor(requestProxy);
+        interceptor = new Interceptor(requestProxy, startTime);
     });
 })();
 
