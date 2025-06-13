@@ -51,7 +51,12 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                     return null;
                 },
                 copyToFixtures(filePath: string) {
+                    filePath = path.resolve(filePath);
                     const fileName = path.basename(filePath);
+
+                    if (!fs.existsSync(fixturesFolder)) {
+                        fs.mkdirSync(fixturesFolder, { recursive: true });
+                    }
 
                     fs.copyFileSync(filePath, `${fixturesFolder}/${fileName}`);
 
