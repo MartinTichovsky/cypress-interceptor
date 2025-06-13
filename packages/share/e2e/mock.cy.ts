@@ -503,7 +503,7 @@ describe("Mock Respose", () => {
             getResponseStatus(testPath_api_3).should("eq", 200);
         });
 
-        it.only("Only GenerateBody", () => {
+        it("Only GenerateBody", () => {
             cy.mockInterceptorResponse(
                 { resourceType },
                 {
