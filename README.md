@@ -12,11 +12,16 @@ Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to l
 
 There is also an option to monitor the web browser console output and log it to a file or work with websockets. For more details, refer to the [Watch The Console](#watch-the-console) or [websocket section](#websocket-interceptor).
 
+For detailed information about generating beautiful HTML reports with network analysis, see the [Network Report Generation documentation](./README.report.md).
+
 ## Motivation
 
-This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren't tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+
+Beyond logging, Cypress Interceptor now includes [**Network Report Generation**](./README.report.md) that transforms raw network data into beautiful, interactive HTML reports. These reports feature performance charts, detailed request/response tables, and comprehensive statistics, making it easier than ever to analyze and understand your application's network behavior. [See an example report here](https://martintichovsky.github.io/cypress-interceptor/report-sample/report.html) to experience the visual power of network analysis.
 
 ## What's new
+- Added [**Network Report Generation**](./README.report.md) feature that creates beautiful HTML reports with interactive charts and detailed network analysis
 - Added [`test.unit`](#testunit) as a helper for testing.
 - Improved the use of Interceptor in `before` hooks and added the ability to pass a function to `cy.waitUntilRequestIsDone`
 - [Watch The Console](#watch-the-console) has been reworked and its logic completely changed
@@ -94,6 +99,7 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
         - [lineCalled](#linecalled)
         - [lineCalledWithClone](#linecalledwithclone)
     - [Interfaces](#interfaces-3)
+- [Network Report Generation](./README.report.md)
 
 
 ## Getting started

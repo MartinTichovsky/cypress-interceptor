@@ -1,7 +1,8 @@
 /// <reference types="cypress" preserve="true" />
 
-import { createRequestProxy } from "./createRequestProxy";
 import { Interceptor } from "./Interceptor";
+import { createRequestProxy } from "./src/createRequestProxy";
+import { RequestProxy } from "./src/RequestProxy";
 import {
     IMockResponse,
     IMockResponseOptions,
@@ -10,8 +11,7 @@ import {
     IThrottleRequestOptions,
     WindowTypeOfRequestProxy,
     WriteStatsOptions
-} from "./Interceptor.types";
-import { RequestProxy } from "./RequestProxy";
+} from "./types/Interceptor.types";
 
 (() => {
     let timeStart: number | undefined = undefined;

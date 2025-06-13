@@ -35,7 +35,7 @@ module.exports = tseslint.config(
             ],
             "no-unused-vars": "off",
             "prettier/prettier": "warn",
-            quotes: ["warn", "double"],
+            quotes: ["warn", "double", { "avoidEscape": true }],
             "simple-import-sort/imports": "warn",
             "simple-import-sort/exports": "warn",
             "spaced-comment": [

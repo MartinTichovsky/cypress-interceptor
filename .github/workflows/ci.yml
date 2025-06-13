@@ -51,6 +51,7 @@ jobs:
 
       - name: Coveralls
         uses: coverallsapp/github-action@main
+        if: github.ref == 'refs/heads/main'
         with:
           base-path: packages/cypress-latest
           github-token: ${{ secrets.GITHUB_TOKEN }}

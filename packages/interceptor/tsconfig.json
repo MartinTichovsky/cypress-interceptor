@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": []
+    "types": ["node"]
   },
   "exclude": ["node_modules", "**/*.d.ts"],
   "extends": "../../tsconfig.json",
