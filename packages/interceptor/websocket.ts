@@ -1,15 +1,15 @@
 /// <reference types="cypress" preserve="true" />
 
-import { createWebsocketProxy } from "./createWebsocketProxy";
-import { WebsocketInterceptor } from "./WebsocketInterceptor";
+import { createWebsocketProxy } from "./src/createWebsocketProxy";
+import { WebsocketInterceptor } from "./src/WebsocketInterceptor";
+import { WebsocketListener } from "./src/websocketListener";
 import {
     IWSMatcher,
     WindowTypeOfWebsocketProxy,
     WriteStatsOptions
-} from "./WebsocketInterceptor.types";
-import { WebsocketListener } from "./websocketListener";
+} from "./types/WebsocketInterceptor.types";
 
-export * from "./WebsocketInterceptor";
+export * from "./src/WebsocketInterceptor";
 
 (() => {
     const websocketListener = new WebsocketListener();

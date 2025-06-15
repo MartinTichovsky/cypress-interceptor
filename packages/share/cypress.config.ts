@@ -1,7 +1,15 @@
 import registerCodeCoverageTasks from "@cypress/code-coverage/task";
 import webpackPreprocessor from "@cypress/webpack-preprocessor";
+import {
+    createNetworkReportFromFile,
+    createNetworkReportFromFolder
+} from "cypress-interceptor/report";
 import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
 import * as fs from "fs";
+import path from "path";
+
+const fixturesFolder = path.resolve(__dirname, "../server/fixtures");
+const mockFolderPath = path.resolve(__dirname, "../share/mock");
 
 export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
     chromeWebSecurity: false,
@@ -26,13 +34,13 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
             );
 
             on("task", {
-                log(message) {
-                    console.log(message);
-                    return null;
-                }
-            });
+                clearFixtures() {
+                    if (fs.existsSync(fixturesFolder)) {
+                        fs.rmdirSync(fixturesFolder, { recursive: true });
+                    }
 
-            on("task", {
+                    return null;
+                },
                 clearLogs(logDirs: string[]) {
                     logDirs.forEach((dir) => {
                         if (fs.existsSync(dir)) {
@@ -42,8 +50,40 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
 
                     return null;
                 },
+                copyToFixtures(filePath: string) {
+                    filePath = path.resolve(filePath);
+                    const fileName = path.basename(filePath);
+
+                    if (!fs.existsSync(fixturesFolder)) {
+                        fs.mkdirSync(fixturesFolder, { recursive: true });
+                    }
+
+                    fs.copyFileSync(filePath, `${fixturesFolder}/${fileName}`);
+
+                    return fileName;
+                },
+                createReportFromFile(fileName?: string, highDuration?: number) {
+                    createNetworkReportFromFile(`${mockFolderPath}/sources.stats.json`, {
+                        fileName,
+                        outputDir: fixturesFolder,
+                        highDuration
+                    });
+
+                    return `${fileName || "sources"}.html`;
+                },
+                createReportFromFolder() {
+                    createNetworkReportFromFolder(mockFolderPath, {
+                        outputDir: fixturesFolder
+                    });
+
+                    return fs.readdirSync(fixturesFolder);
+                },
                 doesFileExist(filePath) {
                     return fs.existsSync(filePath);
+                },
+                log(message) {
+                    console.log(message);
+                    return null;
                 }
             });
 

@@ -54,6 +54,8 @@ jobs:
         with:
           base-path: packages/cypress-latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          coveralls-branch: ${{ github.ref_name }}
+          fail-on-error: false
 
   bump-version:
     if: github.ref == 'refs/heads/main'

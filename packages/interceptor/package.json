@@ -9,6 +9,10 @@
   "files": [
     "convert/*.d.ts",
     "convert/*.js",
+    "src/*.d.ts",
+    "src/*.js",
+    "types/*.d.ts",
+    "types/*.js",
     "*.d.ts",
     "*.js"
   ],
@@ -25,8 +29,9 @@
     "url": "https://github.com/MartinTichovsky/cypress-interceptor"
   },
   "scripts": {
-    "build": "rimraf tsconfig.build.tsbuildinfo --glob \"**/*.js\" \"**/*.d.ts\" && tsc --project tsconfig.build.json",
+    "build": "npm run clean && tsc --project tsconfig.build.json",
     "build:watch": "npm run build -- --watch",
+    "clean": "rimraf tsconfig.build.tsbuildinfo --glob \"**/*.js\" \"**/*.d.ts\" tsconfig.*tsbuildinfo",
     "lint": "eslint .",
     "tsc": "tsc --noEmit"
   },
