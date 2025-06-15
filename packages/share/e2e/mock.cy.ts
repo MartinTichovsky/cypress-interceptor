@@ -99,7 +99,7 @@ describe("Mock Respose", () => {
                         path: testPath_api_2,
                         responseBody: responseBody2,
                         responseCatchType,
-                        status: 300,
+                        status: 200,
                         type: resourceType
                     }
                 ])
