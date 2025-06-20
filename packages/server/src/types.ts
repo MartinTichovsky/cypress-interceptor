@@ -84,9 +84,17 @@ export type DynamicRequest = {
            */
           method: "GET" | "POST";
           /**
-           * The response
+           * The response object, will be parsed as JSON
            */
           responseBody?: Record<string, unknown>;
+          /**
+           * The response string, can be anything
+           */
+          responseString?: string;
+          /**
+           * The response headers
+           */
+          responseHeaders?: Record<string, string>;
           /**
            *
            */

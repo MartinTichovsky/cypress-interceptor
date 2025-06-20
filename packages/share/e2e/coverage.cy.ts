@@ -1,5 +1,11 @@
 import "cypress-interceptor/test.unit.commands";
 
+import {
+    IMockResponse,
+    IRequestInit,
+    IResourceType,
+    WindowTypeOfRequestProxy
+} from "cypress-interceptor/Interceptor.types";
 import { ConsoleProxy } from "cypress-interceptor/src/ConsoleProxy";
 import { createConsoleProxy } from "cypress-interceptor/src/createConsoleProxy";
 import { createRequestProxy } from "cypress-interceptor/src/createRequestProxy";
@@ -17,6 +23,10 @@ import {
     normalizeFileName
 } from "cypress-interceptor/src/utils.cypress";
 import { WatchTheConsole } from "cypress-interceptor/src/WatchTheConsole";
+import {
+    ConsoleLogType,
+    WindowTypeOfConsoleProxy
+} from "cypress-interceptor/src/WatchTheConsole.types";
 import { WebSocketAction, WebsocketListener } from "cypress-interceptor/src/websocketListener";
 import {
     __CALL_LINE__,
@@ -27,17 +37,7 @@ import {
     lineCalled,
     lineCalledWithClone
 } from "cypress-interceptor/test.unit";
-import {
-    IMockResponse,
-    IRequestInit,
-    IResourceType,
-    WindowTypeOfRequestProxy
-} from "cypress-interceptor/types/Interceptor.types";
-import {
-    ConsoleLogType,
-    WindowTypeOfConsoleProxy
-} from "cypress-interceptor/types/WatchTheConsole.types";
-import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/types/WebsocketInterceptor.types";
+import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";

@@ -3,10 +3,6 @@
 import { StringMatcher } from "cypress/types/net-stubbing";
 
 import { convertInputBodyToString } from "./convert/convert";
-import { RequestProxy } from "./src/RequestProxy";
-import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./src/utils";
-import { getFilePath } from "./src/utils.cypress";
-import { waitTill } from "./src/wait";
 import {
     CallStack,
     IMockResponse,
@@ -17,11 +13,20 @@ import {
     OnRequestError,
     WaitUntilRequestOptions,
     WriteStatsOptions
-} from "./types/Interceptor.types";
+} from "./Interceptor.types";
+import { RequestProxy } from "./src/RequestProxy";
+import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./src/utils";
+import { getFilePath } from "./src/utils.cypress";
+import { waitTill } from "./src/wait";
 
 declare global {
     namespace Cypress {
         interface Chainable {
+            /**
+             * Destroy the Interceptor proxy. The original `fetch` and `XMLHttpRequest` will be restored.
+             * The latest Interceptor instance is still available.
+             */
+            destroyInterceptor(): Chainable<void>;
             /**
              * Get an instance of the Interceptor
              *
@@ -73,6 +78,10 @@ declare global {
                 mock: IMockResponse,
                 options?: IMockResponseOptions
             ): Chainable<number>;
+            /**
+             * Recreate the Interceptor instance.
+             */
+            recreateInterceptor(): Chainable<void>;
             /**
              * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
              * is necessary when you want to wait for certain requests.

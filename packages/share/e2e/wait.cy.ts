@@ -1,4 +1,4 @@
-import { IRequestInit } from "cypress-interceptor/types/Interceptor.types";
+import { IRequestInit } from "cypress-interceptor/Interceptor.types";
 import { crossDomainFetch, HOST } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";

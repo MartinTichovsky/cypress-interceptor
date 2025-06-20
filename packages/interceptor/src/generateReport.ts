@@ -1,4 +1,4 @@
-import { CallStack } from "../types/Interceptor.types";
+import { CallStack } from "../Interceptor.types";
 import { writeFileSync } from "./envUtils";
 import { getHtmlTemplate } from "./generateReport.template";
 

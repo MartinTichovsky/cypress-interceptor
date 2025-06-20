@@ -1,4 +1,4 @@
-import { CallStack } from "cypress-interceptor/types/Interceptor.types";
+import { CallStack } from "cypress-interceptor/Interceptor.types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { testCaseDescribe } from "../src/utils";

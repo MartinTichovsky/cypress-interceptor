@@ -13,12 +13,15 @@ import { SERVER_URL } from "./resources/constants";
 import { WSMessage } from "./types";
 
 const app = expressWs(express()).app;
+const secondApp = expressWs(express()).app;
 const upload = multer();
 const port = 3000;
+const secondPort = 3001;
 
 const wait = async (timeout: number) => new Promise((executor) => setTimeout(executor, timeout));
 
 app.use(cors());
+secondApp.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
 app.use("/fixtures", express.static(path.join(__dirname, "../fixtures"), { redirect: false }));
@@ -32,9 +35,17 @@ interface TestingEndpointRequest {
      */
     path: string;
     /**
-     * The response body
+     * The response object, will be parsed as JSON
      */
     responseBody?: string;
+    /**
+     * The response string, can be anything
+     */
+    responseString?: string;
+    /**
+     * The additional response headers
+     */
+    responseHeaders?: string;
     status?: string;
 }
 
@@ -217,6 +228,26 @@ app.get(`/${SERVER_URL.ResponseWithProgress}`, async (_req, res) => {
     res.end();
 });
 
+app.post(`/${SERVER_URL.ResponseWithProgress}`, async (_req, res) => {
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    const chunk = Buffer.alloc(1024 * 100, "a"); // 100 KB per chunk
+    let sent = 0;
+    const total = 1024 * 100 * 50; // 5 MB
+
+    function sendChunk() {
+        if (sent < total) {
+            res.write(chunk);
+            sent += chunk.length;
+            setTimeout(sendChunk, 50); // Slow down sending
+        } else {
+            res.end();
+        }
+    }
+
+    sendChunk();
+});
+
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
     wait(getNumberFomString(req.query.duration))
         .then(() => {
@@ -224,13 +255,28 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
             const accepts = req.accepts();
             const match = url.match(/\/[^.]+(\.[a-zA-Z0-9]+)$/i);
             const contentType = req.headers["content-type"];
+            const responseHeaders: Record<string, string> = {};
 
-            const responseType =
+            if (req.query.responseHeaders) {
+                try {
+                    for (const [key, value] of Object.entries(
+                        JSON.parse(req.query.responseHeaders) as Record<string, string>
+                    )) {
+                        responseHeaders[key] = value;
+                    }
+                } catch {
+                    //
+                }
+            }
+
+            const type =
                 contentType === XHRContentType
                     ? XHRContentType
                     : (match?.[1] ?? accepts?.[0]?.toLowerCase() ?? XHRContentType);
 
-            res.type(responseType);
+            const responseType = responseHeaders["Content-Type"] ?? contentType ?? XHRContentType;
+
+            res.type(type);
 
             if (req.query.status) {
                 res.status(getNumberFomString(req.query.status, 200));
@@ -242,7 +288,13 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
                 res.setHeader("Cache-Control", "public, max-age=3600");
             }
 
-            if (req.query.bigData) {
+            for (const [key, value] of Object.entries(responseHeaders)) {
+                res.setHeader(key, value);
+            }
+
+            if (req.query.responseString) {
+                res.send(req.query.responseString);
+            } else if (req.query.bigData) {
                 res.json(bigDataGenerator());
             } else if (responseType === XHRContentType) {
                 res.json(getResponseBody(req));
@@ -255,6 +307,15 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
         .catch(next);
 });
 
+secondApp.use((_req, res) => {
+    const filePath = path.join(__dirname, "../public/navigation.html");
+    res.sendFile(filePath);
+});
+
 app.listen(port, () => {
     console.log(`Server is listening at http://localhost:${port}`);
+});
+
+secondApp.listen(secondPort, () => {
+    console.log(`Server is listening at http://localhost:${secondPort}`);
 });

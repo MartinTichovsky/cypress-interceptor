@@ -7,7 +7,7 @@ import {
     WatchTheConsoleOptions,
     WindowTypeOfConsoleProxy,
     WriteLogOptions
-} from "./types/WatchTheConsole.types";
+} from "./src/WatchTheConsole.types";
 
 export * from "./src/WatchTheConsole";
 

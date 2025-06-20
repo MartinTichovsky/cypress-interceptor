@@ -1,8 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
 import { Interceptor } from "./Interceptor";
-import { createRequestProxy } from "./src/createRequestProxy";
-import { RequestProxy } from "./src/RequestProxy";
 import {
     IMockResponse,
     IMockResponseOptions,
@@ -11,7 +9,9 @@ import {
     IThrottleRequestOptions,
     WindowTypeOfRequestProxy,
     WriteStatsOptions
-} from "./types/Interceptor.types";
+} from "./Interceptor.types";
+import { createRequestProxy } from "./src/createRequestProxy";
+import { RequestProxy } from "./src/RequestProxy";
 
 (() => {
     let timeStart: number | undefined = undefined;
@@ -27,6 +27,21 @@ import {
     Cypress.on("window:before:load", createRequestProxy(requestProxy));
 
     // register commands
+    Cypress.Commands.add("destroyInterceptor", () => {
+        cy.window().then((_win) => {
+            const win = _win as WindowTypeOfRequestProxy;
+
+            if ("originFetch" in win && win.originFetch) {
+                win.fetch = win.originFetch;
+                delete win["originFetch"];
+            }
+
+            if ("originXMLHttpRequest" in win && win.originXMLHttpRequest) {
+                win.XMLHttpRequest = win.originXMLHttpRequest;
+                delete win["originXMLHttpRequest"];
+            }
+        });
+    });
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher?: IRouteMatcher) =>
         cy.wrap(interceptor.getLastRequest(routeMatcher))
@@ -45,6 +60,10 @@ import {
         (routeMatcher: IRouteMatcher, mock: IMockResponse, options?: IMockResponseOptions) =>
             cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
     );
+    Cypress.Commands.add("recreateInterceptor", () => {
+        interceptor = new Interceptor(requestProxy);
+        cy.window().then((win) => createRequestProxy(requestProxy)(win));
+    });
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
         timeStart = performance.now();

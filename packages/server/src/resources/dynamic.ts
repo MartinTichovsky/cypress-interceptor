@@ -208,6 +208,10 @@ export const getParamsFromDynamicRequest = (entry: DynamicRequest): DynamicReque
                     ? JSON.stringify(entry.responseBody)
                     : entry.responseBody
                 : undefined,
+        responseString:
+            "responseString" in entry && entry.responseString ? entry.responseString : undefined,
+        responseHeaders:
+            "responseHeaders" in entry ? JSON.stringify(entry.responseHeaders) : undefined,
         status: "status" in entry ? entry.status : undefined
     };
 

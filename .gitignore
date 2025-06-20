@@ -12,5 +12,5 @@ _stats
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
 .nyc_output
-coverage
+**/cypress-*/coverage*
 packages/server/fixtures

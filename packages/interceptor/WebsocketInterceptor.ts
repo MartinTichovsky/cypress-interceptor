@@ -9,7 +9,7 @@ import {
     IWSMatcher,
     WaitUntilActionOptions,
     WriteStatsOptions
-} from "./types/WebsocketInterceptor.types";
+} from "./WebsocketInterceptor.types";
 
 declare global {
     namespace Cypress {

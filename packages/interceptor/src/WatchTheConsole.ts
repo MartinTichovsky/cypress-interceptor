@@ -1,14 +1,14 @@
 /// <reference types="cypress" preserve="true" />
 
+import { ConsoleProxy } from "./ConsoleProxy";
+import { deepCopy, removeUndefinedFromObject } from "./utils";
+import { getFilePath } from "./utils.cypress";
 import {
     ConsoleLog,
     ConsoleLogType,
     WatchTheConsoleOptions,
     WriteLogOptions
-} from "../types/WatchTheConsole.types";
-import { ConsoleProxy } from "./ConsoleProxy";
-import { deepCopy, removeUndefinedFromObject } from "./utils";
-import { getFilePath } from "./utils.cypress";
+} from "./WatchTheConsole.types";
 
 declare global {
     namespace Cypress {

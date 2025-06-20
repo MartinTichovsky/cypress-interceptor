@@ -11,8 +11,6 @@
     "convert/*.js",
     "src/*.d.ts",
     "src/*.js",
-    "types/*.d.ts",
-    "types/*.js",
     "*.d.ts",
     "*.js"
   ],
