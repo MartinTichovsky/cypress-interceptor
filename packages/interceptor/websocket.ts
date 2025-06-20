@@ -1,13 +1,13 @@
 /// <reference types="cypress" preserve="true" />
 
-import { createWebsocketProxy } from "./createWebsocketProxy";
+import { createWebsocketProxy } from "./src/createWebsocketProxy";
+import { WebsocketListener } from "./src/websocketListener";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
 import {
     IWSMatcher,
     WindowTypeOfWebsocketProxy,
     WriteStatsOptions
 } from "./WebsocketInterceptor.types";
-import { WebsocketListener } from "./websocketListener";
 
 export * from "./WebsocketInterceptor";
 

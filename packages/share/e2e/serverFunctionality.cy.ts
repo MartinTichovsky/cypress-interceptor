@@ -1,5 +1,10 @@
 import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import {
+    getInitForFetchFromParams,
+    getParamsFromDynamicRequest
+} from "cypress-interceptor-server/src/resources/dynamic";
+import { DynamicRequest } from "cypress-interceptor-server/src/types";
+import {
     DEFAULT_WAITTIME,
     generateUrl,
     getDelayWait,
@@ -503,5 +508,36 @@ describe("Testing that the server works correctly", () => {
 
         getLoadedSector(testPath3).should("exist");
         getResponseBody(testPath3).should("deep.equal", responseBody);
+    });
+
+    it("Should return response headers", () => {
+        cy.destroyInterceptor();
+
+        const responseHeaders = {
+            "X-Custom-Header": "custom-value",
+            "My-Header": "my-value"
+        };
+
+        const entry: DynamicRequest = {
+            method: "GET",
+            path: "response-headers",
+            responseHeaders,
+            status: 200,
+            type: "fetch"
+        };
+
+        return new Cypress.Promise((resolve, reject) => {
+            // do something custom here
+
+            fetch(...getInitForFetchFromParams(entry, getParamsFromDynamicRequest(entry)))
+                .then((res) => {
+                    // Check that the response contains the expected custom headers from responseHeaders
+                    Object.entries(responseHeaders).forEach(([key, value]) => {
+                        expect(res.headers.get(key)).to.equal(value);
+                    });
+                    resolve();
+                })
+                .catch(reject);
+        });
     });
 });

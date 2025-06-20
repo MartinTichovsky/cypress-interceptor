@@ -1,4 +1,4 @@
-import { deepCopy } from "./utils";
+import { deepCopy } from "./src/utils";
 
 export const __CALL_LINE__ = "__callLine__";
 

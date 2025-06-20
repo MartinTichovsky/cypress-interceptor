@@ -1,7 +1,7 @@
 import "cypress-interceptor/console";
 
-import { getFilePath } from "cypress-interceptor/utils.cypress";
-import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
+import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/src/WatchTheConsole.types";
 import { generateUrl } from "cypress-interceptor-server/src/utils";
 
 type LogQueue = [ConsoleLogType, unknown[]][];

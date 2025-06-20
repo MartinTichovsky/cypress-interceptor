@@ -1,6 +1,6 @@
 import "cypress-interceptor/websocket";
 
-import { getFilePath } from "cypress-interceptor/utils.cypress";
+import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";

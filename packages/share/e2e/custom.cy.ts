@@ -1,6 +1,7 @@
 import { convertInputBodyToString } from "cypress-interceptor/convert/convert";
 import { CallStack } from "cypress-interceptor/Interceptor.types";
-import { getFilePath } from "cypress-interceptor/utils.cypress";
+import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { testCaseIt } from "../src/utils";
@@ -377,6 +378,173 @@ describe("Custom", () => {
     it("Should return null when log is empty", () => {
         cy.writeInterceptorStatsToLog("_logs").then((result) => {
             expect(result).to.be.null;
+        });
+    });
+
+    it("destroy and recreate interceptor - fetch", () => {
+        cy.visit("/");
+
+        cy.window().then((win) => {
+            expect("originFetch" in win).to.eq(true);
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(0);
+        });
+
+        const testUrl1 = `http://${HOST}/test-1`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                win.fetch(testUrl1).then((res) => {
+                    expect(res.status).to.eq(200);
+                    resolve(null);
+                });
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        // it will destroy the interceptor from the window but the latest interceptor is still available
+        cy.destroyInterceptor();
+
+        cy.window().then((win) => {
+            expect("originFetch" in win).to.eq(false);
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        const testUrl2 = `http://${HOST}/test-2`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                win.fetch(testUrl2).then((res) => {
+                    expect(res.status).to.eq(200);
+                    resolve(null);
+                });
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        // the interceptor is recreated from scratch
+        cy.recreateInterceptor();
+
+        cy.window().then((win) => {
+            expect("originFetch" in win).to.eq(true);
+        });
+
+        const testUrl3 = `http://${HOST}/test-3`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                win.fetch(testUrl3).then((res) => {
+                    expect(res.status).to.eq(200);
+                    resolve(null);
+                });
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl3);
+        });
+    });
+
+    it("destroy and recreate interceptor - XMLHttpRequest", () => {
+        cy.visit("/");
+
+        cy.window().then((win) => {
+            expect("originXMLHttpRequest" in win).to.eq(true);
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(0);
+        });
+
+        const testUrl1 = `http://${HOST}/test-1`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                const xhr = new win.XMLHttpRequest();
+                xhr.open("GET", testUrl1);
+                xhr.onload = () => {
+                    expect(xhr.status).to.eq(200);
+                    resolve(null);
+                };
+                xhr.send();
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        // it will destroy the interceptor from the window but the latest interceptor is still available
+        cy.destroyInterceptor();
+
+        cy.window().then((win) => {
+            expect("originXMLHttpRequest" in win).to.eq(false);
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        const testUrl2 = `http://${HOST}/test-2`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                const xhr = new win.XMLHttpRequest();
+                xhr.open("GET", testUrl2);
+                xhr.onload = () => {
+                    expect(xhr.status).to.eq(200);
+                    resolve(null);
+                };
+                xhr.send();
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl1);
+        });
+
+        // the interceptor is recreated from scratch
+        cy.recreateInterceptor();
+
+        cy.window().then((win) => {
+            expect("originXMLHttpRequest" in win).to.eq(true);
+        });
+
+        const testUrl3 = `http://${HOST}/test-3`;
+
+        cy.window().then((win) => {
+            return new Promise((resolve) => {
+                const xhr = new win.XMLHttpRequest();
+                xhr.open("GET", testUrl3);
+                xhr.onload = () => {
+                    expect(xhr.status).to.eq(200);
+                    resolve(null);
+                };
+                xhr.send();
+            });
+        });
+
+        cy.interceptor().then((interceptor) => {
+            expect(interceptor.callStack.length).to.eq(1);
+            expect(interceptor.callStack[0].url.toString()).to.eq(testUrl3);
         });
     });
 });

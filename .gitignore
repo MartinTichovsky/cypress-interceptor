@@ -7,8 +7,10 @@ lib
 _console*
 _coverage
 _logs
+_network_report
 _stats
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
 .nyc_output
-coverage
+**/cypress-*/coverage*
+packages/server/fixtures

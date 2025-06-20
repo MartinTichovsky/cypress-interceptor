@@ -1,4 +1,4 @@
-import { WindowTypeOfWebsocketProxy } from "./WebsocketInterceptor.types";
+import { WindowTypeOfWebsocketProxy } from "../WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
 const getQueryObjectFromString = (url: string) => {

@@ -1,8 +1,8 @@
-import { convertInputBodyToString } from "./convert/convert";
-import { WindowTypeOfRequestProxy } from "./Interceptor.types";
+import { convertInputBodyToString } from "../convert/convert";
+import { WindowTypeOfRequestProxy } from "../Interceptor.types";
+import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
-import { lineCalled } from "./test.unit";
 
 export const createRequestProxy = (requestProxy: RequestProxy) => {
     const listener = (win: WindowTypeOfRequestProxy) => {
@@ -115,7 +115,7 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                     return mockResponse();
                 }
 
-                win.originFetch(input, init)
+                win.originFetch!(input, init)
                     .then((response) => {
                         // mock only headers or status
                         if (

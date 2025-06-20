@@ -1,15 +1,15 @@
 /// <reference types="cypress" preserve="true" />
 
-import { ConsoleProxy } from "./ConsoleProxy";
-import { createConsoleProxy } from "./createConsoleProxy";
-import { WatchTheConsole } from "./WatchTheConsole";
+import { ConsoleProxy } from "./src/ConsoleProxy";
+import { createConsoleProxy } from "./src/createConsoleProxy";
+import { WatchTheConsole } from "./src/WatchTheConsole";
 import {
     WatchTheConsoleOptions,
     WindowTypeOfConsoleProxy,
     WriteLogOptions
-} from "./WatchTheConsole.types";
+} from "./src/WatchTheConsole.types";
 
-export * from "./WatchTheConsole";
+export * from "./src/WatchTheConsole";
 
 (() => {
     const consoleProxy = new ConsoleProxy();

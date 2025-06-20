@@ -1,21 +1,33 @@
 import "cypress-interceptor/test.unit.commands";
 
-import { ConsoleProxy } from "cypress-interceptor/ConsoleProxy";
-import { createConsoleProxy } from "cypress-interceptor/createConsoleProxy";
-import { createRequestProxy } from "cypress-interceptor/createRequestProxy";
-import { createWebsocketProxy } from "cypress-interceptor/createWebsocketProxy";
 import {
     IMockResponse,
     IRequestInit,
     IResourceType,
     WindowTypeOfRequestProxy
 } from "cypress-interceptor/Interceptor.types";
+import { ConsoleProxy } from "cypress-interceptor/src/ConsoleProxy";
+import { createConsoleProxy } from "cypress-interceptor/src/createConsoleProxy";
+import { createRequestProxy } from "cypress-interceptor/src/createRequestProxy";
+import { createWebsocketProxy } from "cypress-interceptor/src/createWebsocketProxy";
 import {
     RequestProxy,
     RequestProxyFunction,
     RequestProxyFunctionResult
-} from "cypress-interceptor/RequestProxy";
-import { CallLineEnum } from "cypress-interceptor/test.enum";
+} from "cypress-interceptor/src/RequestProxy";
+import { CallLineEnum } from "cypress-interceptor/src/test.enum";
+import { deepCopy, removeUndefinedFromObject } from "cypress-interceptor/src/utils";
+import {
+    getFilePath,
+    getNormalizedFileNameFromCurrentTest,
+    normalizeFileName
+} from "cypress-interceptor/src/utils.cypress";
+import { WatchTheConsole } from "cypress-interceptor/src/WatchTheConsole";
+import {
+    ConsoleLogType,
+    WindowTypeOfConsoleProxy
+} from "cypress-interceptor/src/WatchTheConsole.types";
+import { WebSocketAction, WebsocketListener } from "cypress-interceptor/src/websocketListener";
 import {
     __CALL_LINE__,
     CallLine,
@@ -25,19 +37,7 @@ import {
     lineCalled,
     lineCalledWithClone
 } from "cypress-interceptor/test.unit";
-import { deepCopy, removeUndefinedFromObject } from "cypress-interceptor/utils";
-import {
-    getFileNameFromCurrentTest,
-    getFilePath,
-    normalizeFileName
-} from "cypress-interceptor/utils.cypress";
-import { WatchTheConsole } from "cypress-interceptor/WatchTheConsole";
-import {
-    ConsoleLogType,
-    WindowTypeOfConsoleProxy
-} from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
-import { WebSocketAction, WebsocketListener } from "cypress-interceptor/websocketListener";
 import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
@@ -164,7 +164,9 @@ it("WatchTheConsole", () => {
 });
 
 it("getFileNameFromCurrentTest", () => {
-    expect(getFileNameFromCurrentTest()).to.eq("coverage.cy.ts (getFileNameFromCurrentTest)");
+    expect(getNormalizedFileNameFromCurrentTest()).to.eq(
+        "coverage.cy.ts (getFileNameFromCurrentTest)"
+    );
 });
 
 describe("Utils", () => {
@@ -359,7 +361,7 @@ describe("Utils", () => {
     });
 
     it("getFileNameFromCurrentTest", () => {
-        expect(getFileNameFromCurrentTest()).to.eq(
+        expect(getNormalizedFileNameFromCurrentTest()).to.eq(
             "coverage.cy.ts (Utils - getFileNameFromCurrentTest)"
         );
     });

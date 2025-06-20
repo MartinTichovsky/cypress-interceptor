@@ -8,15 +8,22 @@
 
 ## About
 
-Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to log all fetch or XHR requests, which can be analyzed in case of failure. It provides extended ways to log these statistics, including the ability to mock or throttle requests easily. Cypress Interceptor is better than `cy.intercept` because it can avoid issues, especially when using global request catch.
+Cypress Interceptor is a substitute for `cy.intercept`. Its main purpose is to log all fetch or XHR requests, which can be analyzed in case of failure. It provides extended ways to log these statistics, including the ability to mock or throttle requests easily. Cypress Interceptor is better than `cy.intercept` because it can avoid issues, especially when using global request catching.
 
 There is also an option to monitor the web browser console output and log it to a file or work with websockets. For more details, refer to the [Watch The Console](#watch-the-console) or [websocket section](#websocket-interceptor).
 
+For detailed information about generating beautiful HTML reports with network analysis, see the [Network Report Generation documentation](./README.report.md).
+
 ## Motivation
 
-This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren’t tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+This diagnostic tool is born out of extensive firsthand experience tracking down elusive, seemingly random Cypress test failures. These issues often weren't tied to Cypress itself, but rather to the behavior of the underlying web application—especially in headless runs on build servers where no manual interaction is possible. By offering robust logging for both API requests and the Web console, the tool provides greater transparency and insight into the root causes of failures, ultimately helping developers streamline their debugging process and ensure more reliable test outcomes.
+
+Beyond logging, Cypress Interceptor now includes [**Network Report Generation**](./README.report.md) that transforms raw network data into beautiful, interactive HTML reports. These reports feature performance charts, detailed request/response tables, and comprehensive statistics, making it easier than ever to analyze and understand your application's network behavior. [See an example report here](https://martintichovsky.github.io/cypress-interceptor/report-example/report.html) to experience the visual power of network analysis.
 
 ## What's new
+- Added [**Network Report Generation**](./README.report.md) feature that creates beautiful HTML reports with interactive charts and detailed network analysis
+- Added [`cy.destroyInterceptor`](#cydestroyinterceptor) and [`cy.recreateInterceptor`](#cyrecreateinterceptor) commands for better control over interceptor lifecycle
+- Fixed navigation issue with XMLHttpRequest where relative paths were incorrectly resolved in Cypress iframe context
 - Added [`test.unit`](#testunit) as a helper for testing.
 - Improved the use of Interceptor in `before` hooks and added the ability to pass a function to `cy.waitUntilRequestIsDone`
 - [Watch The Console](#watch-the-console) has been reworked and its logic completely changed
@@ -35,12 +42,14 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
     - [Interceptor Cypress commands](#the-cypress-interceptor-commands)
     - [Cypress environment variables](#cypress-environment-variables)
     - [Documentation and examples](#documentation-and-examples)
+        - [cy.destroyInterceptor](#cydestroyinterceptor)
         - [cy.interceptor](#cyinterceptor)
         - [cy.interceptorLastRequest](#cyinterceptorlastrequest)
         - [cy.interceptorOptions](#cyinterceptoroptions)
         - [cy.interceptorRequestCalls](#cyinterceptorrequestcalls)
         - [cy.interceptorStats](#cyinterceptorstats)
         - [cy.mockInterceptorResponse](#cymockinterceptorresponse)
+        - [cy.recreateInterceptor](#cyrecreateinterceptor)
         - [cy.resetInterceptorWatch](#cyresetinterceptorwatch)
         - [cy.throttleInterceptorRequest](#cythrottleinterceptorrequest)
         - [cy.waitUntilRequestIsDone](#cywaituntilrequestisdone)
@@ -94,6 +103,7 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
         - [lineCalled](#linecalled)
         - [lineCalledWithClone](#linecalledwithclone)
     - [Interfaces](#interfaces-3)
+- [Network Report Generation](./README.report.md)
 
 
 ## Getting started
@@ -115,6 +125,10 @@ import "cypress-interceptor";
 ## The Cypress Interceptor commands
 
 ```ts
+/**
+ * Destroy the interceptor by restoring the original fetch and XMLHttpRequest implementations
+ */
+destroyInterceptor: () => Chainable<null>;
 /**
  * Get an instance of Interceptor
  *
@@ -168,6 +182,10 @@ mockInterceptorResponse(
     mock: IMockResponse,
     options?: IMockResponseOptions
 ): Chainable<number>;
+/**
+ * Recreate the interceptor with a new instance
+ */
+recreateInterceptor: () => Chainable<null>;
 /**
  * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
  * is necessary when you want to wait for certain requests.
@@ -269,11 +287,26 @@ e2e: {
 }
 ```
 
-__`INTERCEPTOR_REQUEST_TIMEOUT`__ - the value (in ms) that defines how long the Interceptor will wait for pending requests when call `cy.waitUntilRequestIsDone()`
+__`INTERCEPTOR_REQUEST_TIMEOUT`__ - the value (in ms) that defines how long the Interceptor will wait for pending requests when calling `cy.waitUntilRequestIsDone()`
 
 # Documentation and examples
 
 In almost all methods, there is a route matcher ([`IRouteMatcher`](#iroutematcher)) that can be a string, a RegExp ([`StringMatcher`](#stringmatcher)), or an object with multiple matching options. For more information about matching options, explore [`IRouteMatcherObject`](#iroutematcherobject).
+
+## cy.destroyInterceptor
+
+```ts
+destroyInterceptor: () => Chainable<null>;
+```
+
+Destroy the interceptor by restoring the original fetch and XMLHttpRequest implementations. This command removes all proxy functionality and restores the browser's native implementations.
+
+### Example
+
+```ts
+// Destroy the interceptor to restore native behavior
+cy.destroyInterceptor();
+```
 
 ## cy.interceptor
 
@@ -471,8 +504,8 @@ cy.mockInterceptorResponse(
     {
         generateBody: (_, getJsonRequestBody) =>
             "page" in getJsonRequestBody<{ page: number }>()
-            ? ({ custom: "resposne 1" })
-            : ({ custom: "resposne 2" })
+            ? ({ custom: "response 1" })
+            : ({ custom: "response 2" })
     }
 );
 ```
@@ -517,6 +550,21 @@ cy.mockInterceptorResponse(
 );
 ```
 
+## cy.recreateInterceptor
+
+```ts
+recreateInterceptor: () => Chainable<null>;
+```
+
+Recreate the interceptor with a new instance. This command creates a fresh interceptor instance and reestablishes the proxy functionality.
+
+### Example
+
+```ts
+// Recreate the interceptor to get a fresh instance
+cy.recreateInterceptor();
+```
+
 ## cy.resetInterceptorWatch
 
 ```ts
@@ -530,7 +578,7 @@ Reset the Interceptor's watch. It sets the pointer to the last call. Resetting t
 On a site, there are multiple requests to api/getUser, but we want to wait for the specific one that occurs after clicking a button. Since we cannot know which api/getUser call to wait for, calling this method sets the exact point from which we want to check the next requests.
 
 ```ts
-// this page contains multiple requests to `api/getUser` when visit
+// this page contains multiple requests to `api/getUser` when visited
 cy.visit("https://www.my-page.org");
 
 // reset the watch, so all the previous (or pending) requests will be ignored in the next `waitUntilRequestIsDone`
@@ -575,7 +623,7 @@ cy.throttleInterceptorRequest({ queryMatcher: (query) => query?.page === 5}, 500
 ```
 
 ```ts
-// throtlle all requests for 5 seconds
+// throttle all requests for 5 seconds
 cy.throttleInterceptorRequest({ resourceType: "all" }, 5000, { times: Number.POSITIVE_INFINITY });
 cy.throttleInterceptorRequest("*", 5000, { times: Number.POSITIVE_INFINITY });
 ```
@@ -655,7 +703,7 @@ By default, there must be at least one match. Otherwise, it waits until a reques
 
 __Important__
 
-It is crutial to call [`cy.resetInterceptorWatch()`](#cyresetinterceptorwatch) before an action that should trigger a request you want to wait for, or pass an action that should trigger the request as the first argument. The reason is that there may be a chain of requests preventing the one you want to wait for from being processed. More details below.
+It is crucial to call [`cy.resetInterceptorWatch()`](#cyresetinterceptorwatch) before an action that should trigger a request you want to wait for, or pass an action that should trigger the request as the first argument. The reason is that there may be a chain of requests preventing the one you want to wait for from being processed. More details below.
 
 ### Examples
 
@@ -676,7 +724,7 @@ cy.waitUntilRequestIsDone(
 
 ```ts
 // when you do not provide a function as the first argument it is needed to call cy.resetInterceptorWatch
-// because the request you want to wait for could be called before and Interceptor will ses it as done
+// because the request you want to wait for could be called before and Interceptor will see it as done
 cy.resetInterceptorWatch();
 // any action that should trigger the request
 cy.contains("button", "Log In").click();
@@ -941,7 +989,7 @@ type IRouteMatcherObject = {
     /**
      * A matcher for the query string (URL search params)
      *
-     * @param query The URL qearch params as an object
+     * @param query The URL search params as an object
      * @returns `true` if matches
      */
     queryMatcher?: (query: Record<string, string | number>) => boolean;
@@ -1450,7 +1498,7 @@ Get an instance of the Websocket Interceptor
 cy.wsInterceptor().then(interceptor => {
     interceptor.resetWatch();
 
-    intereptor.writeStatsToLog("_logs", { protocols: "soap" }, "stats");
+    interceptor.writeStatsToLog("_logs", { protocols: "soap" }, "stats");
 });
 ```
 
@@ -1536,7 +1584,7 @@ afterAll(() => {
 
 ## cy.wsResetInterceptorWatch
 
-Reset the the Websocket Interceptor's watch
+Reset the Websocket Interceptor's watch
 
 ```ts
 wsResetInterceptorWatch: () => void;
@@ -1544,7 +1592,7 @@ wsResetInterceptorWatch: () => void;
 
 ## cy.waitUntilWebsocketAction
 
-Wait until a websocket action occur
+Wait until a websocket action occurs
 
 ```ts
 waitUntilWebsocketAction(
@@ -1648,15 +1696,15 @@ Same as [`cy.wsInterceptorLastRequest`](#cywsinterceptorlastrequest).
 
 ## getStats
 
-Same as [`cy.wsInterceptorStats](#cywsinterceptorstats).
+Same as [`cy.wsInterceptorStats`](#cywsinterceptorstats).
 
 ## resetWatch
 
-Same as [`cy.wsResetInterceptorWatch](#cywsresetinterceptorwatch).
+Same as [`cy.wsResetInterceptorWatch`](#cywsresetinterceptorwatch).
 
 ## setOptions
 
-Same as [`wsInterceptorOptions`](#cywsinterceptoroptions).
+Same as [`cy.wsInterceptorOptions`](#cywsinterceptoroptions).
 
 ## waitUntilWebsocketAction
 
@@ -1675,7 +1723,7 @@ type IWSMatcher = {
     /**
      * A matcher for the query string (URL search params)
      *
-     * @param query The URL qearch params as an object
+     * @param query The URL search params as an object
      * @returns `true` if matches
      */
     queryMatcher?: (query: Record<string, string | number>) => boolean;
@@ -1899,7 +1947,7 @@ cy.callLineLength().should("eq", 1);
 callLineNext(): Chainable<unknown | unknown[] | undefined>;
 ```
 
-Get the next entry. If there is no next entry, it returns undefined. It is a Cypress query.
+Get the next entry. If there is no next entry, it returns undefined.
 
 If the entry was added as a single argument like `lineCalled("something")`, it will return the single value "something". But if it was added as multiple arguments like `lineCalled("something", 1, true)`, it will return an array `["something", 1, true]`.
 

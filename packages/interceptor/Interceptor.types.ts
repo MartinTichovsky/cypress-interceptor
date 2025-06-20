@@ -272,8 +272,8 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
 }
 
 export type WindowTypeOfRequestProxy = Cypress.AUTWindow & {
-    originFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-    originXMLHttpRequest: typeof XMLHttpRequest;
+    originFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+    originXMLHttpRequest?: typeof XMLHttpRequest;
 };
 
 export interface WriteStatsOptions {
