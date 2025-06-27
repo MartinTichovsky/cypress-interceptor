@@ -6,7 +6,6 @@
             "body": "{\"repository\":\"demo\",\"project\":\"WebApp\",\"userName\":\"testuser\",\"password\":\"demo123\",\"info\":{\"dpr\":1,\"agent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\",\"culture\":\"en-US\",\"dpi\":{\"screenX\":96,\"screenY\":96},\"scrollbars\":{\"vertical\":17,\"horizontal\":17},\"timeZone\":\"UTC\",\"orientation\":null}}",
             "headers": {
                 "Cache-Control": "no-cache",
-                "X-Csrf-Token": null,
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json;charset=UTF-8"
             },
@@ -16,7 +15,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:00.000Z",
         "url": "https://api.example.com/auth/login",
-        "delay": null,
         "_headerProcessDuration": 0,
         "duration": 1850.5,
         "response": {
@@ -52,7 +50,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:05.000Z",
         "url": "https://api.example.com/dashboard/status?_dc=1705314604500",
-        "delay": null,
         "_headerProcessDuration": 5.2,
         "duration": 2189.1,
         "response": {
@@ -91,7 +88,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:12.000Z",
         "url": "https://api.example.com/data/items?_dc=1705314612000&page=1&start=0&limit=25",
-        "delay": null,
         "_headerProcessDuration": 8.5,
         "duration": 3456.7,
         "response": {
@@ -126,7 +122,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:16.000Z",
         "url": "https://api.example.com/database/query",
-        "delay": null,
         "_headerProcessDuration": 12.3,
         "duration": 2334.2,
         "response": {
@@ -163,7 +158,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:25.000Z",
         "url": "https://api.example.com/user/profile?_dc=1705314625000&userId=user-123",
-        "delay": null,
         "_headerProcessDuration": 3.1,
         "duration": 1678.9,
         "response": {
@@ -198,7 +192,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:31.000Z",
         "url": "https://api.example.com/reports/generate",
-        "delay": null,
         "_headerProcessDuration": 15.7,
         "duration": 2234.8,
         "response": {
@@ -235,7 +228,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:39.000Z",
         "url": "https://api.example.com/dashboard/widgets?_dc=1705314638500&category=analytics",
-        "delay": null,
         "_headerProcessDuration": 2.8,
         "duration": 4567.3,
         "response": {
@@ -270,7 +262,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:44.000Z",
         "url": "https://api.example.com/data/export",
-        "delay": null,
         "_headerProcessDuration": 21.4,
         "duration": 1876.5,
         "response": {
@@ -307,7 +298,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:30:54.000Z",
         "url": "https://api.example.com/search?_dc=1705314654000&searchTerm=customer%20data",
-        "delay": null,
         "_headerProcessDuration": 4.2,
         "duration": 1543.2,
         "response": {
@@ -342,7 +332,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:01.000Z",
         "url": "https://api.example.com/user/settings",
-        "delay": null,
         "_headerProcessDuration": 1.8,
         "duration": 1987.6,
         "response": {
@@ -378,7 +367,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:05.000Z",
         "url": "https://api.example.com/system/health?_dc=1705314665000",
-        "delay": null,
         "_headerProcessDuration": 0.9,
         "duration": 1765.4,
         "response": {
@@ -413,7 +401,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:14.000Z",
         "url": "https://api.example.com/charts/generate",
-        "delay": null,
         "_headerProcessDuration": 7.3,
         "duration": 2432.1,
         "response": {
@@ -451,7 +438,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:20.000Z",
         "url": "https://api.example.com/notifications?_dc=1705314679500&page=1&limit=50",
-        "delay": null,
         "_headerProcessDuration": 3.7,
         "duration": 1321.9,
         "response": {
@@ -486,7 +472,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:25.000Z",
         "url": "https://api.example.com/system/backup",
-        "delay": null,
         "_headerProcessDuration": 18.9,
         "duration": 2234.7,
         "response": {
@@ -523,7 +508,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:35.000Z",
         "url": "https://api.example.com/analytics/traffic?_dc=1705314694500&timeRange=7d",
-        "delay": null,
         "_headerProcessDuration": 6.4,
         "duration": 1654.3,
         "response": {
@@ -558,7 +542,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:43.000Z",
         "url": "https://api.example.com/email/send",
-        "delay": null,
         "_headerProcessDuration": 11.2,
         "duration": 1789.4,
         "response": {
@@ -594,7 +577,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:50.000Z",
         "url": "https://api.example.com/cache/stats?_dc=1705314710000",
-        "delay": null,
         "_headerProcessDuration": 2.1,
         "duration": 2432.8,
         "response": {
@@ -629,7 +611,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:31:56.000Z",
         "url": "https://api.example.com/data/sync",
-        "delay": null,
         "_headerProcessDuration": 24.6,
         "duration": 1765.2,
         "response": {
@@ -666,7 +647,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:05.000Z",
         "url": "https://api.example.com/logs/recent?_dc=1705314725000&format=json",
-        "delay": null,
         "_headerProcessDuration": 8.7,
         "duration": 1567.1,
         "response": {
@@ -701,7 +681,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:10.000Z",
         "url": "https://api.example.com/modules/install",
-        "delay": null,
         "_headerProcessDuration": 32.1,
         "duration": 1832.6,
         "response": {
@@ -738,7 +717,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:18.000Z",
         "url": "https://api.example.com/file-system/scan?_dc=1705314738000&depth=3",
-        "delay": null,
         "_headerProcessDuration": 15.3,
         "duration": 2123.7,
         "response": {
@@ -773,7 +751,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:28.000Z",
         "url": "https://api.example.com/monitoring/alerts/create",
-        "delay": null,
         "_headerProcessDuration": 8.9,
         "duration": 1576.3,
         "response": {
@@ -811,7 +788,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:33.000Z",
         "url": "https://api.example.com/metrics/performance?_dc=1705314753000&metric=response-time&period=1h",
-        "delay": null,
         "_headerProcessDuration": 4.7,
         "duration": 1234.9,
         "response": {
@@ -846,7 +822,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:40.000Z",
         "url": "https://api.example.com/system/maintenance",
-        "delay": null,
         "_headerProcessDuration": 12.4,
         "duration": 1456.3,
         "response": {
@@ -880,7 +855,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:50.000Z",
         "url": "https://api.example.com/ping",
-        "delay": null,
         "_headerProcessDuration": 1.2,
         "duration": 156.7,
         "response": {
@@ -914,7 +888,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:51.000Z",
         "url": "https://api.example.com/cart/add",
-        "delay": null,
         "_headerProcessDuration": 3.8,
         "duration": 892.4,
         "response": {
@@ -949,7 +922,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:52.000Z",
         "url": "https://api.example.com/products/list?category=electronics&sort=price",
-        "delay": null,
         "_headerProcessDuration": 2.1,
         "duration": 1234.6,
         "response": {
@@ -983,7 +955,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:54.000Z",
         "url": "https://api.example.com/support/ticket",
-        "delay": null,
         "_headerProcessDuration": 5.7,
         "duration": 2198.3,
         "response": {
@@ -1015,7 +986,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:57.000Z",
         "url": "https://api.example.com/weather/current",
-        "delay": null,
         "_headerProcessDuration": 1.4,
         "duration": 534.2,
         "response": {
@@ -1049,7 +1019,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:32:58.000Z",
         "url": "https://api.example.com/orders/create",
-        "delay": null,
         "_headerProcessDuration": 8.9,
         "duration": 3456.7,
         "response": {
@@ -1082,7 +1051,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:02.000Z",
         "url": "https://api.example.com/cache/clear",
-        "delay": null,
         "_headerProcessDuration": 0.8,
         "duration": 287.5,
         "response": {
@@ -1117,7 +1085,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:03.000Z",
         "url": "https://api.example.com/blog/posts?page=1&size=10",
-        "delay": null,
         "_headerProcessDuration": 3.2,
         "duration": 1876.4,
         "response": {
@@ -1151,7 +1118,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:05.000Z",
         "url": "https://api.example.com/user/preferences",
-        "delay": null,
         "_headerProcessDuration": 2.3,
         "duration": 743.8,
         "response": {
@@ -1183,7 +1149,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:06.000Z",
         "url": "https://api.example.com/version",
-        "delay": null,
         "_headerProcessDuration": 0.5,
         "duration": 123.7,
         "response": {
@@ -1217,7 +1182,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:07.000Z",
         "url": "https://api.example.com/feedback/submit",
-        "delay": null,
         "_headerProcessDuration": 6.4,
         "duration": 4567.2,
         "response": {
@@ -1253,7 +1217,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:12.000Z",
         "url": "https://api.example.com/activity/log?userId=user-456&startDate=2024-01-01",
-        "delay": null,
         "_headerProcessDuration": 4.1,
         "duration": 2341.9,
         "response": {
@@ -1286,7 +1249,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:15.000Z",
         "url": "https://api.example.com/auth/request-reset",
-        "delay": null,
         "_headerProcessDuration": 2.8,
         "duration": 1567.3,
         "response": {
@@ -1318,7 +1280,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:17.000Z",
         "url": "https://api.example.com/countries/list",
-        "delay": null,
         "_headerProcessDuration": 1.1,
         "duration": 398.6,
         "response": {
@@ -1351,7 +1312,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:18.000Z",
         "url": "https://api.example.com/currency/convert",
-        "delay": null,
         "_headerProcessDuration": 3.7,
         "duration": 867.4,
         "response": {
@@ -1387,7 +1347,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:19.000Z",
         "url": "https://api.example.com/alerts/list?type=security&severity=high",
-        "delay": null,
         "_headerProcessDuration": 5.3,
         "duration": 2234.7,
         "response": {
@@ -1421,7 +1380,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:22.000Z",
         "url": "https://api.example.com/tasks/update",
-        "delay": null,
         "_headerProcessDuration": 4.2,
         "duration": 1345.8,
         "response": {
@@ -1453,7 +1411,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:24.000Z",
         "url": "https://api.example.com/timezone/current",
-        "delay": null,
         "_headerProcessDuration": 0.7,
         "duration": 234.5,
         "response": {
@@ -1487,7 +1444,6 @@
         "resourceType": "xhr",
         "timeStart": "2024-01-15T10:33:25.000Z",
         "url": "https://api.example.com/files/upload",
-        "delay": null,
         "_headerProcessDuration": 12.8,
         "duration": 5234.6,
         "response": {

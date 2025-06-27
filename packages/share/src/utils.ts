@@ -4,6 +4,8 @@ import {
     ResponseCatchType
 } from "cypress-interceptor-server/src/types";
 
+import { getResponseHeaders } from "./selectors";
+
 export enum XMLHttpRequestLoad {
     AddEventListener_Load = "`addEventListener` - load",
     AddEventListener_Readystatechange = "`addEventListener` - readystatechange",
@@ -14,6 +16,19 @@ export enum XMLHttpRequestLoad {
 type XMLHttpRequestTestFunction = (
     onResponse: (request: XMLHttpRequest, resolve: VoidFunction) => void
 ) => void;
+
+export const checkResponseHeaders = (id: string, mockHeaders: { [key: string]: string }) =>
+    getResponseHeaders(id).then((headers: [[string, string]] | undefined) =>
+        cy.wrap(
+            headers &&
+                Object.keys(mockHeaders).every((key) =>
+                    headers.find(
+                        ([headerKey, headerValue]) =>
+                            headerKey === key && headerValue === mockHeaders[key]
+                    )
+                )
+        )
+    );
 
 export const createMatcher =
     (subject: Record<string, string | number>, strictMatch = false) =>

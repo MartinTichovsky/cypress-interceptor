@@ -50,15 +50,7 @@ declare global {
     Cypress.Commands.add("callLineCurrent", () => cy.wrap(callLine.current));
     Cypress.Commands.addQuery("callLineLength", () => () => callLine.length);
     Cypress.Commands.addQuery("callLineNext", () => {
-        let next: unknown;
-
-        return () => {
-            if (next === undefined) {
-                next = callLine.next;
-            }
-
-            return next;
-        };
+        return () => callLine.next;
     });
     Cypress.Commands.add("callLineReset", () => callLine.reset());
 })();

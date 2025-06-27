@@ -48,6 +48,12 @@ export interface CallStack {
     url: URL;
 }
 
+export type CallStackJson = Omit<CallStack, "response" | "timeStart" | "url"> & {
+    response?: Omit<IResponse, "timeEnd"> & { timeEnd: string };
+    timeStart: string;
+    url: string;
+};
+
 export type RequestMethod =
     | "CONNECT"
     | "DELETE"
@@ -246,6 +252,36 @@ export interface IThrottleRequestOptions {
 }
 
 export type OnRequestError = (request: IRequestInit, error: Error) => void;
+
+export type ReproduceNetComOptions = {
+    /**
+     * The host to use for the request.
+     */
+    host?: string;
+    /**
+     * The protocol to use for the request.
+     */
+    protocol?: "http" | "https";
+} & (
+    | {
+          /**
+           * If set to `true`, only `urlMatch` will be used to match the request URL.
+           */
+          onlyUrlMatch?: boolean;
+          /**
+           * A function to check if the request URL matches the reproduced URL.
+           *
+           * @param requestUrl The request URL
+           * @param reproduceEntry The reproduced entry
+           * @returns `true` if matches
+           */
+          urlMatch: (requestUrl: URL, reproduceEntry: CallStack) => boolean;
+      }
+    | {
+          onlyUrlMatch?: never;
+          urlMatch?: never;
+      }
+);
 
 export interface WaitUntilRequestOptions extends IRouteMatcherObject {
     /**

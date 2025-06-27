@@ -2,8 +2,15 @@
  * AI generated tests (manually edited)
  */
 
-import { SERVER_URL } from "cypress-interceptor-server/src/resources/constants";
+import { getFileNameFromCurrentTest } from "cypress-interceptor/src/utils.cypress";
+import {
+    HOST,
+    I_TEST_NAME_HEADER,
+    SERVER_URL
+} from "cypress-interceptor-server/src/resources/constants";
 import { getParamsFromDynamicRequest } from "cypress-interceptor-server/src/resources/dynamic";
+
+import { getCounter, resetCounter } from "../src/counter";
 
 const createTests = (disableInterceptor: boolean) => {
     beforeEach(() => {
@@ -23,6 +30,11 @@ const createTests = (disableInterceptor: boolean) => {
         });
 
         it("should handle GET request with response body and headers", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/users";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const responseBody = { message: "GET request successful", data: [1, 2, 3] };
@@ -35,7 +47,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/users",
+                        path: testPath,
                         responseBody,
                         responseHeaders,
                         status: responseStatus,
@@ -45,6 +57,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
 
                     xhr.onload = () => {
@@ -62,9 +75,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle POST request with request body and custom headers", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/users/create";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { name: "John Doe", email: "john@example.com" };
@@ -79,7 +102,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: "/api/users/create",
+                        path: testPath,
                         responseBody,
                         responseHeaders: undefined,
                         status: responseStatus,
@@ -92,6 +115,7 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.setRequestHeader("Authorization", requestHeaders["Authorization"]);
                     xhr.setRequestHeader("X-API-Key", requestHeaders["X-API-Key"]);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     xhr.send(JSON.stringify(requestBody));
 
@@ -106,9 +130,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle POST request with query parameters (like PUT)", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/users/update";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { status: "active", priority: "high" };
@@ -119,7 +153,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: queryParams,
                         method: "POST",
-                        path: "/api/users/update",
+                        path: testPath,
                         responseBody: undefined,
                         responseHeaders: undefined,
                         status: responseStatus,
@@ -130,6 +164,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
 
                     xhr.onload = () => {
@@ -139,9 +174,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.include(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle POST request for deletion and test readyState changes", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/users/456/delete";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const expectedStatus = 204;
@@ -152,7 +197,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: "/api/users/456/delete",
+                        path: testPath,
                         responseBody: undefined,
                         responseHeaders: undefined,
                         status: expectedStatus,
@@ -173,12 +218,23 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
                 });
+            });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
             });
         });
 
         it("should handle error responses (404 Not Found)", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/nonexistent";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const expectedStatus = 404;
@@ -188,7 +244,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/nonexistent",
+                        path: testPath,
                         responseBody: errorResponseBody,
                         responseHeaders: undefined,
                         status: expectedStatus,
@@ -198,6 +254,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
 
                     xhr.onload = () => {
@@ -211,9 +268,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle server error responses (500 Internal Server Error)", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/error-endpoint";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const expectedStatus = 500;
@@ -226,7 +293,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "POST",
-                        path: "/api/error-endpoint",
+                        path: testPath,
                         responseBody: errorResponseBody,
                         responseHeaders: undefined,
                         status: expectedStatus,
@@ -236,6 +303,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
 
                     xhr.onload = () => {
@@ -249,9 +317,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle POST request with complex response headers (like PATCH)", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/resources/patch";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { field: "updated-value", operation: "patch" };
@@ -266,7 +344,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: "/api/resources/patch",
+                        path: testPath,
                         responseBody: undefined,
                         responseHeaders,
                         status: expectedStatus,
@@ -277,6 +355,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
 
                     xhr.onload = () => {
@@ -296,9 +375,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle request with both query parameters and request body", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/process";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { action: "process", data: { items: [1, 2, 3] } };
@@ -311,7 +400,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: queryParams,
                         method: "POST",
-                        path: "/api/process",
+                        path: testPath,
                         responseBody,
                         responseHeaders,
                         status: responseStatus,
@@ -321,6 +410,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
 
                     xhr.onload = () => {
@@ -337,9 +427,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.include(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle progress events and loading states", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = `/${SERVER_URL.ResponseWithProgress}`;
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { largeData: "x".repeat(1000) };
@@ -351,7 +451,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: SERVER_URL.ResponseWithProgress,
+                        path: testPath,
                         responseBody: undefined,
                         responseHeaders: undefined,
                         type: "xhr"
@@ -384,24 +484,35 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
                 });
+            });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.include(`http://${HOST}${testPath}`);
             });
         });
 
         it("should handle different GET and POST scenarios comprehensively", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPaths = ["/api/get-test", "/api/head-like-test", "/api/options-like-test"];
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 const testCases = [
-                    { method: "GET" as const, path: "/api/get-test", status: 200, body: undefined },
+                    { method: "GET" as const, path: testPaths[0], status: 200, body: undefined },
                     {
                         method: "GET" as const,
-                        path: "/api/head-like-test",
+                        path: testPaths[1],
                         status: 200,
                         body: undefined
                     },
                     {
                         method: "POST" as const,
-                        path: "/api/options-like-test",
+                        path: testPaths[2],
                         status: 200,
                         body: { operation: "options" }
                     }
@@ -422,6 +533,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                         const xhr = new win.XMLHttpRequest();
                         xhr.open(testCase.method, params.url);
+                        xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                         if (testCase.body) {
                             xhr.setRequestHeader("Content-Type", "application/json");
@@ -442,9 +554,21 @@ const createTests = (disableInterceptor: boolean) => {
                     expect(results).to.include.members(["GET", "GET", "POST"]);
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(3);
+                testPaths.forEach((path) => {
+                    expect(res.body).to.include(`http://${HOST}${path}`);
+                });
+            });
         });
 
         it("should handle response with custom status text and multiple headers", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/with-headers";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const multipleHeaders = {
@@ -462,7 +586,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/with-headers",
+                        path: testPath,
                         responseBody: responseBody,
                         responseHeaders: multipleHeaders,
                         status: expectedStatus,
@@ -472,6 +596,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
 
                     xhr.onreadystatechange = () => {
@@ -500,9 +625,19 @@ const createTests = (disableInterceptor: boolean) => {
                     };
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle XMLHttpRequest with different ready states and events", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/ready-state-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { test: "ready-state-testing" };
@@ -514,7 +649,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: "/api/ready-state-test",
+                        path: testPath,
                         responseBody: undefined,
                         responseHeaders: undefined,
                         status: expectedStatus,
@@ -549,20 +684,38 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send(JSON.stringify(requestBody));
                 });
+            });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
             });
         });
 
         it("should handle various status codes and response scenarios", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPaths = [
+                "/api/ok",
+                "/api/created",
+                "/api/accepted",
+                "/api/bad-request",
+                "/api/unauthorized",
+                "/api/forbidden"
+            ];
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 const statusTests = [
-                    { status: 200, path: "/api/ok", method: "GET" as const },
-                    { status: 201, path: "/api/created", method: "POST" as const },
-                    { status: 202, path: "/api/accepted", method: "POST" as const },
-                    { status: 400, path: "/api/bad-request", method: "GET" as const },
-                    { status: 401, path: "/api/unauthorized", method: "GET" as const },
-                    { status: 403, path: "/api/forbidden", method: "GET" as const }
+                    { status: 200, path: testPaths[0], method: "GET" as const },
+                    { status: 201, path: testPaths[1], method: "POST" as const },
+                    { status: 202, path: testPaths[2], method: "POST" as const },
+                    { status: 400, path: testPaths[3], method: "GET" as const },
+                    { status: 401, path: testPaths[4], method: "GET" as const },
+                    { status: 403, path: testPaths[5], method: "GET" as const }
                 ];
 
                 const promises = statusTests.map((test) => {
@@ -582,6 +735,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                         const xhr = new win.XMLHttpRequest();
                         xhr.open(test.method, params.url);
+                        xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                         if (testBody) {
                             xhr.setRequestHeader("Content-Type", "application/json");
@@ -603,9 +757,21 @@ const createTests = (disableInterceptor: boolean) => {
                     expect(results).to.include.members([200, 201, 202, 400, 401, 403]);
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(6);
+                testPaths.forEach((path) => {
+                    expect(res.body).to.include(`http://${HOST}${path}`);
+                });
+            });
         });
 
         it("should handle timeout property correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/timeout-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const xhr = new win.XMLHttpRequest();
@@ -622,7 +788,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/timeout-test",
+                        path: testPath,
                         responseBody: { success: true },
                         responseHeaders: undefined,
                         status: 200,
@@ -630,6 +796,7 @@ const createTests = (disableInterceptor: boolean) => {
                     });
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.timeout = 10000; // 10 seconds timeout
 
                     xhr.onload = () => {
@@ -640,9 +807,19 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle withCredentials property correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/credentials-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const xhr = new win.XMLHttpRequest();
@@ -659,7 +836,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/credentials-test",
+                        path: testPath,
                         responseBody: { authenticated: true },
                         responseHeaders: undefined,
                         status: 200,
@@ -667,6 +844,7 @@ const createTests = (disableInterceptor: boolean) => {
                     });
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.withCredentials = true;
 
                     xhr.onload = () => {
@@ -677,9 +855,19 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle upload property and events correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/upload-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const requestBody = { largeData: "x".repeat(5000) };
@@ -691,7 +879,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: requestBody,
                         query: undefined,
                         method: "POST",
-                        path: "/api/upload-test",
+                        path: testPath,
                         responseBody: { uploaded: true },
                         responseHeaders: undefined,
                         status: 200,
@@ -719,6 +907,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     xhr.open("POST", params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     xhr.onload = () => {
                         // Give some time for upload events to fire
@@ -733,16 +922,26 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send(JSON.stringify(requestBody));
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle responseURL property correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/responseurl-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const params = getParamsFromDynamicRequest({
                         body: undefined,
                         query: { param1: "value1", param2: "value2" },
                         method: "GET",
-                        path: "/api/responseurl-test",
+                        path: testPath,
                         responseBody: { url: "test" },
                         responseHeaders: undefined,
                         status: 200,
@@ -755,6 +954,7 @@ const createTests = (disableInterceptor: boolean) => {
                     expect(xhr.responseURL).to.equal("");
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     xhr.onload = () => {
                         // responseURL should contain the request URL after completion
@@ -767,16 +967,26 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.include(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle overrideMimeType function correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/mimetype-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const params = getParamsFromDynamicRequest({
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/mimetype-test",
+                        path: testPath,
                         responseBody: { xml: "<xml><data>test</data></xml>" },
                         responseHeaders: { "Content-Type": "application/xml" },
                         status: 200,
@@ -786,6 +996,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     // Test overrideMimeType function exists and can be called
                     expect(xhr.overrideMimeType).to.be.a("function");
@@ -802,9 +1013,19 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle responseXML property correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/xml-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const xmlContent = '<?xml version="1.0"?><root><item>test</item></root>';
@@ -813,7 +1034,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/xml-test",
+                        path: testPath,
                         responseString: xmlContent,
                         responseHeaders: { "Content-Type": "application/xml" },
                         status: 200,
@@ -823,6 +1044,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.overrideMimeType("text/xml");
 
                     xhr.onload = () => {
@@ -834,16 +1056,26 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should throw error when accessing responseText with non-text responseType", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/responsetype-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const params = getParamsFromDynamicRequest({
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/responsetype-test",
+                        path: testPath,
                         responseBody: { data: "test" },
                         responseHeaders: undefined,
                         status: 200,
@@ -853,6 +1085,7 @@ const createTests = (disableInterceptor: boolean) => {
                     const xhr = new win.XMLHttpRequest();
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     // Set responseType to json
                     xhr.responseType = "json";
@@ -873,9 +1106,19 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle different event types correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/events-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     const events: string[] = [];
@@ -884,7 +1127,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/events-test",
+                        path: testPath,
                         responseBody: { events: "test" },
                         responseHeaders: undefined,
                         status: 200,
@@ -906,6 +1149,7 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.addEventListener("timeout", () => events.push("timeout"));
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
                     xhr.onload = () => {
                         // Give some time for all events to fire
@@ -921,9 +1165,19 @@ const createTests = (disableInterceptor: boolean) => {
                     xhr.send();
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle abort event correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+            const testPath = "/api/abort-test";
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     let abortCalled = false;
@@ -933,7 +1187,7 @@ const createTests = (disableInterceptor: boolean) => {
                         body: undefined,
                         query: undefined,
                         method: "GET",
-                        path: "/api/abort-test",
+                        path: testPath,
                         responseBody: { test: "abort" },
                         responseHeaders: undefined,
                         status: 200,
@@ -955,6 +1209,7 @@ const createTests = (disableInterceptor: boolean) => {
                     });
 
                     xhr.open(params.method!, params.url);
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
 
                     // Abort the request immediately
@@ -963,9 +1218,18 @@ const createTests = (disableInterceptor: boolean) => {
                     }, 100);
                 });
             });
+
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(1);
+                expect(res.body[0]).to.eq(`http://${HOST}${testPath}`);
+            });
         });
 
         it("should handle error event correctly", () => {
+            const iTestName = getFileNameFromCurrentTest();
+
+            resetCounter(iTestName);
+
             cy.window().then(async (win) => {
                 return new Promise<void>((resolve) => {
                     let errorCalled = false;
@@ -986,8 +1250,15 @@ const createTests = (disableInterceptor: boolean) => {
 
                     // Try to make a request to an invalid URL to trigger error
                     xhr.open("GET", "http://invalid-url-that-should-fail");
+                    xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
                     xhr.send();
                 });
+            });
+
+            // Note: This test uses an invalid URL that would fail,
+            // so we expect the counter to not track it successfully
+            getCounter(iTestName).then((res) => {
+                expect(res.body).to.have.length(0);
             });
         });
     });

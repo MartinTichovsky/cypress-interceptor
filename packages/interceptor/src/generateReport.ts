@@ -1,6 +1,7 @@
-import { CallStack } from "../Interceptor.types";
+import { CallStack, CallStackJson } from "../Interceptor.types";
 import { writeFileSync } from "./envUtils";
 import { getHtmlTemplate } from "./generateReport.template";
+import { convertCallStackJsonToCallStack, validateStats } from "./validator";
 
 type CallStackWithDuration = CallStack & {
     duration: number;
@@ -32,11 +33,11 @@ const formatDateTime = (date: Date): string => {
  * @param outputFileName Path where the HTML file will be created
  * @param options Options
  */
-export async function generateReport(
+export function generateReport(
     statsFilePath: string,
     outputFileName: string,
     options?: GenerateReportOptions
-): Promise<void>;
+): void;
 /**
  * Generates an HTML report with a column chart showing duration over time
  *
@@ -44,16 +45,16 @@ export async function generateReport(
  * @param outputFileName Path where the HTML file will be created
  * @param options Options
  */
-export async function generateReport(
+export function generateReport(
     data: CallStack[],
     filePath: string,
     options?: GenerateReportOptions
-): Promise<void>;
-export async function generateReport(
+): void;
+export function generateReport(
     dataOrFilePath: CallStack[] | string,
     filePath: string,
     options: GenerateReportOptions = {}
-): Promise<void> {
+): void {
     try {
         const { highDuration = 3000, filter } = options;
 
@@ -95,13 +96,13 @@ export async function generateReport(
                     duration: item.duration,
                     time: formatDateTime(item.timeStart),
                     url: item.url,
-                    method: item.request?.method || "GET",
-                    query: item.request?.query || {},
-                    headers: item.request?.headers || {},
-                    body: item.request?.body || "",
-                    responseBody: item.response?.body || "",
-                    responseHeaders: item.response?.headers || {},
-                    statusCode: item.response?.statusCode || 0
+                    method: item.request.method,
+                    query: item.request.query,
+                    headers: item.request.headers,
+                    body: item.request.body,
+                    responseBody: item.response?.body,
+                    responseHeaders: item.response?.headers,
+                    statusCode: item.response?.statusCode
                 }))
             ),
             title: options?.title,
@@ -111,7 +112,7 @@ export async function generateReport(
         // Write the HTML file
         writeFileSync(filePath, html);
 
-        console.log(`✅ Report generated successfully at: ${filePath}`);
+        console.info(`✅ Report generated successfully at: ${filePath}`);
     } catch (error) {
         console.error("❌ Error generating report:", error);
         throw error;
@@ -119,40 +120,13 @@ export async function generateReport(
 }
 
 const loadStats = (filePath: string): CallStack[] => {
-    let data: CallStack[] = [];
+    const requireFn = eval("require");
+    const fs = requireFn("fs");
 
-    try {
-        const requireFn = eval("require");
-        const fs = requireFn("fs");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    const parsedData = JSON.parse(fileContent) as CallStackJson[];
 
-        const fileContent = fs.readFileSync(filePath, "utf8");
-        data = JSON.parse(fileContent);
-    } catch (error) {
-        console.error("❌ Error loading stats:", error);
-        throw error;
-    }
+    validateStats(parsedData);
 
-    if (!Array.isArray(data)) {
-        throw new Error("Invalid stats file format: expected array");
-    }
-
-    if (
-        !data.every(
-            (entry) =>
-                "timeStart" in entry &&
-                "url" in entry &&
-                typeof entry.timeStart === "string" &&
-                !isNaN(Date.parse(entry.timeStart)) &&
-                typeof entry.url === "string"
-        )
-    ) {
-        throw new Error(
-            "Invalid stats file format: expected array of objects with time, duration, and url properties"
-        );
-    }
-
-    return data.map((item) => ({
-        ...item,
-        timeStart: new Date(item.timeStart)
-    }));
+    return convertCallStackJsonToCallStack(parsedData);
 };

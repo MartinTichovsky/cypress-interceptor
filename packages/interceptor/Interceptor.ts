@@ -5,18 +5,21 @@ import { StringMatcher } from "cypress/types/net-stubbing";
 import { convertInputBodyToString } from "./convert/convert";
 import {
     CallStack,
+    CallStackJson,
     IMockResponse,
     IMockResponseOptions,
     InterceptorOptions,
     IRouteMatcher,
     IThrottleRequestOptions,
     OnRequestError,
+    ReproduceNetComOptions,
     WaitUntilRequestOptions,
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./src/RequestProxy";
-import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./src/utils";
+import { deepCopy, removeUndefinedFromObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
+import { convertCallStackJsonToCallStack, validateStats } from "./src/validator";
 import { waitTill } from "./src/wait";
 
 declare global {
@@ -82,6 +85,15 @@ declare global {
              * Recreate the Interceptor instance.
              */
             recreateInterceptor(): Chainable<void>;
+            /**
+             * Reproduce the network communication from the provided stats.
+             *
+             * @param stats The stats to reproduce
+             */
+            reproduceNetCom(
+                stats: CallStackJson[],
+                options?: ReproduceNetComOptions
+            ): Chainable<void>;
             /**
              * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
              * is necessary when you want to wait for certain requests.
@@ -215,6 +227,8 @@ export class Interceptor {
     private _options: Required<InterceptorOptions> = {
         ...defaultOptions
     };
+    private _reproduceOptions: ReproduceNetComOptions = {};
+    private _reproduceStack?: CallStack[];
     private _skip = 0;
     private _throttle: {
         delay: number;
@@ -264,8 +278,18 @@ export class Interceptor {
 
             this._callStack.push(item);
 
-            const throttle = this.getThrottle(item);
-            const mock = this.getMock(item) ?? throttle.mockResponse;
+            /**
+             * when mocking the response, the priority is:
+             * - reproduce
+             * - mock
+             * - throttle
+             */
+
+            const reproduceStack = this.getReproduceStack(item);
+            const throttle = reproduceStack ?? this.getThrottle(item);
+            const mock = reproduceStack
+                ? reproduceStack.mockResponse
+                : (this.getMock(item) ?? throttle.mockResponse);
             const durationStart = performance.now();
 
             item.delay = throttle.delay;
@@ -293,7 +317,9 @@ export class Interceptor {
                     } else if ("responseText" in response) {
                         body =
                             response.responseType === "json"
-                                ? JSON.stringify(response.response)
+                                ? typeof response.response === "object"
+                                    ? JSON.stringify(response.response)
+                                    : response.response
                                 : response.responseText;
                     }
 
@@ -482,6 +508,60 @@ export class Interceptor {
         return items.length ? deepCopy(items[items.length - 1]) : undefined;
     }
 
+    public getReproduceStack(item: CallStack) {
+        if (!this._reproduceStack || this._reproduceStack.length === 0) {
+            return undefined;
+        }
+
+        const url = `${item.url.origin}${item.url.pathname}`;
+
+        const index = this._reproduceStack.findIndex(
+            (entry) =>
+                this._reproduceOptions.urlMatch?.(item.url, deepCopy(entry)) ||
+                (this._reproduceOptions.onlyUrlMatch === true
+                    ? false
+                    : `${this._reproduceOptions.protocol ? `${this._reproduceOptions.protocol}:` : entry.url.protocol}//${this._reproduceOptions.host ?? entry.url.host}${entry.url.pathname}` ===
+                          url &&
+                      entry.request.method === item.request.method &&
+                      entry.resourceType === item.resourceType)
+        );
+
+        if (index === -1) {
+            return undefined;
+        }
+
+        const entry = this._reproduceStack[index];
+
+        let body = entry.response?.body;
+
+        // we expect the body will be a stingified JSON object
+        if (body && typeof body === "string") {
+            try {
+                body = JSON.parse(body);
+            } catch {
+                //
+            }
+        }
+
+        const delay = (entry.duration ?? 0) + (entry.delay ?? 0);
+
+        const mockResponse = {
+            body,
+            headers: Object.fromEntries(
+                Object.entries(entry.response?.headers ?? {}).map(([key, value]) => [
+                    key,
+                    Array.isArray(value) ? value[0] : value
+                ])
+            ),
+            statusCode: entry.response?.statusCode,
+            statusText: entry.response?.statusText
+        };
+
+        this._reproduceStack.splice(index, 1);
+
+        return { delay, mockResponse };
+    }
+
     /**
      * Get statistics for all requests matching the provided route matcher since the beginning of the current test.
      *
@@ -596,6 +676,13 @@ export class Interceptor {
         }
 
         return false;
+    }
+
+    public reproduceNetCom(stats: CallStackJson[], options?: ReproduceNetComOptions) {
+        validateStats(stats);
+
+        this._reproduceOptions = options ?? {};
+        this._reproduceStack = convertCallStackJsonToCallStack(stats);
     }
 
     /**
@@ -821,7 +908,7 @@ export class Interceptor {
             getFilePath(options?.fileName, outputDir, "stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
-                replacer,
+                undefined,
                 options?.prettyOutput ? 4 : undefined
             ),
             options

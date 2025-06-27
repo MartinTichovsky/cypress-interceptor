@@ -6,8 +6,8 @@ describe("Report Template", () => {
     });
 
     it("Should render single report template", () => {
-        cy.task<string>("createReportFromFile").then((htmlName) => {
-            cy.visit(`/fixtures/${htmlName}`);
+        cy.task<string>("createReportFromFile").then((outputFilePath) => {
+            cy.visit(`/fixtures/${outputFilePath.replaceAll("\\", "/").split("/").pop()}`);
 
             validateReportTemplate();
         });

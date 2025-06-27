@@ -64,6 +64,9 @@ import { RequestProxy } from "./src/RequestProxy";
         interceptor = new Interceptor(requestProxy);
         cy.window().then((win) => createRequestProxy(requestProxy)(win));
     });
+    Cypress.Commands.add("reproduceNetCom", (stats, options) => {
+        interceptor.reproduceNetCom(stats, options);
+    });
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
         timeStart = performance.now();

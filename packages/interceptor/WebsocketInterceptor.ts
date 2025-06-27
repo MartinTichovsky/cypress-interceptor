@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { deepCopy, isNonNullableObject, replacer, testUrlMatch } from "./src/utils";
+import { deepCopy, isNonNullableObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
 import { waitTill } from "./src/wait";
 import { WebsocketListener } from "./src/websocketListener";
@@ -390,7 +390,7 @@ export class WebsocketInterceptor {
             getFilePath(options?.fileName, outputDir, "ws.stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
-                replacer,
+                undefined,
                 options?.prettyOutput ? 4 : undefined
             ),
             options

@@ -1,22 +1,7 @@
-const isNodeEnvironment = (): boolean => {
-    try {
-        return (
-            typeof process !== "undefined" &&
-            process.versions != null &&
-            process.versions.node != null
-        );
-    } catch {
-        return false;
-    }
-};
+const isNodeEnvironment = () =>
+    typeof process !== "undefined" && process.versions != null && process.versions.node != null;
 
-const isCypressEnvironment = (): boolean => {
-    try {
-        return typeof cy !== "undefined" && typeof Cypress !== "undefined";
-    } catch {
-        return false;
-    }
-};
+const isCypressEnvironment = () => typeof cy !== "undefined" && typeof Cypress !== "undefined";
 
 export const getFs = () => {
     const requireFn = eval("require");

@@ -15,6 +15,15 @@
 
         <img src="/image.png" />
 
+        <script type="importmap">
+            {
+                "imports": {
+                    "cypress-interceptor/test.unit": "/public/resources/cypress-interceptor/test.unit.js"
+                }
+            }
+        </script>
+        <script src="./resources/callLine.js" type="module"></script>
+
         <script>
             fetch("/fetch", {
                 body: undefined,

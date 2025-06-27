@@ -1,8 +1,8 @@
 /// <reference types="cypress" preserve="true" />
 
-import { ConsoleProxy } from "./ConsoleProxy";
-import { deepCopy, removeUndefinedFromObject } from "./utils";
-import { getFilePath } from "./utils.cypress";
+import { ConsoleProxy } from "./src/ConsoleProxy";
+import { deepCopy, removeUndefinedFromObject } from "./src/utils";
+import { getFilePath } from "./src/utils.cypress";
 import {
     ConsoleLog,
     ConsoleLogType,

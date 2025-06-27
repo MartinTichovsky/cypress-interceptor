@@ -2,7 +2,7 @@ import { getFs, getPath } from "./src/envUtils";
 import { generateReport } from "./src/generateReport";
 import { getFileNameFromCurrentTest, getFilePath } from "./src/utils.cypress";
 
-interface ReportHtmlOptions {
+export interface ReportHtmlOptions {
     fileName?: string;
     highDuration?: number;
     outputDir: string;
@@ -26,17 +26,14 @@ export const createNetworkReportFromFile = (filePath: string, options: ReportHtm
     const path = getPath();
 
     const { fileName, outputDir, highDuration } = options;
+    const outputFileName = `${fileName || path.basename(filePath).replace(".stats.json", "")}.html`;
+    const outputFilePath = path.join(outputDir, outputFileName);
 
-    generateReport(
-        filePath,
-        path.join(
-            outputDir,
-            `${fileName || path.basename(filePath).replace(".stats.json", "")}.html`
-        ),
-        {
-            highDuration
-        }
-    );
+    generateReport(filePath, outputFilePath, {
+        highDuration
+    });
+
+    return outputFilePath;
 };
 
 export const createNetworkReportFromFolder = (

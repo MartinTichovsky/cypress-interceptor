@@ -42,9 +42,6 @@ export const removeUndefinedFromObject = <T, K extends keyof T>(object: CommonOb
     return result;
 };
 
-export const replacer = (_key: string, value: unknown) =>
-    typeof value === "undefined" ? null : value;
-
 export const testUrlMatch = (urlMatcher: string | RegExp, url: string) => {
     if (typeof urlMatcher === "string") {
         urlMatcher = new RegExp(`^${urlMatcher.replace(/(\*)+/gi, "(.*)")}$`);

@@ -4,6 +4,54 @@
  * @author AI
  */
 
+export enum ReportTestId {
+    AVG_DURATION_CARD = "avg-duration-card",
+    CHART_CONTAINER = "chart-container",
+    CHART_CONTENT = "chart-content",
+    CHART_SCROLL_AREA = "chart-scroll-area",
+    CHART_WRAPPER = "chart-wrapper",
+    CHART_Y_AXIS = "chart-y-axis",
+    DATA_TABLE = "data-table",
+    DURATION_CHART_CANVAS = "duration-chart-canvas",
+    DURATION_COLUMN = "duration-column",
+    EXPAND_COLUMN = "expand-column",
+    LEGEND_FAST = "legend-fast",
+    LEGEND_SLOW = "legend-slow",
+    MAX_DURATION_CARD = "max-duration-card",
+    METHOD_COLUMN = "method-column",
+    MIN_DURATION_CARD = "min-duration-card",
+    PERFORMANCE_LEGEND = "performance-legend",
+    SCROLL_INDICATOR = "scroll-indicator",
+    STATS_CONTAINER = "stats-container",
+    TABLE_BODY = "table-body",
+    TABLE_CONTAINER = "table-container",
+    TABLE_HEADER = "table-header",
+    TABLE_HEAD = "table-head",
+    TIME_COLUMN = "time-column",
+    TOTAL_REQUESTS_CARD = "total-requests-card",
+    URL_COLUMN = "url-column",
+    Y_AXIS_CANVAS = "y-axis-canvas"
+}
+
+export enum ReportTestIdPrefix {
+    TABLE_ROW = "table-row",
+    EXPAND_BTN = "expand-btn",
+    DURATION_CELL = "duration-cell",
+    EXPANDABLE_ROW = "expandable-row",
+    FULL_URL_SECTION = "full-url-section",
+    FULL_URL_CONTENT = "full-url-content",
+    PARAMS_SECTION = "params-section",
+    PARAMS_CONTENT = "params-content",
+    HEADERS_SECTION = "headers-section",
+    HEADERS_CONTENT = "headers-content",
+    REQUEST_BODY_SECTION = "request-body-section",
+    REQUEST_BODY_CONTENT = "request-body-content",
+    RESPONSE_HEADERS_SECTION = "response-headers-section",
+    RESPONSE_HEADERS_CONTENT = "response-headers-content",
+    RESPONSE_BODY_SECTION = "response-body-section",
+    RESPONSE_BODY_CONTENT = "response-body-content"
+}
+
 interface GetHtmlTemplateProps {
     avgDuration: string;
     dataCount: number;
@@ -752,67 +800,67 @@ export const getHtmlTemplate = ({
             <p>Performance metrics over time - ${dataCount} data points</p>
         </div>
 
-        <div class="stats" data-testid="stats-container">
-            <div class="stat-card" data-testid="max-duration-card">
+        <div class="stats" data-testid="${ReportTestId.STATS_CONTAINER}">
+            <div class="stat-card" data-testid="${ReportTestId.MAX_DURATION_CARD}">
                 <div class="stat-value">${maxDuration}ms</div>
                 <div class="stat-label">Max Duration</div>
             </div>
-            <div class="stat-card" data-testid="min-duration-card">
+            <div class="stat-card" data-testid="${ReportTestId.MIN_DURATION_CARD}">
                 <div class="stat-value">${minDuration}ms</div>
                 <div class="stat-label">Min Duration</div>
             </div>
-            <div class="stat-card" data-testid="avg-duration-card">
+            <div class="stat-card" data-testid="${ReportTestId.AVG_DURATION_CARD}">
                 <div class="stat-value">${avgDuration}ms</div>
                 <div class="stat-label">Average Duration</div>
             </div>
-            <div class="stat-card" data-testid="total-requests-card">
+            <div class="stat-card" data-testid="${ReportTestId.TOTAL_REQUESTS_CARD}">
                 <div class="stat-value">${totalRequests}</div>
                 <div class="stat-label">Total Requests</div>
             </div>
         </div>
 
-        <div class="chart-container" data-testid="chart-container">
-            <div class="chart-wrapper" data-testid="chart-wrapper">
-                <div class="performance-legend" data-testid="performance-legend">
-                    <div class="legend-item" data-testid="legend-fast">
+        <div class="chart-container" data-testid="${ReportTestId.CHART_CONTAINER}">
+            <div class="chart-wrapper" data-testid="${ReportTestId.CHART_WRAPPER}">
+                <div class="performance-legend" data-testid="${ReportTestId.PERFORMANCE_LEGEND}">
+                    <div class="legend-item" data-testid="${ReportTestId.LEGEND_FAST}">
                         <div class="legend-dot fast"></div>
                         <span class="legend-fast">Fast (&lt; ${highDuration}ms)</span>
                     </div>
-                    <div class="legend-item" data-testid="legend-slow">
+                    <div class="legend-item" data-testid="${ReportTestId.LEGEND_SLOW}">
                         <div class="legend-dot slow"></div>
                         <span class="legend-slow">Slow (≥ ${highDuration}ms)</span>
                     </div>
                 </div>
-                <div class="chart-y-axis" data-testid="chart-y-axis">
-                    <canvas id="yAxisChart" data-testid="y-axis-canvas"></canvas>
+                <div class="chart-y-axis" data-testid="${ReportTestId.CHART_Y_AXIS}">
+                    <canvas id="yAxisChart" data-testid="${ReportTestId.Y_AXIS_CANVAS}"></canvas>
                 </div>
-                <div class="chart-scroll-area" data-testid="chart-scroll-area">
-                    <div class="chart-content" data-testid="chart-content">
-                        <canvas id="durationChart" data-testid="duration-chart-canvas"></canvas>
+                <div class="chart-scroll-area" data-testid="${ReportTestId.CHART_SCROLL_AREA}">
+                    <div class="chart-content" data-testid="${ReportTestId.CHART_CONTENT}">
+                        <canvas id="durationChart" data-testid="${ReportTestId.DURATION_CHART_CANVAS}"></canvas>
                     </div>
-                    <div class="scroll-indicator" id="scrollIndicator" data-testid="scroll-indicator" style="display: none;">
+                    <div class="scroll-indicator" id="scrollIndicator" data-testid="${ReportTestId.SCROLL_INDICATOR}" style="display: none;">
                         ← Scroll to see more requests →
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="table-container" data-testid="table-container">
-            <div class="table-header" data-testid="table-header">
-                <h2>📋 Request Details</h2>
+        <div class="table-container" data-testid="${ReportTestId.TABLE_CONTAINER}">
+            <div class="table-header" data-testid="${ReportTestId.TABLE_HEADER}">
+                <h2>Request Details</h2>
                 <p>Detailed breakdown of all requests sorted by time</p>
             </div>
-            <table class="data-table" id="requestTable" data-testid="data-table">
-                <thead data-testid="table-head">
+            <table class="data-table" id="requestTable" data-testid="${ReportTestId.DATA_TABLE}">
+                <thead data-testid="${ReportTestId.TABLE_HEAD}">
                     <tr>
-                        <th style="width: 40px;" data-testid="expand-column">📋</th>
-                        <th class="sortable" data-sort="url" data-testid="url-column">🌐 URL</th>
-                        <th class="sortable" data-sort="method" data-testid="method-column">📝 Method</th>
-                        <th class="sortable" data-sort="time" data-testid="time-column">⏰ Time</th>
-                        <th class="sortable" data-sort="duration" data-testid="duration-column">⚡ Duration</th>
+                        <th style="width: 40px;" data-testid="${ReportTestId.EXPAND_COLUMN}">📋</th>
+                        <th class="sortable" data-sort="url" data-testid="${ReportTestId.URL_COLUMN}">🌐 URL</th>
+                        <th class="sortable" data-sort="method" data-testid="${ReportTestId.METHOD_COLUMN}">📝 Method</th>
+                        <th class="sortable" data-sort="time" data-testid="${ReportTestId.TIME_COLUMN}">⏰ Time</th>
+                        <th class="sortable" data-sort="duration" data-testid="${ReportTestId.DURATION_COLUMN}">⚡ Duration</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody" data-testid="table-body">
+                <tbody id="tableBody" data-testid="${ReportTestId.TABLE_BODY}">
                     <!-- Table rows will be populated by JavaScript -->
                 </tbody>
             </table>
@@ -1254,13 +1302,13 @@ export const getHtmlTemplate = ({
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
                 tr.setAttribute('data-original-index', originalIndex);
-                tr.setAttribute('data-testid', \`table-row-\${originalIndex}\`);
+                tr.setAttribute('data-testid', \`${ReportTestIdPrefix.TABLE_ROW}-\${originalIndex}\`);
                 
                 // Expand button cell
                 const expandCell = document.createElement('td');
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-btn';
-                expandBtn.setAttribute('data-testid', \`expand-btn-\${originalIndex}\`);
+                expandBtn.setAttribute('data-testid', \`${ReportTestIdPrefix.EXPAND_BTN}-\${originalIndex}\`);
                 expandBtn.innerHTML = '▶';
                 expandBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -1301,8 +1349,8 @@ export const getHtmlTemplate = ({
                 // Duration cell
                 const durationCell = document.createElement('td');
                 const isFast = row.duration < highDuration;
-                durationCell.className = \`duration-cell \${isFast ? "duration-fast" : "duration-slow"}\`;
-                durationCell.setAttribute('data-testid', \`duration-cell-\${originalIndex}\`);
+                durationCell.className = \`${ReportTestIdPrefix.DURATION_CELL} \${isFast ? "duration-fast" : "duration-slow"}\`;
+                durationCell.setAttribute('data-testid', \`${ReportTestIdPrefix.DURATION_CELL}-\${originalIndex}\`);
                 durationCell.setAttribute('data-duration-type', isFast ? 'fast' : 'slow');
                 durationCell.textContent = \`\${row.duration.toFixed(0)}ms\`;
                 tr.appendChild(durationCell);
@@ -1316,7 +1364,7 @@ export const getHtmlTemplate = ({
                 const expandRow = document.createElement('tr');
                 expandRow.className = 'expandable-content';
                 expandRow.id = \`expand-\${originalIndex}\`;
-                expandRow.setAttribute('data-testid', \`expandable-row-\${originalIndex}\`);
+                expandRow.setAttribute('data-testid', \`${ReportTestIdPrefix.EXPANDABLE_ROW}-\${originalIndex}\`);
                 
                 const expandTd = document.createElement('td');
                 expandTd.colSpan = 5;
@@ -1328,12 +1376,12 @@ export const getHtmlTemplate = ({
                 if (displayUrl !== String(row.url)) {
                     const fullUrlSection = document.createElement('div');
                     fullUrlSection.className = 'details-section';
-                    fullUrlSection.setAttribute('data-testid', \`full-url-section-\${originalIndex}\`);
+                    fullUrlSection.setAttribute('data-testid', \`${ReportTestIdPrefix.FULL_URL_SECTION}-\${originalIndex}\`);
                     fullUrlSection.innerHTML = \`
                         <div class="details-title">
                             🔗 Full URL
                         </div>
-                        <div class="details-content" style="word-break: break-all; font-family: monospace;" data-testid="full-url-content-\${originalIndex}">
+                        <div class="details-content" style="word-break: break-all; font-family: monospace;" data-testid="${ReportTestIdPrefix.FULL_URL_CONTENT}-\${originalIndex}">
                             \${String(row.url)}
                         </div>
                     \`;
@@ -1343,12 +1391,12 @@ export const getHtmlTemplate = ({
                 // Parameters section
                 const paramsSection = document.createElement('div');
                 paramsSection.className = 'details-section';
-                paramsSection.setAttribute('data-testid', \`params-section-\${originalIndex}\`);
+                paramsSection.setAttribute('data-testid', \`${ReportTestIdPrefix.PARAMS_SECTION}-\${originalIndex}\`);
                 paramsSection.innerHTML = \`
                     <div class="details-title">
                         🔍 URL Parameters
                     </div>
-                    <div class="details-content params" id="params-\${originalIndex}" data-testid="params-content-\${originalIndex}">
+                    <div class="details-content params" id="params-\${originalIndex}" data-testid="${ReportTestIdPrefix.PARAMS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.query || {})}
                     </div>
                 \`;
@@ -1357,12 +1405,12 @@ export const getHtmlTemplate = ({
                 // Headers section
                 const headersSection = document.createElement('div');
                 headersSection.className = 'details-section';
-                headersSection.setAttribute('data-testid', \`headers-section-\${originalIndex}\`);
+                headersSection.setAttribute('data-testid', \`${ReportTestIdPrefix.HEADERS_SECTION}-\${originalIndex}\`);
                 headersSection.innerHTML = \`
                     <div class="details-title">
                         📋 Request Headers
                     </div>
-                    <div class="details-content params" id="headers-\${originalIndex}" data-testid="headers-content-\${originalIndex}">
+                    <div class="details-content params" id="headers-\${originalIndex}" data-testid="${ReportTestIdPrefix.HEADERS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.headers || {})}
                     </div>
                 \`;
@@ -1371,23 +1419,23 @@ export const getHtmlTemplate = ({
                 // Request body section
                 const bodySection = document.createElement('div');
                 bodySection.className = 'details-section';
-                bodySection.setAttribute('data-testid', \`request-body-section-\${originalIndex}\`);
+                bodySection.setAttribute('data-testid', \`${ReportTestIdPrefix.REQUEST_BODY_SECTION}-\${originalIndex}\`);
                 // No extra space for the request body to be well formatted
                 bodySection.innerHTML = \`
                     <div class="details-title">📄 Request Body</div>
-                    <div class="details-content json" id="body-\${originalIndex}" data-testid="request-body-content-\${originalIndex}">\${formatRequestBody(row.body || '')}</div>
+                    <div class="details-content json" id="body-\${originalIndex}" data-testid="${ReportTestIdPrefix.REQUEST_BODY_CONTENT}-\${originalIndex}">\${formatRequestBody(row.body || '')}</div>
                 \`;
                 detailsDiv.appendChild(bodySection);
                 
                 // Response headers section
                 const responseHeadersSection = document.createElement('div');
                 responseHeadersSection.className = 'details-section';
-                responseHeadersSection.setAttribute('data-testid', \`response-headers-section-\${originalIndex}\`);
+                responseHeadersSection.setAttribute('data-testid', \`${ReportTestIdPrefix.RESPONSE_HEADERS_SECTION}-\${originalIndex}\`);
                 responseHeadersSection.innerHTML = \`
                     <div class="details-title">
                         📨 Response Headers \${row.statusCode ? \`(Status: \${row.statusCode})\` : ''}
                     </div>
-                    <div class="details-content params" id="response-headers-\${originalIndex}" data-testid="response-headers-content-\${originalIndex}">
+                    <div class="details-content params" id="response-headers-\${originalIndex}" data-testid="${ReportTestIdPrefix.RESPONSE_HEADERS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.responseHeaders || {})}
                     </div>
                 \`;
@@ -1396,10 +1444,10 @@ export const getHtmlTemplate = ({
                 // Response body section
                 const responseBodySection = document.createElement('div');
                 responseBodySection.className = 'details-section';
-                responseBodySection.setAttribute('data-testid', \`response-body-section-\${originalIndex}\`);
+                responseBodySection.setAttribute('data-testid', \`${ReportTestIdPrefix.RESPONSE_BODY_SECTION}-\${originalIndex}\`);
                 responseBodySection.innerHTML = \`
                     <div class="details-title">📥 Response Body</div>
-                    <div class="details-content json" id="response-body-\${originalIndex}" data-testid="response-body-content-\${originalIndex}">\${formatRequestBody(row.responseBody || '')}</div>
+                    <div class="details-content json" id="response-body-\${originalIndex}" data-testid="${ReportTestIdPrefix.RESPONSE_BODY_CONTENT}-\${originalIndex}">\${formatRequestBody(row.responseBody || '')}</div>
                 \`;
                 detailsDiv.appendChild(responseBodySection);
                 

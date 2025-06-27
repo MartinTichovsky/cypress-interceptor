@@ -2,31 +2,19 @@ import { crossDomainFetch } from "cypress-interceptor-server/src/resources/const
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { getResponseBody, getResponseDuration, getResponseStatus } from "../src/selectors";
 import {
-    getResponseBody,
-    getResponseDuration,
-    getResponseHeaders,
-    getResponseStatus
-} from "../src/selectors";
-import { createMatcher, isObject, objectIncludes, testCaseDescribe } from "../src/utils";
+    checkResponseHeaders,
+    createMatcher,
+    isObject,
+    objectIncludes,
+    testCaseDescribe
+} from "../src/utils";
 
 describe("Mock Respose", () => {
     const testPath_api_1 = "test/api-1";
     const testPath_api_2 = "api/api-2";
     const testPath_api_3 = "test/api-3";
-
-    const checkResponseHeaders = (id: string, mockHeaders: { [key: string]: string }) =>
-        getResponseHeaders(id).then((headers: [[string, string]] | undefined) =>
-            cy.wrap(
-                headers &&
-                    Object.keys(mockHeaders).every((key) =>
-                        headers.find(
-                            ([headerKey, headerValue]) =>
-                                headerKey === key && headerValue === mockHeaders[key]
-                        )
-                    )
-            )
-        );
 
     const mockResponseBody = {
         response: {

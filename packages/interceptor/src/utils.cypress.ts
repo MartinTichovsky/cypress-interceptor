@@ -1,10 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-export const getFileNameFromCurrentTest = () => {
-    const currentTest = Cypress.currentTest;
-
-    return currentTest.titlePath.length ? currentTest.titlePath.join(" - ") : currentTest.title;
-};
+export const getFileNameFromCurrentTest = () => Cypress.currentTest.titlePath.join(" - ");
 
 export const getFilePath = (
     fileName: string | undefined,

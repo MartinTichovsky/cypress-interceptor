@@ -25,13 +25,20 @@ export const createWebpackConfig = (codeCoverage = false): Configuration => ({
                       {
                           test: /\.ts/,
                           enforce: "post",
-                          exclude: [
-                              /node_modules/,
-                              /\.cy\.[tj]sx?$/,
-                              /\.spec\.[tj]sx?$/,
-                              /server(\\|\/)/,
-                              /share(\\|\/)/
-                          ],
+                          exclude: (filepath: string) => {
+                              filepath = filepath.replace(/\\/g, "/");
+
+                              if (
+                                  filepath.includes("node_modules") ||
+                                  /\.cy\.[tj]sx?$/.test(filepath) ||
+                                  /\.spec\.[tj]sx?$/.test(filepath)
+                              ) {
+                                  return true;
+                              }
+
+                              // only include cypress-interceptor source code
+                              return !filepath.includes("/packages/interceptor/");
+                          },
                           use: {
                               loader: "@jsdevtools/coverage-istanbul-loader"
                           }

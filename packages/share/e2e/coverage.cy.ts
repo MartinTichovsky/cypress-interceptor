@@ -1,15 +1,21 @@
 import "cypress-interceptor/test.unit.commands";
 
+import { xmlDocumentToObject } from "cypress-interceptor/convert/xmlDocument";
 import {
     IMockResponse,
     IRequestInit,
     IResourceType,
     WindowTypeOfRequestProxy
 } from "cypress-interceptor/Interceptor.types";
+import {
+    createNetworkReportFromFile,
+    createNetworkReportFromFolder
+} from "cypress-interceptor/report";
 import { ConsoleProxy } from "cypress-interceptor/src/ConsoleProxy";
 import { createConsoleProxy } from "cypress-interceptor/src/createConsoleProxy";
 import { createRequestProxy } from "cypress-interceptor/src/createRequestProxy";
 import { createWebsocketProxy } from "cypress-interceptor/src/createWebsocketProxy";
+import { writeFileSync } from "cypress-interceptor/src/envUtils";
 import {
     RequestProxy,
     RequestProxyFunction,
@@ -22,11 +28,6 @@ import {
     getNormalizedFileNameFromCurrentTest,
     normalizeFileName
 } from "cypress-interceptor/src/utils.cypress";
-import { WatchTheConsole } from "cypress-interceptor/src/WatchTheConsole";
-import {
-    ConsoleLogType,
-    WindowTypeOfConsoleProxy
-} from "cypress-interceptor/src/WatchTheConsole.types";
 import { WebSocketAction, WebsocketListener } from "cypress-interceptor/src/websocketListener";
 import {
     __CALL_LINE__,
@@ -37,9 +38,16 @@ import {
     lineCalled,
     lineCalledWithClone
 } from "cypress-interceptor/test.unit";
+import { WatchTheConsole } from "cypress-interceptor/WatchTheConsole";
+import {
+    ConsoleLogType,
+    WindowTypeOfConsoleProxy
+} from "cypress-interceptor/WatchTheConsole.types";
 import { WindowTypeOfWebsocketProxy } from "cypress-interceptor/WebsocketInterceptor.types";
 import { HOST, SERVER_URL, WS_HOST } from "cypress-interceptor-server/src/resources/constants";
+import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { mockNodeEnvironment, mockRequire } from "../src/mock";
 import { createXMLHttpRequestTest, XMLHttpRequestLoad } from "../src/utils";
 
 const circularObj: Record<string, unknown> = {};
@@ -59,6 +67,7 @@ const createDeeplyNestedObject = (depth: number) => {
 };
 
 const wait = async (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout));
+const wrap = (fnc: VoidFunction) => cy.wrap(null).then(fnc);
 
 const url = `http://${HOST}/test`;
 const urlBrokenStream = `http://${HOST}/${SERVER_URL.BrokenStream}`;
@@ -66,14 +75,12 @@ const urlBrokenStream = `http://${HOST}/${SERVER_URL.BrokenStream}`;
 let callLine: CallLine;
 
 beforeEach(() => {
-    cy.window().then((win) => {
-        enableCallLine(win);
+    enableCallLine();
 
-        callLine = getCallLine();
-        callLine.clean();
+    callLine = getCallLine();
+    callLine.clean();
 
-        cy.callLineClean();
-    });
+    cy.callLineClean();
 });
 
 it("ConsoleProxy", () => {
@@ -2027,7 +2034,7 @@ it("test.unit", () => {
 
     // enabled
 
-    enableCallLine(win);
+    enableCallLine();
 
     const callLine1 = "this line has been called";
 
@@ -2140,9 +2147,7 @@ it("test.unit", () => {
     expect(callLine.next).to.eq(callLine6);
 });
 
-it("cy.callLine", () => {
-    const wrap = (fnc: VoidFunction) => cy.wrap(null).then(fnc);
-
+it("cy.callLine in the context of the global window", () => {
     const win: CallLineWindowType = window;
 
     // disable call line
@@ -2343,6 +2348,68 @@ it("cy.callLine", () => {
     wrap(() => lineCalledWithClone(callLine6));
 
     cy.callLineNext().should("eq", callLine6);
+
+    cy.callLineClean();
+
+    const callLine7 = "111";
+
+    cy.wrap(null).then(() => {
+        setTimeout(() => {
+            lineCalled(callLine7);
+        }, 2000);
+    });
+
+    // now it should wait for the next call
+    cy.callLineNext().should("eq", callLine7);
+});
+
+it("cy.callLine in the context of Cypress window", () => {
+    cy.on("uncaught:exception", () => {
+        return false;
+    });
+
+    cy.visit("/public/index.html");
+
+    cy.window().then((_win) => {
+        const win = _win as unknown as Window & {
+            testUnit: { lineCalled: (...args: unknown[]) => void };
+        };
+
+        context("With disabled call line", () => {
+            const callLine = "call-line";
+
+            wrap(() => win.testUnit.lineCalled(callLine));
+
+            cy.callLineNext().should("be.undefined");
+        });
+
+        wrap(() => enableCallLine(win));
+
+        context("With enabled call line", () => {
+            const callLine1 = "call-line-1";
+            const callLine2 = "call-line-2";
+
+            wrap(() => win.testUnit.lineCalled(callLine1));
+
+            cy.callLineNext().should("eq", callLine1);
+            cy.callLineNext().should("be.undefined");
+
+            wrap(() => lineCalled(callLine2));
+
+            cy.callLineNext().should("eq", callLine2);
+            cy.callLineNext().should("be.undefined");
+
+            cy.callLineReset();
+
+            cy.callLineNext().should("eq", callLine1);
+            cy.callLineNext().should("eq", callLine2);
+            cy.callLineNext().should("be.undefined");
+
+            cy.callLineClean();
+
+            cy.callLineNext().should("be.undefined");
+        });
+    });
 });
 
 it("Should wait for the results", () => {
@@ -2387,4 +2454,178 @@ it("Should wait for the results", () => {
 
     cy.callLineNext().should("not.be.undefined");
     cy.callLineCurrent().should("eq", "555");
+});
+
+describe("Generate report", () => {
+    beforeEach(() => {
+        // mock node environment
+        mockNodeEnvironment();
+    });
+
+    it("createNetworkReportFromFile - without fileName", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const { mockFs } = mockRequire({
+                readFileSync: JSON.stringify(stats)
+            });
+
+            createNetworkReportFromFile("_network_report/stats.json", {
+                outputDir: "_output"
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.called;
+                expect(mockFs.writeFileSync.lastCall.args[0].includes(".html")).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("createNetworkReportFromFile - with fileName", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const { mockFs } = mockRequire({
+                readFileSync: JSON.stringify(stats)
+            });
+            const fileName = "test-report";
+
+            createNetworkReportFromFile("_network_report/stats.json", {
+                outputDir: "_output",
+                fileName
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.called;
+                expect(
+                    mockFs.writeFileSync.lastCall.args[0].includes(fileName) &&
+                        mockFs.writeFileSync.lastCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("createNetworkReportFromFolder", () => {
+        cy.visit(
+            getDynamicUrl([
+                {
+                    delay: 100,
+                    method: "POST",
+                    path: "/test/api-test-1",
+                    type: "fetch"
+                }
+            ])
+        );
+
+        cy.waitUntilRequestIsDone();
+
+        cy.interceptorStats().then((stats) => {
+            const fileName1 = "stats-1";
+            const fileName2 = "stats-2";
+
+            const { mockFs } = mockRequire({
+                readdirSync: [`${fileName1}.json`, `${fileName2}.json`],
+                readFileSync: JSON.stringify(stats)
+            });
+
+            createNetworkReportFromFolder("_network_report", {
+                outputDir: "_output"
+            });
+
+            cy.wrap(null).then(() => {
+                expect(mockFs.writeFileSync).to.be.calledTwice;
+                expect(
+                    mockFs.writeFileSync.firstCall.args[0].includes(fileName1) &&
+                        mockFs.writeFileSync.firstCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(
+                    mockFs.writeFileSync.secondCall.args[0].includes(fileName2) &&
+                        mockFs.writeFileSync.secondCall.args[0].includes(".html")
+                ).to.be.true;
+                expect(mockFs.existsSync).to.be.called;
+            });
+        });
+    });
+
+    it("writeFileSync", () => {
+        const win = window as Window & {
+            cy?: Cypress.cy;
+            Cypress?: Cypress.Cypress;
+            process?: unknown;
+        };
+
+        const cy = win.cy;
+        const Cypress = win.Cypress;
+        const process = win.process;
+
+        win.cy = undefined;
+        win.Cypress = undefined;
+        win.process = undefined;
+
+        expect(() => writeFileSync("test.txt", "test")).to.throw(
+            "File system operations not available"
+        );
+
+        win.cy = cy;
+        win.Cypress = Cypress;
+        win.process = process;
+    });
+});
+
+it("Code branches", () => {
+    // Test castValueFromElement when textContent is undefined or null
+    const doc1 = document.implementation.createDocument("", "root", null);
+
+    // Element with textContent = undefined
+    const el1 = document.createElement("test1");
+    Object.defineProperty(el1, "textContent", { value: undefined });
+    doc1.documentElement.appendChild(el1);
+
+    // Element with textContent = null
+    const el2 = document.createElement("test2");
+    Object.defineProperty(el2, "textContent", { value: null });
+    doc1.documentElement.appendChild(el2);
+
+    const result = xmlDocumentToObject(doc1, window);
+
+    expect(result.test1).to.eq("");
+    expect(result.test2).to.eq("");
+
+    const doc2 = document.implementation.createDocument("", "root", null);
+
+    const el3 = document.createElement("test3");
+    el3.setAttribute("type", "array");
+    doc2.documentElement.appendChild(el3);
+
+    const el4 = document.createElement("test4");
+    el4.setAttribute("type", "array");
+    el3.appendChild(el4);
+
+    const result2 = xmlDocumentToObject(doc2, window);
+
+    expect(result2.test3).to.deep.eq([[]]);
 });

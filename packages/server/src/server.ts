@@ -5,11 +5,19 @@ import * as fs from "fs";
 import multer from "multer";
 import * as path from "path";
 import * as ts from "typescript";
-import { WebSocket } from "ws";
 
 import { bigDataGenerator } from "./bigDataGenerator";
 import { getExampleResponse } from "./exampleResponse";
-import { SERVER_URL } from "./resources/constants";
+import { COUNTER_SERVER_URL, I_TEST_NAME_HEADER, SERVER_URL } from "./resources/constants";
+import { TestingEndpointRequest, WsEndpointRequest } from "./server.types";
+import {
+    executeAutoResponse,
+    getITestNameHeader,
+    getNumberFomString,
+    getResponseBody,
+    wait,
+    XHRContentType
+} from "./server.utils";
 import { WSMessage } from "./types";
 
 const app = expressWs(express()).app;
@@ -18,7 +26,8 @@ const upload = multer();
 const port = 3000;
 const secondPort = 3001;
 
-const wait = async (timeout: number) => new Promise((executor) => setTimeout(executor, timeout));
+const cypressInterceptorString = "cypress-interceptor";
+const resourcesPath = "/public/resources/";
 
 app.use(cors());
 secondApp.use(cors());
@@ -26,68 +35,45 @@ app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
 app.use("/fixtures", express.static(path.join(__dirname, "../fixtures"), { redirect: false }));
 
-interface TestingEndpointRequest {
-    enableCache?: boolean;
-    bigData?: boolean;
-    duration?: string;
-    /**
-     * Should be unique for every request
-     */
-    path: string;
-    /**
-     * The response object, will be parsed as JSON
-     */
-    responseBody?: string;
-    /**
-     * The response string, can be anything
-     */
-    responseString?: string;
-    /**
-     * The additional response headers
-     */
-    responseHeaders?: string;
-    status?: string;
-}
+// Logging middleware for I-Test-Name header
+const testNameLogs: Record<string, string[]> = {};
 
-interface WsEndpointRequest {
-    autoResponse?: string;
-}
+app.use((req, res, next) => {
+    const testName = getITestNameHeader(req);
 
-const getResponseBody = (
-    req: express.Request<unknown, unknown, unknown, TestingEndpointRequest>
-) => {
-    try {
-        return {
-            ...(req.query.responseBody ? JSON.parse(req.query.responseBody) : {})
-        };
-    } catch (ex) {
-        console.warn(ex);
-        return {};
-    }
-};
+    if (
+        req.originalUrl !== COUNTER_SERVER_URL.GetCounter &&
+        req.originalUrl !== COUNTER_SERVER_URL.ResetCounter &&
+        testName
+    ) {
+        const url = new URL(`${req.protocol}://${req.get("host")}${req.originalUrl}`);
 
-const getNumberFomString = (num: string | undefined, defaultNumber = 0) => {
-    const result = parseInt(num ?? defaultNumber.toString());
-    return !isNaN(result) ? result : defaultNumber;
-};
+        testNameLogs[testName] = [
+            ...(testNameLogs[testName] ?? []),
+            `${url.origin}${url.pathname}`
+        ];
 
-const XHRContentType = "application/json";
-
-const executeAutoResponse = async (ws: WebSocket, autoResponse: WSMessage[]) => {
-    if (!autoResponse.length) {
-        return;
+        res.setHeader(I_TEST_NAME_HEADER, testName);
     }
 
-    if (autoResponse[0].delay) {
-        await wait(autoResponse[0].delay);
+    next();
+});
+
+app.get(COUNTER_SERVER_URL.GetCounter, (req, res) => {
+    const testName = getITestNameHeader(req);
+
+    res.json((testName && testNameLogs[testName]) ?? []);
+});
+
+app.post(COUNTER_SERVER_URL.ResetCounter, (req, res) => {
+    const testName = getITestNameHeader(req);
+
+    if (testName) {
+        testNameLogs[testName] = [];
     }
 
-    ws.send(autoResponse[0].data);
-
-    autoResponse.shift();
-
-    void executeAutoResponse(ws, autoResponse);
-};
+    res.sendStatus(200);
+});
 
 app.ws(`/${SERVER_URL.WebSocketClose}`, (ws) => {
     ws.close(1000, "Closing connection");
@@ -126,9 +112,6 @@ app.ws("/{*splat}", (ws, req) => {
         void executeAutoResponse(ws, autoResponse);
     }
 });
-
-const cypressInterceptorString = "cypress-interceptor";
-const resourcesPath = "/public/resources/";
 
 app.get(`${resourcesPath}{*splat}`, (req, res) => {
     const scriptPath = `${req.url.replace(resourcesPath, "").replace(".js", "")}.ts`;

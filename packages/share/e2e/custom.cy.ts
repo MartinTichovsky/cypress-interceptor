@@ -373,6 +373,36 @@ describe("Custom", () => {
             const result = await convertInputBodyToString(undefined, win);
             expect(result).to.equal("");
         });
+
+        it("should reject if FileReader throw an error", async () => {
+            class MockFileReader {
+                public error: Error = new Error("read error");
+                public onerror: (() => void) | null = null;
+                public onload: (() => void) | null = null;
+
+                readAsText() {
+                    setTimeout(() => {
+                        if (this.onerror) {
+                            this.onerror();
+                        }
+                    }, 0);
+                }
+            }
+
+            window.FileReader = MockFileReader as unknown as typeof window.FileReader;
+
+            const blob = new window.Blob(["test"]);
+
+            return convertInputBodyToString(blob, win).then(
+                () => {
+                    throw new Error("Promise should have been rejected");
+                },
+                (err) => {
+                    expect(err).to.exist;
+                    expect(err.message).to.eq("read error");
+                }
+            );
+        });
     });
 
     it("Should return null when log is empty", () => {
