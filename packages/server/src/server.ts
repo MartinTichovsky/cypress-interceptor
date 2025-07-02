@@ -9,7 +9,7 @@ import * as ts from "typescript";
 import { bigDataGenerator } from "./bigDataGenerator";
 import { getExampleResponse } from "./exampleResponse";
 import { COUNTER_SERVER_URL, I_TEST_NAME_HEADER, SERVER_URL } from "./resources/constants";
-import { TestingEndpointRequest, WsEndpointRequest } from "./server.types";
+import { CookiesRequest, TestingEndpointRequest, WsEndpointRequest } from "./server.types";
 import {
     executeAutoResponse,
     getITestNameHeader,
@@ -84,6 +84,7 @@ app.ws("/{*splat}", (ws, req) => {
         if (req.url.includes(`/${SERVER_URL.WebSocketArrayBuffer}`)) {
             ws.binaryType = "arraybuffer";
             ws.send(msg);
+
             return;
         }
 
@@ -231,6 +232,15 @@ app.post(`/${SERVER_URL.ResponseWithProgress}`, async (_req, res) => {
     sendChunk();
 });
 
+app.get<unknown, unknown, unknown, CookiesRequest>(`/${SERVER_URL.Cookies}`, (req, res) => {
+    res.cookie(req.query.cookieName, req.query.cookieValue, {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax"
+    });
+    res.json({ success: true, cookie: `${req.query.cookieName}=${req.query.cookieValue}` });
+});
+
 app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
     wait(getNumberFomString(req.query.duration))
         .then(() => {
@@ -292,6 +302,7 @@ app.use<unknown, unknown, unknown, TestingEndpointRequest>((req, res, next) => {
 
 secondApp.use((_req, res) => {
     const filePath = path.join(__dirname, "../public/navigation.html");
+
     res.sendFile(filePath);
 });
 

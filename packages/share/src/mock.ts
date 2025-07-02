@@ -70,3 +70,11 @@ export const mockRequire = ({
 
     return { mockFs, mockPath, win };
 };
+
+export const removeNodeEnvironment = () => {
+    const win = window as Window & {
+        process?: { versions?: { node?: string } };
+    };
+
+    delete win.process;
+};

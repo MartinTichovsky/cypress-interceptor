@@ -42,6 +42,7 @@ const generateRandomObject = (maxTree: number, currentTree: number) => {
 
 const genereateNumber = () => {
     const dig = Math.pow(10, randomNumber(6));
+
     return Math.round(Math.random() * randomNumber(999999) * dig) / dig;
 };
 

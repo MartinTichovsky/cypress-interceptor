@@ -7,6 +7,7 @@ export enum SERVER_URL {
     AutoResponseFormData = "auto-response-form-data",
     BlobResponse = "blob-response",
     BrokenStream = "broken-stream",
+    Cookies = "cookies",
     InvalidJson = "invalid-json",
     ResponseWithProgress = "response-with-progress",
     WebSocketArrayBuffer = "array-buffer",

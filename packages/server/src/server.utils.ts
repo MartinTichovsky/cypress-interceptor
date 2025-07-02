@@ -13,6 +13,7 @@ export const getITestNameHeader = (req: express.Request) => {
     for (const headerKey of Object.keys(req.headers)) {
         if (headerKey.toLowerCase() === iTestNameHeaderKey) {
             const value = req.headers[headerKey];
+
             return typeof value === "string" ? value : undefined;
         }
     }
@@ -29,12 +30,14 @@ export const getResponseBody = (
         };
     } catch (ex) {
         console.warn(ex);
+
         return {};
     }
 };
 
 export const getNumberFomString = (num: string | undefined, defaultNumber = 0) => {
     const result = parseInt(num ?? defaultNumber.toString());
+
     return !isNaN(result) ? result : defaultNumber;
 };
 

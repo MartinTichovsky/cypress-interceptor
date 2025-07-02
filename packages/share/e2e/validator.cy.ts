@@ -66,6 +66,7 @@ describe("Validator Tests", () => {
 
         it("should handle empty array", () => {
             const result = convertCallStackJsonToCallStack([]);
+
             expect(result).to.deep.equal([]);
         });
 
@@ -85,11 +86,14 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() =>
                 convertCallStackJsonToCallStack(invalid as CallStackJson[])
             ).to.not.throw();
+
             // The function will create an Invalid Date, but not throw
             const result = convertCallStackJsonToCallStack(invalid as CallStackJson[]);
+
             expect(result[0].timeStart).to.be.instanceOf(Date);
             expect(isNaN(result[0].timeStart.getTime())).to.be.true;
         });
@@ -110,6 +114,7 @@ describe("Validator Tests", () => {
                     url: "not-a-url"
                 }
             ];
+
             expect(() => convertCallStackJsonToCallStack(invalid as CallStackJson[])).to.throw();
         });
 
@@ -130,6 +135,7 @@ describe("Validator Tests", () => {
                 }
             ];
             const result = convertCallStackJsonToCallStack(valid as CallStackJson[]);
+
             expect(result[0].response).to.be.undefined;
         });
 
@@ -159,6 +165,7 @@ describe("Validator Tests", () => {
             ];
             // delay and duration are not part of IResponse, so we only check that response exists and is valid
             const result = convertCallStackJsonToCallStack(valid as CallStackJson[]);
+
             expect(result[0].response).to.exist;
         });
 
@@ -226,6 +233,7 @@ describe("Validator Tests", () => {
 
         it("should throw error for invalid input type", () => {
             const invalidInput: unknown = "not an array";
+
             expect(() => validateStats(invalidInput as CallStackJson[])).to.throw(
                 createValidationError(-1, "root", ValidationErrorMessages.EXPECTED_ARRAY).message
             );
@@ -367,6 +375,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -391,6 +400,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -414,6 +424,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "timeStart", ValidationErrorMessages.TIME_START_REQUIRED)
                     .message
@@ -435,6 +446,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -459,6 +471,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -482,6 +495,7 @@ describe("Validator Tests", () => {
                     timeStart: "2024-03-20T10:00:00Z"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "url", ValidationErrorMessages.URL_REQUIRED).message
             );
@@ -502,6 +516,7 @@ describe("Validator Tests", () => {
                     url: 123 as unknown as string
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "url", ValidationErrorMessages.URL_MUST_BE_URL).message
             );
@@ -522,6 +537,7 @@ describe("Validator Tests", () => {
                     url: "not-a-url"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "url", ValidationErrorMessages.URL_MUST_BE_URL).message
             );
@@ -543,6 +559,7 @@ describe("Validator Tests", () => {
                     delay: "not-a-number" as unknown as number
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "delay", ValidationErrorMessages.DELAY_MUST_BE_NUMBER)
                     .message
@@ -565,6 +582,7 @@ describe("Validator Tests", () => {
                     duration: "not-a-number" as unknown as number
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -583,6 +601,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(0, "request", ValidationErrorMessages.REQUEST_REQUIRED)
                     .message
@@ -603,6 +622,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -627,6 +647,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -650,6 +671,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -674,6 +696,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -698,6 +721,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -721,6 +745,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -745,6 +770,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -768,6 +794,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -792,6 +819,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -816,6 +844,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -840,6 +869,7 @@ describe("Validator Tests", () => {
                     url: "https://api.example.com"
                 }
             ];
+
             expect(() => validateStats(valid as CallStackJson[])).to.not.throw();
         });
 
@@ -865,6 +895,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -897,6 +928,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -928,6 +960,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -960,6 +993,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -992,6 +1026,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -1023,6 +1058,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -1055,6 +1091,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -1086,6 +1123,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,
@@ -1118,6 +1156,7 @@ describe("Validator Tests", () => {
                     } as unknown as CallStackJson["response"]
                 }
             ];
+
             expect(() => validateStats(invalid as CallStackJson[])).to.throw(
                 createValidationError(
                     0,

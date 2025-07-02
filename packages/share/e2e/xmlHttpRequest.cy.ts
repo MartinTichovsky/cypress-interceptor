@@ -65,6 +65,7 @@ const createTests = (disableInterceptor: boolean) => {
                         expect(xhr.statusText).to.equal("OK");
 
                         const responseData = JSON.parse(xhr.responseText);
+
                         expect(responseData).to.deep.equal(responseBody);
 
                         expect(xhr.getResponseHeader("X-Custom-Header")).to.equal(
@@ -124,6 +125,7 @@ const createTests = (disableInterceptor: boolean) => {
                         expect(xhr.statusText).to.equal("Created");
 
                         const responseData = JSON.parse(xhr.responseText);
+
                         expect(responseData).to.deep.equal(responseBody);
 
                         resolve();
@@ -262,6 +264,7 @@ const createTests = (disableInterceptor: boolean) => {
                         expect(xhr.statusText).to.equal("Not Found");
 
                         const errorData = JSON.parse(xhr.responseText);
+
                         expect(errorData).to.deep.equal(errorResponseBody);
 
                         resolve();
@@ -311,6 +314,7 @@ const createTests = (disableInterceptor: boolean) => {
                         expect(xhr.statusText).to.equal("Internal Server Error");
 
                         const errorData = JSON.parse(xhr.responseText);
+
                         expect(errorData).to.deep.equal(errorResponseBody);
 
                         resolve();
@@ -368,6 +372,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                         // Test getting all headers
                         const allHeaders = xhr.getAllResponseHeaders();
+
                         expect(allHeaders).to.include("content-type:");
                         expect(allHeaders).to.include("last-modified:");
 
@@ -408,6 +413,7 @@ const createTests = (disableInterceptor: boolean) => {
                     });
 
                     const xhr = new win.XMLHttpRequest();
+
                     xhr.open(params.method!, params.url);
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
@@ -417,6 +423,7 @@ const createTests = (disableInterceptor: boolean) => {
                         expect(xhr.status).to.equal(responseStatus);
 
                         const responseData = JSON.parse(xhr.responseText);
+
                         expect(responseData).to.deep.equal(responseBody);
 
                         expect(xhr.getResponseHeader("X-Processing-Time")).to.equal(
@@ -532,6 +539,7 @@ const createTests = (disableInterceptor: boolean) => {
                         });
 
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open(testCase.method, params.url);
                         xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 
@@ -605,6 +613,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                             // Test response body
                             const responseData = JSON.parse(xhr.responseText);
+
                             expect(responseData).to.deep.equal(responseBody);
 
                             // Test all headers individually
@@ -734,6 +743,7 @@ const createTests = (disableInterceptor: boolean) => {
                         });
 
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open(test.method, params.url);
                         xhr.setRequestHeader(I_TEST_NAME_HEADER, iTestName);
 

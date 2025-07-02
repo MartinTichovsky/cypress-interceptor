@@ -1,8 +1,28 @@
 import { deepCopy } from "./src/utils";
+import { getFilePath } from "./src/utils.cypress";
+import { CallLineStack, CallLineToFileOptions } from "./test.unit.types";
 
-export const __CALL_LINE__ = "__callLine__";
+const __CALL_LINE__ = "__callLine__";
+const __CALL_LINE_NAME__ = "CallLine";
 
-export type CallLineWindowType<T = unknown> = Window & { [__CALL_LINE__]?: T[] };
+type CallLineWindowType = Window & { [__CALL_LINE__]?: CallLine };
+
+// #region Main functions
+
+/**
+ * Disable the call line in the window object
+ *
+ * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
+ */
+export const disableCallLine = (childWindow?: CallLineWindowType) => {
+    const parentWindow: CallLineWindowType = globalThis.window;
+
+    parentWindow[__CALL_LINE__] = undefined;
+
+    if (childWindow) {
+        childWindow[__CALL_LINE__] = undefined;
+    }
+};
 
 /**
  * Enable the call line in the window object
@@ -20,8 +40,12 @@ export type CallLineWindowType<T = unknown> = Window & { [__CALL_LINE__]?: T[] }
 export const enableCallLine = (childWindow?: CallLineWindowType) => {
     const parentWindow: CallLineWindowType = globalThis.window;
 
-    if (parentWindow[__CALL_LINE__] === undefined || !Array.isArray(parentWindow[__CALL_LINE__])) {
-        parentWindow[__CALL_LINE__] = [];
+    if (
+        parentWindow[__CALL_LINE__] === undefined ||
+        !("name" in parentWindow[__CALL_LINE__]) ||
+        parentWindow[__CALL_LINE__].name !== __CALL_LINE_NAME__
+    ) {
+        parentWindow[__CALL_LINE__] = new CallLine();
     }
 
     if (childWindow) {
@@ -34,18 +58,26 @@ export const enableCallLine = (childWindow?: CallLineWindowType) => {
  *
  * @returns True if the call line is enabled
  */
-export const isCallLineEnabled = () =>
-    (window as CallLineWindowType)[__CALL_LINE__] !== undefined &&
-    Array.isArray((window as CallLineWindowType)[__CALL_LINE__]);
+export const isCallLineEnabled = () => {
+    const win: CallLineWindowType = window;
+
+    return (
+        win[__CALL_LINE__] !== undefined &&
+        "name" in win[__CALL_LINE__] &&
+        win[__CALL_LINE__].name === __CALL_LINE_NAME__
+    );
+};
 
 /**
  * Get a created instance of the CallLine class
  *
  * @returns An instance of the CallLine class
  */
-export const getCallLine = () => new CallLine();
+export const getCallLine = () => {
+    const win: CallLineWindowType = window;
 
-const getCallLineArray = <T>() => (window as CallLineWindowType<T>)[__CALL_LINE__] ?? [];
+    return isCallLineEnabled() ? win[__CALL_LINE__]! : new CallLine();
+};
 
 /**
  * For storing information about the line that was called.
@@ -59,7 +91,7 @@ export const lineCalled = (...args: unknown[]) => {
         return;
     }
 
-    getCallLineArray().push(args.length > 1 ? [...args] : args[0]);
+    getCallLine().call(args.length > 1 ? [...args] : args[0]);
 };
 
 /**
@@ -74,20 +106,26 @@ export const lineCalledWithClone = (...args: unknown[]) => {
         return;
     }
 
-    getCallLineArray().push(deepCopy(args.length > 1 ? [...args] : args[0]));
+    getCallLine().call(deepCopy(args.length > 1 ? [...args] : args[0]));
 };
+
+// #endregion
 
 /**
  * It is a helper class for the call line that is stored in the window object.
  */
 export class CallLine {
+    private _stack: CallLineStack[] = [];
     private i = -1;
 
     /**
-     * Get an instance of the window or an empty array if is not enabled
+     * Get the stack of the call line
      */
     get array() {
-        return getCallLineArray();
+        return this._stack.map((stack) => ({
+            args: Array.isArray(stack.args) ? [...stack.args] : stack.args,
+            date: stack.date
+        }));
     }
 
     /**
@@ -96,21 +134,25 @@ export class CallLine {
      * the last entry invoked by `next`.
      */
     get current(): unknown | unknown[] | undefined {
-        return this.i === -1 ? undefined : getCallLineArray()[this.i];
+        return this.i === -1 ? undefined : this.array[this.i]?.args;
     }
 
     /**
      * True if CallLine feature is globally enabled
      */
     get isEnabled() {
-        return (window as CallLineWindowType)[__CALL_LINE__] !== undefined;
+        return isCallLineEnabled();
     }
 
     /**
      * Get the number of all entries.
      */
     get length() {
-        return getCallLineArray().length;
+        return this._stack.length;
+    }
+
+    get name() {
+        return "CallLine";
     }
 
     /**
@@ -122,9 +164,7 @@ export class CallLine {
      * `["something", 1, true]`.
      */
     get next(): unknown | unknown[] | undefined {
-        const callLineArray = getCallLineArray();
-
-        if (callLineArray.length && callLineArray.length > this.i + 1) {
+        if (this._stack.length && this._stack.length > this.i + 1) {
             this.i++;
 
             return this.current;
@@ -134,15 +174,19 @@ export class CallLine {
     }
 
     /**
+     * Add a new entry to the call line
+     *
+     * @param args The arguments to store
+     */
+    call(args: unknown | unknown[]) {
+        this._stack.push({ args, date: new Date() });
+    }
+
+    /**
      * Clean the CallLine array and start storing the values from the beginning
      */
     clean() {
-        const parentWindow: CallLineWindowType = window;
-
-        if (Array.isArray(parentWindow[__CALL_LINE__])) {
-            parentWindow[__CALL_LINE__].splice(0, parentWindow[__CALL_LINE__].length);
-        }
-
+        this._stack = [];
         this.reset();
     }
 
@@ -151,5 +195,32 @@ export class CallLine {
      */
     reset() {
         this.i = -1;
+    }
+
+    /**
+     * Save CallLine entries to a file
+     *
+     * @param outputDir The folder to save the call line
+     * @param options The options for the file
+     */
+    toFile(
+        outputDir: string,
+        options?: CallLineToFileOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+    ) {
+        let stack = this._stack;
+
+        if (options?.filter) {
+            stack = stack.filter(options.filter);
+        }
+
+        if (!stack.length) {
+            return cy.wrap(null);
+        }
+
+        return cy.writeFile(
+            getFilePath(options?.fileName, outputDir, "callLine"),
+            JSON.stringify(stack, undefined, options?.prettyOutput ? 4 : undefined),
+            options
+        );
     }
 }

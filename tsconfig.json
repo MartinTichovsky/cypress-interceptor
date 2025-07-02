@@ -13,5 +13,6 @@
             "cypress-interceptor-share": ["./packages/share"]
         },
         "skipLibCheck": true
-    }
+    },
+    "exclude": ["./packages/interceptor/**/*.d.ts"]
 }

@@ -264,6 +264,7 @@ export const createXMLHttpRequestProxy = (
                     const originalEvent = args[0] as Event;
                     // loadstart happens at the beginning, so no need to wait for response
                     const newEvent = this.createProgressEvent("loadstart", originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             } else {
@@ -271,6 +272,7 @@ export const createXMLHttpRequestProxy = (
                 proxyListener = (...args) => {
                     const originalEvent = args[0] as Event;
                     const newEvent = this.createEvent(originalEvent.type, originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             }

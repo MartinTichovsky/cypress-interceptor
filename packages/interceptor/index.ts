@@ -70,10 +70,12 @@ import { RequestProxy } from "./src/RequestProxy";
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
         timeStart = performance.now();
+
         return cy.wrap(timeStart, { timeout: 0 });
     });
     Cypress.Commands.add("stopTiming", () => {
         timeStop = performance.now();
+
         return cy.wrap(timeStart !== undefined ? timeStop - timeStart : undefined, {
             timeout: 0
         });

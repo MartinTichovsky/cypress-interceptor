@@ -1,3 +1,8 @@
+export interface CookiesRequest {
+    cookieName: string;
+    cookieValue: string;
+}
+
 export interface TestingEndpointRequest {
     enableCache?: boolean;
     bigData?: boolean;

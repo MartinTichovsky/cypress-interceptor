@@ -204,6 +204,7 @@ const parseResponseHeaders = (headersString: string) => {
 
     headerLines.forEach((line) => {
         const [key, value] = line.split(": ", 2);
+
         if (key && value !== undefined) {
             headers[key.toLowerCase()] = value;
         }
@@ -256,6 +257,7 @@ export class Interceptor {
             const _headerProcessStart = performance.now();
 
             this.win = win;
+
             const crossDomain = request.url.host !== document.location.host;
             // the pending status is not logged in cross-domain requests when ignoreCrossDomain is `true`
             // but it can be mocked or throttled
@@ -301,6 +303,7 @@ export class Interceptor {
                     const _responseProcessDuration = performance.now();
 
                     item.duration = performance.now() - durationStart;
+
                     const timeEnd = new Date();
 
                     let body = "";
@@ -634,6 +637,7 @@ export class Interceptor {
         options?: IMockResponseOptions
     ) {
         const mockEntry = { id: ++this._mockId, mock, options, routeMatcher };
+
         this._mock.push(mockEntry);
 
         return mockEntry.id;
@@ -728,6 +732,7 @@ export class Interceptor {
         options?: IThrottleRequestOptions
     ) {
         const throttleEntry = { delay, id: ++this._throttleId, options, routeMatcher };
+
         this._throttle.push(throttleEntry);
 
         return throttleEntry.id;

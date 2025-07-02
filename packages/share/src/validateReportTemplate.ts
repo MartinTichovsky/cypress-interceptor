@@ -237,6 +237,7 @@ export const validateReportTemplate = (shouldContainSlowRequests = true) => {
             .invoke("text")
             .then((text) => {
                 const duration = parseFloat(text.replace("ms", ""));
+
                 expect(duration).to.be.a("number");
                 expect(duration).to.be.greaterThan(0);
             });
@@ -245,6 +246,7 @@ export const validateReportTemplate = (shouldContainSlowRequests = true) => {
     // Test 15: Test scroll indicator functionality (if chart is scrollable)
     cy.get(byDataTestId(ReportTestId.CHART_SCROLL_AREA)).then(($scrollArea) => {
         const scrollArea = $scrollArea[0];
+
         if (scrollArea.scrollWidth > scrollArea.clientWidth) {
             // Chart is scrollable, indicator should be visible
             cy.get(byDataTestId("scroll-indicator")).should("be.visible");
@@ -271,6 +273,7 @@ export const validateReportTemplate = (shouldContainSlowRequests = true) => {
         .invoke("text")
         .then((fastText) => {
             const thresholdMatch = fastText.match(/< (\d+)ms/);
+
             if (thresholdMatch) {
                 const threshold = parseInt(thresholdMatch[1]);
 
@@ -280,6 +283,7 @@ export const validateReportTemplate = (shouldContainSlowRequests = true) => {
                         .invoke("text")
                         .then((text) => {
                             const duration = parseFloat(text.replace("ms", ""));
+
                             expect(duration).to.be.lessThan(threshold);
                         });
                 });
@@ -291,6 +295,7 @@ export const validateReportTemplate = (shouldContainSlowRequests = true) => {
                             .invoke("text")
                             .then((text) => {
                                 const duration = parseFloat(text.replace("ms", ""));
+
                                 expect(duration).to.be.at.least(threshold);
                             });
                     });

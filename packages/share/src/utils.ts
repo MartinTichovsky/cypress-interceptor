@@ -76,6 +76,7 @@ const createXMLHttpRequestTestFunction = (
                 request.addEventListener("load", () => {
                     resolve();
                 });
+
                 return;
             case XMLHttpRequestLoad.AddEventListener_Readystatechange:
                 request.addEventListener("readystatechange", () => {
@@ -83,11 +84,13 @@ const createXMLHttpRequestTestFunction = (
                         resolve();
                     }
                 });
+
                 return;
             case XMLHttpRequestLoad.Onload:
                 request.onload = () => {
                     resolve();
                 };
+
                 return;
             case XMLHttpRequestLoad.Onreadystatechange:
                 request.onreadystatechange = () => {
@@ -95,6 +98,7 @@ const createXMLHttpRequestTestFunction = (
                         resolve();
                     }
                 };
+
                 return;
         }
     });
@@ -268,3 +272,8 @@ export const testCaseIt = (
 };
 
 export const toRegExp = (value: string) => value.replace(/\//g, "\\/").replace(/\./g, "\\.");
+
+export const wait = async (timeout: number) =>
+    new Promise((resolve) => setTimeout(resolve, timeout));
+
+export const wrap = (fnc: VoidFunction) => cy.wrap(null).then(fnc);

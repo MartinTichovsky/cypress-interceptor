@@ -325,52 +325,63 @@ describe("Custom", () => {
                 "application/xml"
             );
             const result = await convertInputBodyToString(doc, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should return string as is", async () => {
             const input = "test string";
             const result = await convertInputBodyToString(input, win);
+
             expect(result).to.equal(input);
         });
 
         it("should convert Blob to string", async () => {
             const blob = new win.Blob(["test blob"], { type: "text/plain" });
             const result = await convertInputBodyToString(blob, win);
+
             expect(result).to.equal("test blob");
         });
 
         it("should convert FormData to JSON string", async () => {
             const formData = new win.FormData();
+
             formData.append("key", "value");
+
             const result = await convertInputBodyToString(formData, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should convert URLSearchParams to JSON string", async () => {
             const params = new win.URLSearchParams(testObject);
             const result = await convertInputBodyToString(params, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should convert ArrayBuffer to string", async () => {
             const buffer = new win.TextEncoder().encode("test buffer").buffer;
             const result = await convertInputBodyToString(buffer, win);
+
             expect(result).to.equal("test buffer");
         });
 
         it("should convert object to JSON string", async () => {
             const result = await convertInputBodyToString(testObject as unknown as BodyInit, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should return empty string for null input", async () => {
             const result = await convertInputBodyToString(null, win);
+
             expect(result).to.equal("");
         });
 
         it("should return empty string for undefined input", async () => {
             const result = await convertInputBodyToString(undefined, win);
+
             expect(result).to.equal("");
         });
 
@@ -506,6 +517,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl1);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);
@@ -537,6 +549,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl2);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);
@@ -563,6 +576,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl3);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);

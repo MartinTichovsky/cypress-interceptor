@@ -167,6 +167,7 @@ export class WebsocketInterceptor {
                                     ? 1
                                     : 0;
                         }
+
                         break;
                     }
                     case "send": {

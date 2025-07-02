@@ -53,6 +53,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 },
                 copyToFixtures(filePath: string) {
                     filePath = path.resolve(filePath);
+
                     const fileName = path.basename(filePath);
 
                     if (!fs.existsSync(fixturesFolder)) {
@@ -90,6 +91,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 },
                 log(message) {
                     console.log(message);
+
                     return null;
                 }
             });

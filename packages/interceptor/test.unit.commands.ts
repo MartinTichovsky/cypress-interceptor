@@ -1,6 +1,7 @@
 /// <reference types="cypress" preserve="true" />
 
 import { CallLine, getCallLine } from "./test.unit";
+import { CallLineToFileOptions } from "./test.unit.types";
 
 declare global {
     namespace Cypress {
@@ -38,19 +39,29 @@ declare global {
              * Resets the counter and starts from the first entry on the next call to `cy.callLineNext`
              */
             callLineReset(): void;
+            /**
+             * Save CallLine entries to a file
+             *
+             * @param outputDir - The folder to save the call line
+             * @param options - Options for the file
+             */
+            callLineToFile(
+                outputDir: string,
+                options?: CallLineToFileOptions &
+                    Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+            ): Chainable<null>;
         }
     }
 }
 
 (() => {
-    const callLine = getCallLine();
-
-    Cypress.Commands.add("callLine", () => cy.wrap(callLine));
-    Cypress.Commands.add("callLineClean", () => callLine.clean());
-    Cypress.Commands.add("callLineCurrent", () => cy.wrap(callLine.current));
-    Cypress.Commands.addQuery("callLineLength", () => () => callLine.length);
-    Cypress.Commands.addQuery("callLineNext", () => {
-        return () => callLine.next;
+    Cypress.Commands.add("callLine", () => cy.wrap(getCallLine()));
+    Cypress.Commands.add("callLineClean", () => getCallLine().clean());
+    Cypress.Commands.add("callLineCurrent", () => cy.wrap(getCallLine().current));
+    Cypress.Commands.addQuery("callLineLength", () => () => getCallLine().length);
+    Cypress.Commands.addQuery("callLineNext", () => () => getCallLine().next);
+    Cypress.Commands.add("callLineReset", () => getCallLine().reset());
+    Cypress.Commands.add("callLineToFile", (outputDir: string, options?: CallLineToFileOptions) => {
+        getCallLine().toFile(outputDir, options);
     });
-    Cypress.Commands.add("callLineReset", () => callLine.reset());
 })();

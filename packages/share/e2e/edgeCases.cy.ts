@@ -81,9 +81,11 @@ const createTests = (disableInterceptor: boolean) => {
 
                             while (true) {
                                 const { done, value } = await reader!.read();
+
                                 if (done) {
                                     break;
                                 }
+
                                 chunks.push(new TextDecoder().decode(value));
                             }
 
@@ -162,6 +164,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.timeout = 1000;
 
                         xhr.ontimeout = () => {
@@ -179,6 +182,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", "/headers-test");
                         xhr.setRequestHeader("X-Custom-Header", "test-value");
                         xhr.setRequestHeader("Content-Type", "application/json");
@@ -205,6 +209,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params.url);
                         xhr.responseType = "blob";
 
@@ -231,6 +236,7 @@ const createTests = (disableInterceptor: boolean) => {
                         ...getInitForFetchFromParams(entry, getParamsFromDynamicRequest(entry))
                     );
                     const blob = await response.blob();
+
                     expect(blob).to.be.instanceof(win.Blob);
                 });
             });
@@ -247,6 +253,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params.url);
                         xhr.responseType = "json";
 
@@ -460,6 +467,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     const xhrPromise = new Promise<XMLHttpRequest>((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params2.url);
                         xhr.onload = () => resolve(xhr);
                         xhr.send();
@@ -469,6 +477,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     const wsPromise = new Promise<WebSocket>((resolve) => {
                         const ws = new win.WebSocket(params3.url);
+
                         ws.onopen = () => resolve(ws);
                     });
 
@@ -617,6 +626,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     return fetchPromise.then(async (response) => {
                         const reader = response.body?.getReader();
+
                         controller.abort(); // Cancel after response started
 
                         try {
