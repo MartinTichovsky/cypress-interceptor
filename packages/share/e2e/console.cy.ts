@@ -4,11 +4,13 @@ import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
 import { generateUrl } from "cypress-interceptor-server/src/utils";
 
+import { OUTPUT_DIR } from "../src/constants";
+
 type LogQueue = [ConsoleLogType, unknown[]][];
 
 const invalidDate = new Date("").toString();
 const staticUrl = generateUrl("public/index.html");
-const outputDir = "_console";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 
 const createConsoleLog = (logQueue: LogQueue) => {
     cy.window().then((win) => {
@@ -220,9 +222,9 @@ describe("Custom types", () => {
 });
 
 describe("Filtering with a string", () => {
-    const outputDir1 = "_console_1";
-    const outputDir2 = "_console_2";
-    const outputDir3 = "_console_3";
+    const outputDir1 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_1`;
+    const outputDir2 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_2`;
+    const outputDir3 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_3`;
 
     const logQueue: LogQueue = [
         [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
@@ -283,9 +285,9 @@ describe("Filtering with a string", () => {
 });
 
 describe("Filtering with an object", () => {
-    const outputDir1 = "_console_1";
-    const outputDir2 = "_console_2";
-    const outputDir3 = "_console_3";
+    const outputDir1 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_1`;
+    const outputDir2 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_2`;
+    const outputDir3 = `${OUTPUT_DIR}/${Cypress.spec.name}/console_3`;
 
     const logQueue: LogQueue = [
         [

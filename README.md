@@ -78,6 +78,8 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
     - [Websocket Interceptor Cypress commands](#the-cypress-websocket-interceptor-commands)
     - [Cypress environment variables](#cypress-environment-variables-1)
     - [Documentation and examples](#documentation-and-examples-2)
+        - [cy.destroyWsInterceptor](#cydestroywsinterceptor)
+        - [cy.recreateWsInterceptor](#cyrecreatewsinterceptor)
         - [cy.wsInterceptor](#cywsinterceptor)
         - [cy.wsInterceptorLastRequest](#cywsinterceptorlastrequest)
         - [cy.wsInterceptorStats](#cywsinterceptorstats)
@@ -134,7 +136,7 @@ import "cypress-interceptor";
  * XMLHttpRequest implementations. This command removes all proxy
  * functionality and restores the browser's native implementations.
  */
-destroyInterceptor(): Chainable<void>;
+destroyInterceptor(): void;
 /**
  * Get an instance of the Interceptor
  *
@@ -189,7 +191,7 @@ mockInterceptorResponse(
 /**
  * Recreate the Interceptor instance.
  */
-recreateInterceptor(): Chainable<void>;
+recreateInterceptor(): void;
 /**
  * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
  * is necessary when you want to wait for certain requests.
@@ -304,7 +306,7 @@ In almost all methods, there is a route matcher ([`IRouteMatcher`](#iroutematche
 ## cy.destroyInterceptor
 
 ```ts
-destroyInterceptor: () => Chainable<void>;
+destroyInterceptor: () => void;
 ```
 
 Destroy the interceptor by restoring the original fetch and XMLHttpRequest implementations. This command removes all proxy functionality and restores the browser's native implementations.
@@ -591,7 +593,7 @@ cy.mockInterceptorResponse(
 ## cy.recreateInterceptor
 
 ```ts
-recreateInterceptor: () => Chainable<null>;
+recreateInterceptor: () => void;
 ```
 
 Recreate the interceptor with a new instance. This command creates a fresh interceptor instance and reestablishes the proxy functionality.
@@ -1100,10 +1102,10 @@ interface WaitUntilRequestOptions extends IRouteMatcherObject {
      * Time to wait in milliseconds. The default is set to 750.
      *
      * It is necessary to wait if there might be a following request after the last one
-     * (due to JavaScript code and subsequent requests). Set it to 0 to skip repeated
+     * (due to JavaScript code and subsequent requests). Set it to false or 0 to skip repeated
      * checking for requests.
      */
-    waitForNextRequest?: number;
+    waitForNextRequest?: false | number;
 }
 ```
 
@@ -1444,20 +1446,28 @@ import "cypress-interceptor/websocket";
 
 ```ts
 /**
+ * Destroy the Websocket Interceptor
+ */
+destroyWsInterceptor(): void;
+/**
+ * Recreate the Websocket Interceptor
+ */
+recreateWsInterceptor(): void;
+/**
  * Get an instance of the Websocket Interceptor
  *
  * @returns An instance of the Websocket Interceptor
  */
-wsInterceptor: () => Chainable<WebsocketInterceptor>;
+wsInterceptor(): Chainable<WebsocketInterceptor>;
 /**
  * Get the last call matching the provided route matcher.
  *
  * @param matcher A matcher
  * @returns The last call information or `undefined` if none matches.
  */
-wsInterceptorLastRequest: (
+wsInterceptorLastRequest(
     matcher?: IWSMatcher
-) => Chainable<CallStackWebsocket | undefined>;
+): Chainable<CallStackWebsocket | undefined>;
 /**
  * Get the statistics for all requests matching the provided matcher since the beginning
  * of the current test.
@@ -1466,7 +1476,7 @@ wsInterceptorLastRequest: (
  * @returns It returns all requests matching the provided matcher with detailed information.
  * If none match, it returns an empty array.
  */
-wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
+wsInterceptorStats(matcher?: IWSMatcher): Chainable<CallStackWebsocket[]>;
 /**
  * Write the logged requests' information (or those filtered by the provided matcher) to a file
  *
@@ -1479,10 +1489,11 @@ wsInterceptorStats: (matcher?: IWSMatcher) => Chainable<CallStackWebsocket[]>;
  * @param outputDir A path for the output directory
  * @param options Options
  */
-wsInterceptorStatsToLog: (
+wsInterceptorStatsToLog(
     outputDir: string,
-    options?: WriteStatsOptions & Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
-) => Chainable<null>;
+    options?: WriteStatsOptions &
+        Partial<Cypress.WriteFileOptions & Cypress.Timeoutable>
+): Chainable<null>;
 /**
  * Reset the the Websocket Interceptor's watch
  */
@@ -1519,11 +1530,6 @@ waitUntilWebsocketAction(
     options?: WaitUntilActionOptions,
     errorMessage?: string
 ): Cypress.Chainable<WebsocketInterceptor>;
-waitUntilWebsocketAction(
-    matcherOrOptions?: IWSMatcher | IWSMatcher[] | WaitUntilActionOptions,
-    errorMessageOrOptions?: string | WaitUntilActionOptions,
-    errorMessage?: string
-): Cypress.Chainable<WebsocketInterceptor>;
 ```
 
 ## Cypress environment variables
@@ -1531,6 +1537,22 @@ waitUntilWebsocketAction(
 Same as [Cypress environment variables](#cypress-environment-variables).
 
 # Documentation and examples
+
+## cy.destroyWsInterceptor
+
+```ts
+recreateWsInterceptor(): void;
+```
+
+Destroy the Websocket Interceptor
+
+## cy.recreateWsInterceptor
+
+```ts
+recreateWsInterceptor(): void;
+```
+
+Recreate the Websocket Interceptor
 
 ## cy.wsInterceptor
 
@@ -1932,7 +1954,7 @@ callLineCurrent(): Chainable<unknown | unknown[] | undefined>;
  */
 callLineDisable(): void;
 /**
- * Enable the call line
+ * Enable the call line and create a new instance of the CallLine class
  */
 callLineEnable(): void;
 /**

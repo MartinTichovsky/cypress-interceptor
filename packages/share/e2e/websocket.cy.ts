@@ -5,6 +5,7 @@ import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.typ
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { OUTPUT_DIR } from "../src/constants";
 import { createMatcher, fireRequest } from "../src/utils";
 
 function createOutputFileName(outputDir: string, fileName?: string) {
@@ -15,9 +16,9 @@ function createOutputFileName(outputDir: string, fileName?: string) {
         : getFilePath(undefined, outputDir, type);
 }
 
-const outputDir = "_logs";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 
-before(() => {
+beforeEach(() => {
     cy.task("clearLogs", [outputDir]);
 });
 

@@ -4,6 +4,8 @@ import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
 
+export const CYPRESS_ENV_KEY_XHR_PROXY_DISABLED = "__xhrProxyDisabled";
+
 /**
  * !! IMPORTANT !!
  * There is a bug in the XMLHttpRequest implementation in Cypress. When use a wrapped function like:
@@ -44,6 +46,10 @@ export const createXMLHttpRequestProxy = (
     win: WindowTypeOfRequestProxy,
     requestProxy: RequestProxy
 ) => {
+    if (Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)) {
+        return;
+    }
+
     if (win.originXMLHttpRequest === undefined) {
         win.originXMLHttpRequest = win.XMLHttpRequest;
     }
@@ -81,10 +87,6 @@ export const createXMLHttpRequestProxy = (
             };
 
             this.onreadystatechange = () => {
-                //
-            };
-
-            this.ontimeout = () => {
                 //
             };
         }

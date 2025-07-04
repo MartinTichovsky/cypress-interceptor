@@ -4,6 +4,7 @@ import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { OUTPUT_DIR } from "../src/constants";
 import { testCaseIt } from "../src/utils";
 
 function createOutputFileName(outputDir: string, fileName?: string) {
@@ -14,7 +15,7 @@ function createOutputFileName(outputDir: string, fileName?: string) {
         : getFilePath(undefined, outputDir, type);
 }
 
-const outputDir = "_stats";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 const testPath_Fetch_1 = "stats/fetch-1";
 
 before(() => {
@@ -86,7 +87,6 @@ describe("Custom", () => {
             const testPath_Fetch1 = "stats/fetch-1";
             const testPath_Fetch2 = "stats/fetch-2";
             const fileName = "FILE_NAME_FILTER";
-            const outputDir = "_logs";
 
             const customHeader = (source: string) => ({
                 "custom-header": source

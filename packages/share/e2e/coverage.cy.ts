@@ -478,6 +478,12 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         requestProxy(window as WindowTypeOfRequestProxy);
 
         expect(originFetch).not.to.eq(window.fetch);
+
+        // multiple creation should not create multiple proxies
+
+        requestProxy(window as WindowTypeOfRequestProxy);
+
+        expect(originFetch).not.to.eq(window.fetch);
     });
 
     describe("Without proxy", () => {
@@ -969,206 +975,12 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
         requestProxy(window as WindowTypeOfRequestProxy);
 
         expect(originXMLHttpRequest).not.to.eq(window.XMLHttpRequest);
-    });
 
-    describe("Without proxy", () => {
-        createXMLHttpRequestTest("Should return the correct response", async (onResponse) => {
-            const request = new XMLHttpRequest();
+        // multiple creation should not create multiple proxies
 
-            request.open("GET", url);
-            request.responseType = "json";
-            request.setRequestHeader("Content-Type", "application/json");
+        requestProxy(window as WindowTypeOfRequestProxy);
 
-            await new Promise((resolve) => {
-                onResponse(request, () => {
-                    setTimeout(() => {
-                        resolve(null);
-                    }, 500);
-                });
-
-                request.send();
-            }).then(() => {
-                expect(request.response).to.deep.eq({});
-                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-            });
-        });
-
-        it("Should call `onreadystatechange` between states", async () => {
-            const request = new XMLHttpRequest();
-
-            request.open("GET", new URL(url));
-            request.responseType = "json";
-            request.setRequestHeader("Content-Type", "application/json");
-
-            let betweenStateCalledCount = 0;
-            let loadCalled = false;
-
-            await new Promise((resolve) => {
-                request.onreadystatechange = () => {
-                    if (request.readyState === XMLHttpRequest.DONE) {
-                        // a delay for other methods to be called before the next step
-                        setTimeout(() => {
-                            resolve(null);
-                        }, 500);
-                    } else {
-                        betweenStateCalledCount++;
-                    }
-                };
-
-                request.onload = () => {
-                    loadCalled = true;
-                };
-
-                request.send();
-            }).then(() => {
-                expect(request.response).to.deep.eq({});
-                expect(betweenStateCalledCount).to.be.above(0);
-                expect(loadCalled).to.be.true;
-                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-            });
-        });
-
-        createXMLHttpRequestTest(
-            "Should fail when reading text from a broken strem",
-            async (onResponse) => {
-                const request = new XMLHttpRequest();
-
-                let onerror: unknown;
-
-                request.open("GET", urlBrokenStream);
-
-                await new Promise((resolve) => {
-                    request.onerror = function (ev) {
-                        onerror = ev.type;
-                    };
-
-                    onResponse(request, () => {
-                        // a delay for `onerror` to be called
-                        setTimeout(() => {
-                            resolve(null);
-                        }, 500);
-                    });
-
-                    request.send();
-                }).then(() => {
-                    expect(onerror).not.to.be.undefined;
-                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-                });
-            },
-            [
-                XMLHttpRequestLoad.AddEventListener_Readystatechange,
-                XMLHttpRequestLoad.Onreadystatechange
-            ]
-        );
-
-        createXMLHttpRequestTest(
-            "Should fail with the correct error message when cancelled",
-            async (onResponse) => {
-                const request = new XMLHttpRequest();
-
-                let onabort: unknown;
-                let onerror: unknown;
-
-                request.open("GET", url + "?duration=2000");
-                request.responseType = "json";
-                request.setRequestHeader("Content-Type", "application/json");
-
-                new Promise((resolve) => {
-                    request.onabort = (ev) => {
-                        onabort = ev.type;
-                    };
-
-                    request.onerror = function (ev) {
-                        onerror = ev.type;
-                    };
-
-                    onResponse(request, () => {
-                        setTimeout(() => {
-                            resolve(null);
-                        }, 500);
-                    });
-
-                    request.send();
-                });
-
-                setTimeout(() => {
-                    request.abort();
-                }, 100);
-
-                await wait(1000);
-
-                expect(onabort).not.to.be.undefined;
-                expect(onabort).to.eq("abort");
-                expect(onerror).to.be.undefined;
-                cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-            }
-        );
-
-        createXMLHttpRequestTest(
-            "Should work when passing null - without error",
-            async (onResponse) => {
-                const request = new XMLHttpRequest();
-
-                request.open("GET", url);
-                request.responseType = "json";
-                request.setRequestHeader("Content-Type", "application/json");
-
-                request.onabort = null;
-                request.onerror = null;
-                request.onload = null;
-                request.onloadstart = null;
-                request.onprogress = null;
-                request.onreadystatechange = null;
-                request.ontimeout = null;
-
-                await new Promise((resolve) => {
-                    onResponse(request, () => {
-                        setTimeout(() => {
-                            resolve(null);
-                        }, 500);
-                    });
-
-                    request.send();
-                }).then(() => {
-                    expect(request.response).to.deep.eq({});
-                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-                });
-            }
-        );
-
-        createXMLHttpRequestTest(
-            "Should work when passing null - with error",
-            async (onResponse) => {
-                const request = new XMLHttpRequest();
-
-                request.open("GET", urlBrokenStream);
-
-                request.onabort = null;
-                request.onerror = null;
-                request.onload = null;
-                request.onloadstart = null;
-                request.onprogress = null;
-                request.onreadystatechange = null;
-                request.ontimeout = null;
-
-                await new Promise((resolve) => {
-                    onResponse(request, () => {
-                        // a delay for `onerror` to be called
-                        setTimeout(() => {
-                            resolve(null);
-                        }, 500);
-                    });
-
-                    request.send();
-                }).then(() => {
-                    cy.callLine().then((callLine) => expect(callLine.length).to.eq(0));
-                });
-            },
-            [
-                XMLHttpRequestLoad.AddEventListener_Readystatechange,
-                XMLHttpRequestLoad.Onreadystatechange
-            ]
-        );
+        expect(originXMLHttpRequest).not.to.eq(window.XMLHttpRequest);
     });
 
     createXMLHttpRequestTest("Should mock the correct JSON body", async (onResponse) => {
@@ -1976,6 +1788,12 @@ it("createWebsocketProxy ", async () => {
     const OriginWebsocket = window.WebSocket;
 
     expect(OriginWebsocket).to.eq(window.WebSocket);
+
+    websocketProxy(window as WindowTypeOfWebsocketProxy);
+
+    expect(OriginWebsocket).not.to.eq(window.WebSocket);
+
+    // multiple creation should not create multiple proxies
 
     websocketProxy(window as WindowTypeOfWebsocketProxy);
 

@@ -15,6 +15,14 @@ declare global {
     namespace Cypress {
         interface Chainable {
             /**
+             * Destroy the Websocket Interceptor
+             */
+            destroyWsInterceptor(): void;
+            /**
+             * Recreate the Websocket Interceptor
+             */
+            recreateWsInterceptor(): void;
+            /**
              * Get an instance of the Websocket Interceptor
              *
              * @returns An instance of the Websocket Interceptor

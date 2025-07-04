@@ -27,7 +27,7 @@ declare global {
              */
             callLineDisable(): void;
             /**
-             * Enable the call line
+             * Enable the call line and create a new instance of the CallLine class
              */
             callLineEnable(): void;
             /**

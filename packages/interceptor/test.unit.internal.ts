@@ -30,7 +30,7 @@ export const disableCallLine = (childWindow?: CallLineWindowType) => {
 };
 
 /**
- * Enable the call line in the window object
+ * Enable the call line in the window object and create a new instance of the CallLine class
  *
  * @param childWindow A window instance. In Cypress, it must be the window of `cy.window()`
  * @example How to enable in Cypress
@@ -45,13 +45,7 @@ export const disableCallLine = (childWindow?: CallLineWindowType) => {
 export const enableCallLine = (childWindow?: CallLineWindowType) => {
     const parentWindow: CallLineWindowType = globalThis.window;
 
-    if (
-        parentWindow[__CALL_LINE__] === undefined ||
-        !("name" in parentWindow[__CALL_LINE__]) ||
-        parentWindow[__CALL_LINE__].name !== __CALL_LINE_NAME__
-    ) {
-        parentWindow[__CALL_LINE__] = new CallLine();
-    }
+    parentWindow[__CALL_LINE__] = new CallLine();
 
     if (childWindow) {
         childWindow[__CALL_LINE__] = parentWindow[__CALL_LINE__];
@@ -99,7 +93,7 @@ export class CallLine {
      */
     get array() {
         return this._stack.map((stack) => ({
-            args: Array.isArray(stack.args) ? [...stack.args] : stack.args,
+            args: [...stack.args],
             date: stack.date
         }));
     }

@@ -10,6 +10,7 @@ import {
 } from "cypress-interceptor/test.unit.internal";
 import { CallLineStack } from "cypress-interceptor/test.unit.types";
 
+import { OUTPUT_DIR } from "../src/constants";
 import { wrap } from "../src/utils";
 
 function createOutputFileName(outputDir: string, fileName?: string) {
@@ -20,7 +21,7 @@ function createOutputFileName(outputDir: string, fileName?: string) {
         : getFilePath(undefined, outputDir, type);
 }
 
-const outputDir = "_callLine";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 
 describe("test.unit", () => {
     beforeEach(() => {
@@ -483,6 +484,13 @@ describe("test.unit", () => {
         wrap(() => lineCalled(...callLine1));
         wrap(() => lineCalled(callLine2));
 
+        cy.callLine().then((callLine) => {
+            expect(callLine.array.map((entry) => entry.args)).to.deep.equal([
+                [...callLine1],
+                [callLine2]
+            ]);
+        });
+
         cy.callLineToFile(outputDir, {
             filter: (dataPoint) => dataPoint.args.includes(callLine1[0]),
             prettyOutput: true
@@ -490,6 +498,14 @@ describe("test.unit", () => {
             cy.readFile<CallLineStack[]>(outputFileName).then((file) => {
                 expect(file.map((entry) => entry.args)).to.deep.equal([[...callLine1]]);
             });
+        });
+    });
+
+    it("cy.callLineToFile it should not create file if there is no data", () => {
+        const outputFileName = createOutputFileName(outputDir);
+
+        cy.callLineToFile(outputDir).then(() => {
+            cy.task("doesFileExist", outputFileName).should("be.false");
         });
     });
 });

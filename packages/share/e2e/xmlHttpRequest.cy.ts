@@ -2,6 +2,8 @@
  * AI generated tests (manually edited)
  */
 
+import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "cypress-interceptor/src/createFetchProxy";
+import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "cypress-interceptor/src/createXMLHttpRequestProxy";
 import { getFileNameFromCurrentTest } from "cypress-interceptor/src/utils.cypress";
 import {
     HOST,
@@ -17,9 +19,22 @@ const createTests = (disableInterceptor: boolean) => {
         if (disableInterceptor) {
             cy.destroyInterceptor();
 
-            cy.window().then(async (win) => {
+            cy.window().then((win) => {
+                expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(true);
                 expect("originFetch" in win).to.eq(false);
+
+                expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(true);
                 expect("originXMLHttpRequest" in win).to.eq(false);
+            });
+        } else {
+            cy.recreateInterceptor();
+
+            cy.window().then((win) => {
+                expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(false);
+                expect("originFetch" in win).to.eq(true);
+
+                expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(false);
+                expect("originXMLHttpRequest" in win).to.eq(true);
             });
         }
     });

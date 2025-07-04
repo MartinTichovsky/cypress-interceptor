@@ -76,58 +76,45 @@ const formatDateTime = (date: Date): string => {
  * Helper to process request/response body according to includeBodyOption and limits
  */
 const getProcessedBody = (
-    body: unknown,
+    body: string,
     urlString: string,
     includeBodyOption: boolean | ((url: URL) => boolean) | undefined,
     defaultLimit: number
 ): string | undefined => {
-    if (body == null) {
+    if (!body) {
         return undefined;
-    }
-
-    const bodyStr = typeof body === "string" ? body : JSON.stringify(body);
-
-    if (!bodyStr) {
-        return bodyStr;
     }
 
     // If option is true, return full body
     if (includeBodyOption === true) {
-        return bodyStr;
+        return body;
     }
 
     // If option is a function, call it
     if (typeof includeBodyOption === "function") {
         let shouldIncludeFull = false;
 
-        try {
-            const url = new URL(urlString, "http://dummy");
+        const url = new URL(urlString, "http://dummy");
 
-            shouldIncludeFull = includeBodyOption(url);
-        } catch {
-            // fallback: do not include full
-        }
+        shouldIncludeFull = includeBodyOption(url);
 
         if (shouldIncludeFull) {
-            return bodyStr;
+            return body;
         }
 
-        // If function returns false, limit to 100 chars
-        const limit = 100;
-
-        if (bodyStr.length > limit) {
-            return bodyStr.slice(0, limit) + "...";
+        if (body.length > defaultLimit) {
+            return body.slice(0, defaultLimit) + "...";
         }
 
-        return bodyStr;
+        return body;
     }
 
-    // Default: limit to defaultLimit (1000)
-    if (bodyStr.length > defaultLimit) {
-        return bodyStr.slice(0, defaultLimit) + "...";
+    // Default: limit to defaultLimit
+    if (body.length > defaultLimit) {
+        return body.slice(0, defaultLimit) + "...";
     }
 
-    return bodyStr;
+    return body;
 };
 
 /**
@@ -178,13 +165,9 @@ export function generateReport(
         const isCustomHighDuration = typeof highDuration === "function";
         const highDurations: number[] = dataWithDuration.map((item) => {
             if (isCustomHighDuration) {
-                try {
-                    const url = new URL(item.url, "http://dummy");
+                const url = new URL(item.url, "http://dummy");
 
-                    return highDuration(url) ?? 0;
-                } catch {
-                    return 0;
-                }
+                return highDuration(url) ?? 0;
             }
 
             return highDuration as number;
@@ -233,7 +216,7 @@ export function generateReport(
                         1000
                     ),
                     responseBody: getProcessedBody(
-                        item.response?.body,
+                        item.response?.body ?? "",
                         String(item.url),
                         options.includeResponseBody,
                         1000

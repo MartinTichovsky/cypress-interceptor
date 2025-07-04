@@ -10,13 +10,13 @@ import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { OUTPUT_DIR } from "../../src/constants";
 import { mockNodeEnvironment, mockRequire, removeNodeEnvironment } from "../../src/mock";
 import { checkBarColor } from "../../src/report";
 import { byDataTestId } from "../../src/selectors";
 import { validateReportTemplate } from "../../src/validateReportTemplate";
 
-const networkReportOutputDir = "_network_report";
-const statsOutputDir = "_stats";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 
 const expectBodyToBeFormatted = (id: string, type: "request" | "response") => {
     // 1. Expand the row
@@ -213,7 +213,7 @@ const generateLargeRandomObject = (minLength: number, depth = 0): Record<string,
 
 describe("Report", () => {
     beforeEach(() => {
-        cy.task("clearLogs", [networkReportOutputDir]);
+        cy.task("clearLogs", [outputDir]);
     });
 
     describe("With default settings", () => {
@@ -222,7 +222,7 @@ describe("Report", () => {
 
         after(() => {
             createNetworkReport({
-                outputDir: networkReportOutputDir
+                outputDir
             });
 
             cy.task("copyToFixtures", fileName).then((htmlName) => {
@@ -241,7 +241,7 @@ describe("Report", () => {
                 timeout: 60000
             });
 
-            fileName = getFilePath(undefined, networkReportOutputDir, undefined, "html");
+            fileName = getFilePath(undefined, outputDir, undefined, "html");
         });
     });
 
@@ -252,7 +252,7 @@ describe("Report", () => {
         after(() => {
             createNetworkReport({
                 highDuration: 5000,
-                outputDir: networkReportOutputDir
+                outputDir
             });
 
             cy.task("copyToFixtures", fileName).then((htmlName) => {
@@ -269,17 +269,13 @@ describe("Report", () => {
 
             cy.waitUntilRequestIsDone();
 
-            fileName = getFilePath(undefined, networkReportOutputDir, undefined, "html");
+            fileName = getFilePath(undefined, outputDir, undefined, "html");
         });
     });
 
     describe("createNetworkReportFromFile", () => {
-        beforeEach(() => {
-            cy.task("clearLogs", [statsOutputDir]);
-        });
-
         it("Should create a report from a file", () => {
-            const outputFileName = getFilePath(undefined, statsOutputDir, "stats");
+            const outputFileName = getFilePath(undefined, outputDir, "stats");
 
             cy.visit(
                 getDynamicUrl([
@@ -309,13 +305,13 @@ describe("Report", () => {
 
             cy.waitUntilRequestIsDone();
 
-            cy.writeInterceptorStatsToLog(statsOutputDir);
+            cy.writeInterceptorStatsToLog(outputDir);
 
             cy.task("doesFileExist", outputFileName).should("be.true");
 
             cy.task<string>("createNetworkReportFromFile", {
                 filePath: outputFileName,
-                outputDir: networkReportOutputDir
+                outputDir
             }).then((outputFilePath) => {
                 cy.task("doesFileExist", outputFilePath).should("be.true");
 
@@ -384,7 +380,7 @@ describe("Report", () => {
             const apiTest2 = new URL("http://localhost:3000/api/test2");
 
             const outputFileName = "report.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 
@@ -488,7 +484,7 @@ describe("Report", () => {
             });
 
             const outputFileName = "report-from-file.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 
@@ -534,7 +530,7 @@ describe("Report", () => {
             });
 
             const outputFileName = "report-from-file-with-no-duration.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 
@@ -572,7 +568,7 @@ describe("Report", () => {
             });
 
             const outputFileName = "report-from-file-with-no-response.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 
@@ -596,7 +592,7 @@ describe("Report", () => {
             const apiTest3 = new URL("http://localhost:3000/api/test-3");
 
             const outputFileName = "report-with-highlight.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 
@@ -730,18 +726,21 @@ describe("Report", () => {
             const apiTest1 = new URL("http://localhost:3000/api/test-a");
             const apiTest2 = new URL("http://localhost:3000/api/test-b");
             const apiTest3 = new URL("http://localhost:3000/api/test-c");
+            const apiTest4 = new URL("http://localhost:3000/api/test-d");
+            const apiTest5 = new URL("http://localhost:3000/api/test-e");
+            const apiTest6 = new URL("http://localhost:3000/api/test-f");
 
             const outputFileName1 = "report-with-limited-body-1.html";
-            const outputFilePath1 = `${networkReportOutputDir}/${outputFileName1}`;
+            const outputFilePath1 = `${outputDir}/${outputFileName1}`;
 
             const outputFileName2 = "report-with-limited-body-2.html";
-            const outputFilePath2 = `${networkReportOutputDir}/${outputFileName2}`;
+            const outputFilePath2 = `${outputDir}/${outputFileName2}`;
 
             const outputFileName3 = "report-with-limited-body-3.html";
-            const outputFilePath3 = `${networkReportOutputDir}/${outputFileName3}`;
+            const outputFilePath3 = `${outputDir}/${outputFileName3}`;
 
             const outputFileName4 = "report-with-limited-body-4.html";
-            const outputFilePath4 = `${networkReportOutputDir}/${outputFileName4}`;
+            const outputFilePath4 = `${outputDir}/${outputFileName4}`;
 
             const largeRequestBody1 = JSON.stringify(generateLargeRandomObject(1500));
             const largeResponseBody1 = JSON.stringify(generateLargeRandomObject(1500));
@@ -749,6 +748,8 @@ describe("Report", () => {
             const largeResponseBody2 = JSON.stringify(generateLargeRandomObject(1500));
             const largeRequestBody3 = JSON.stringify(generateLargeRandomObject(1500));
             const largeResponseBody3 = JSON.stringify(generateLargeRandomObject(1500));
+            const shortRequestBody = JSON.stringify({ shortRequestBody: "shortRequestBody" });
+            const shortResponseBody = JSON.stringify({ shortResponseBody: "shortResponseBody" });
 
             const callStack: CallStack[] = [
                 {
@@ -825,6 +826,73 @@ describe("Report", () => {
                     sequenceId: 3,
                     timeStart: new Date(),
                     url: apiTest3
+                },
+                {
+                    crossDomain: false,
+                    duration: 1500,
+                    isPending: false,
+                    request: {
+                        body: shortRequestBody,
+                        headers: { "content-type": "application/json" },
+                        method: "POST",
+                        query: {}
+                    },
+                    resourceType: "fetch",
+                    response: {
+                        body: shortResponseBody,
+                        headers: {},
+                        isMock: false,
+                        statusCode: 200,
+                        statusText: "OK",
+                        timeEnd: new Date()
+                    },
+                    runtime: 0,
+                    runtimeString: "0h 0m 0s 0ms",
+                    sequenceId: 3,
+                    timeStart: new Date(),
+                    url: apiTest4
+                },
+                {
+                    crossDomain: false,
+                    duration: 1500,
+                    isPending: false,
+                    request: {
+                        body: "",
+                        headers: { "content-type": "application/json" },
+                        method: "POST",
+                        query: {}
+                    },
+                    resourceType: "fetch",
+                    response: {
+                        body: "",
+                        headers: {},
+                        isMock: false,
+                        statusCode: 200,
+                        statusText: "OK",
+                        timeEnd: new Date()
+                    },
+                    runtime: 0,
+                    runtimeString: "0h 0m 0s 0ms",
+                    sequenceId: 3,
+                    timeStart: new Date(),
+                    url: apiTest5
+                },
+                {
+                    crossDomain: false,
+                    duration: 1500,
+                    isPending: true,
+                    request: {
+                        body: "",
+                        headers: { "content-type": "application/json" },
+                        method: "POST",
+                        query: {}
+                    },
+                    resourceType: "fetch",
+                    runtime: 0,
+                    runtimeString: "0h 0m 0s 0ms",
+                    sequenceId: 3,
+                    timeStart: new Date(),
+                    url: apiTest6
                 }
             ];
 
@@ -864,6 +932,14 @@ describe("Report", () => {
 
                     expectBodyToBeFormatted("2", "request");
 
+                    cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortRequestBody);
+                        });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "0"))
                         .invoke("text")
                         .then((text) => {
@@ -887,6 +963,14 @@ describe("Report", () => {
                         });
 
                     expectBodyToBeFormatted("2", "response");
+
+                    cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortResponseBody);
+                        });
                 }
             );
 
@@ -929,6 +1013,14 @@ describe("Report", () => {
 
                     expectBodyToBeFormatted("2", "request");
 
+                    cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortRequestBody);
+                        });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "0"))
                         .invoke("text")
                         .then((text) => {
@@ -952,6 +1044,14 @@ describe("Report", () => {
                         });
 
                     expectBodyToBeFormatted("2", "response");
+
+                    cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortResponseBody);
+                        });
                 }
             );
 
@@ -1000,6 +1100,14 @@ describe("Report", () => {
 
                     expectBodyToBeFormatted("2", "request");
 
+                    cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortRequestBody);
+                        });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "0"))
                         .invoke("text")
                         .then((text) => {
@@ -1029,6 +1137,14 @@ describe("Report", () => {
                         });
 
                     expectBodyToBeFormatted("2", "response");
+
+                    cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortResponseBody);
+                        });
                 }
             );
 
@@ -1054,15 +1170,25 @@ describe("Report", () => {
 
                             expect(JSON.stringify(body)).to.eq(largeRequestBody1);
                         });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "1"))
                         .invoke("text")
                         .then((text) => {
                             expect(text.endsWith("...")).to.be.true;
                         });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "2"))
                         .invoke("text")
                         .then((text) => {
                             expect(text.endsWith("...")).to.be.true;
+                        });
+
+                    cy.get(byDataTestId(ReportTestIdPrefix.REQUEST_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortRequestBody);
                         });
 
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "0"))
@@ -1070,17 +1196,27 @@ describe("Report", () => {
                         .then((text) => {
                             expect(text.endsWith("...")).to.be.true;
                         });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "1"))
                         .invoke("text")
                         .then((text) => {
                             expect(text.endsWith("...")).to.be.true;
                         });
+
                     cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "2"))
                         .invoke("text")
                         .then((text) => {
                             const body = JSON.parse(text);
 
                             expect(JSON.stringify(body)).to.eq(largeResponseBody3);
+                        });
+
+                    cy.get(byDataTestId(ReportTestIdPrefix.RESPONSE_BODY_CONTENT, "3"))
+                        .invoke("text")
+                        .then((text) => {
+                            const body = JSON.parse(text);
+
+                            expect(JSON.stringify(body)).to.eq(shortResponseBody);
                         });
                 }
             );
@@ -1115,7 +1251,7 @@ describe("Report", () => {
             const apiTest3 = new URL("http://localhost:3000/api/test-z3");
 
             const outputFileName = "report-with-timeout.html";
-            const outputFilePath = `${networkReportOutputDir}/${outputFileName}`;
+            const outputFilePath = `${outputDir}/${outputFileName}`;
 
             cy.task("doesFileExist", outputFilePath).should("be.false");
 

@@ -283,10 +283,10 @@ export interface WaitUntilRequestOptions extends IRouteMatcherObject {
      * Time to wait in milliseconds. The default is set to 750.
      *
      * It is necessary to wait if there might be a following request after the last one
-     * (due to JavaScript code and subsequent requests). Set it to 0 to skip repeated
+     * (due to JavaScript code and subsequent requests). Set it to false or 0 to skip repeated
      * checking for requests.
      */
-    waitForNextRequest?: number;
+    waitForNextRequest?: false | number;
 }
 
 export type WindowTypeOfRequestProxy = Cypress.AUTWindow & {

@@ -27,7 +27,7 @@ declare global {
              * XMLHttpRequest implementations. This command removes all proxy
              * functionality and restores the browser's native implementations.
              */
-            destroyInterceptor(): Chainable<void>;
+            destroyInterceptor(): void;
             /**
              * Get an instance of the Interceptor
              *
@@ -82,7 +82,7 @@ declare global {
             /**
              * Recreate the Interceptor instance.
              */
-            recreateInterceptor(): Chainable<void>;
+            recreateInterceptor(): void;
             /**
              * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
              * is necessary when you want to wait for certain requests.
@@ -802,7 +802,11 @@ export class Interceptor {
             }
         ).then(() => {
             const waitForNextRequestTime =
-                stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_WAIT_FOR_NEXT_REQUEST;
+                stringMatcherOrOptions.waitForNextRequest !== undefined
+                    ? stringMatcherOrOptions.waitForNextRequest === false
+                        ? 0
+                        : stringMatcherOrOptions.waitForNextRequest
+                    : DEFAULT_WAIT_FOR_NEXT_REQUEST;
 
             // check with a delay if there is an another request after the last one
             return waitForNextRequestTime > 0
