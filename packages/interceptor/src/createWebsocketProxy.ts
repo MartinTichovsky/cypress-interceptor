@@ -1,6 +1,8 @@
 import { WindowTypeOfWebsocketProxy } from "../WebsocketInterceptor.types";
 import { WebsocketListener } from "./websocketListener";
 
+export const CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED = "__websocketProxyDisabled";
+
 const getQueryObjectFromString = (url: string) => {
     const urlObject = new URL(url.toString());
     const queryArray = [...urlObject.searchParams.entries()];
@@ -16,6 +18,10 @@ const getQueryObjectFromString = (url: string) => {
 
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
     const listener = (win: WindowTypeOfWebsocketProxy) => {
+        if (Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)) {
+            return;
+        }
+
         if (win.originWebSocket === undefined) {
             win.originWebSocket = win.WebSocket;
         }
@@ -51,10 +57,6 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                 };
 
                 this.onerror = () => {
-                    //
-                };
-
-                this.onmessage = () => {
                     //
                 };
             }

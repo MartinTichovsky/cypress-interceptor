@@ -1,37 +1,119 @@
 import "cypress-interceptor";
 import "cypress-interceptor/websocket";
 
+import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "cypress-interceptor/src/createFetchProxy";
+import { CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED } from "cypress-interceptor/src/createWebsocketProxy";
+import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "cypress-interceptor/src/createXMLHttpRequestProxy";
 import { SERVER_URL } from "cypress-interceptor-server/src/resources/constants";
 import {
     getInitForFetchFromParams,
     getParamsFromDynamicRequest
 } from "cypress-interceptor-server/src/resources/dynamic";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
+import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
-const outputDir = "_logs";
+import { OUTPUT_DIR } from "../src/constants";
+import { getResponseStatus } from "../src/selectors";
+
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 const testPath_Fetch_1 = "stats/fetch-1";
 
-before(() => {
-    cy.task("clearLogs", [outputDir]);
-});
+const createTests = (disableInterceptor: boolean, withvisit: "after" | "before") => {
+    describe(`Edge Cases and Error Scenarios with interceptor ${disableInterceptor ? "disabled" : "enabled"}`, () => {
+        beforeEach(() => {
+            cy.task("clearLogs", [outputDir]);
 
-beforeEach(() => {
-    cy.visit("/");
-});
+            if (withvisit === "before") {
+                cy.visit("/");
+            }
 
-const createTests = (disableInterceptor: boolean) => {
-    beforeEach(() => {
+            if (disableInterceptor) {
+                cy.destroyInterceptor();
+                cy.destroyWsInterceptor();
+
+                cy.window().then((win) => {
+                    expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(true);
+                    expect("originFetch" in win).to.eq(false);
+
+                    expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(true);
+                    expect("originXMLHttpRequest" in win).to.eq(false);
+
+                    expect(Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(true);
+                    expect("originWebSocket" in win).to.eq(false);
+                });
+            } else {
+                cy.recreateInterceptor();
+                cy.recreateWsInterceptor();
+
+                cy.window().then((win) => {
+                    expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(false);
+                    expect("originFetch" in win).to.eq(true);
+
+                    expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(false);
+                    expect("originXMLHttpRequest" in win).to.eq(true);
+
+                    expect(Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(false);
+                    expect("originWebSocket" in win).to.eq(true);
+                });
+            }
+
+            if (withvisit === "after") {
+                cy.visit("/");
+            }
+        });
+
         if (disableInterceptor) {
-            cy.destroyInterceptor();
+            it("Interceptor should be disabled", () => {
+                const testPath_api_1 = "fetch-1";
+                const testPath_api_2 = "xhr-1";
 
-            cy.window().then((win) => {
-                expect("originFetch" in win).to.eq(false);
-                expect("originXMLHttpRequest" in win).to.eq(false);
+                cy.visit(
+                    getDynamicUrl([
+                        {
+                            method: "POST",
+                            path: "fetch-1",
+                            type: "fetch"
+                        },
+                        {
+                            method: "POST",
+                            path: "xhr-1",
+                            type: "xhr"
+                        }
+                    ])
+                );
+
+                cy.wait(1000);
+
+                cy.interceptorStats().then((stats) => {
+                    expect(stats.length).to.eq(0);
+                });
+
+                getResponseStatus(testPath_api_1).should("eq", 200);
+                getResponseStatus(testPath_api_2).should("eq", 200);
+            });
+
+            it("wsInterceptor should be disabled", () => {
+                const response = "test";
+
+                cy.visit(
+                    getDynamicUrl([
+                        {
+                            autoResponse: [{ data: response }],
+                            delay: 100,
+                            path: "webSocket-1",
+                            type: "websocket"
+                        }
+                    ])
+                );
+
+                cy.wait(1000);
+
+                cy.wsInterceptorStats().then((stats) => {
+                    expect(stats.length).to.eq(0);
+                });
             });
         }
-    });
 
-    describe(`Edge Cases and Error Scenarios with interceptor ${disableInterceptor ? "disabled" : "enabled"}`, () => {
         describe("Fetch Edge Cases", () => {
             it("should handle fetch with AbortController", () => {
                 cy.window().then(async (win) => {
@@ -81,9 +163,11 @@ const createTests = (disableInterceptor: boolean) => {
 
                             while (true) {
                                 const { done, value } = await reader!.read();
+
                                 if (done) {
                                     break;
                                 }
+
                                 chunks.push(new TextDecoder().decode(value));
                             }
 
@@ -162,6 +246,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.timeout = 1000;
 
                         xhr.ontimeout = () => {
@@ -179,6 +264,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", "/headers-test");
                         xhr.setRequestHeader("X-Custom-Header", "test-value");
                         xhr.setRequestHeader("Content-Type", "application/json");
@@ -205,6 +291,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params.url);
                         xhr.responseType = "blob";
 
@@ -231,6 +318,7 @@ const createTests = (disableInterceptor: boolean) => {
                         ...getInitForFetchFromParams(entry, getParamsFromDynamicRequest(entry))
                     );
                     const blob = await response.blob();
+
                     expect(blob).to.be.instanceof(win.Blob);
                 });
             });
@@ -247,6 +335,7 @@ const createTests = (disableInterceptor: boolean) => {
                 cy.window().then((win) => {
                     return new Promise((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params.url);
                         xhr.responseType = "json";
 
@@ -460,6 +549,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     const xhrPromise = new Promise<XMLHttpRequest>((resolve) => {
                         const xhr = new win.XMLHttpRequest();
+
                         xhr.open("GET", params2.url);
                         xhr.onload = () => resolve(xhr);
                         xhr.send();
@@ -469,6 +559,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     const wsPromise = new Promise<WebSocket>((resolve) => {
                         const ws = new win.WebSocket(params3.url);
+
                         ws.onopen = () => resolve(ws);
                     });
 
@@ -617,6 +708,7 @@ const createTests = (disableInterceptor: boolean) => {
 
                     return fetchPromise.then(async (response) => {
                         const reader = response.body?.getReader();
+
                         controller.abort(); // Cancel after response started
 
                         try {
@@ -663,7 +755,9 @@ const createTests = (disableInterceptor: boolean) => {
     });
 };
 
-// we must be sure that the tests are applicable to the original fetch and xhr
-createTests(true);
+// we must be sure that the tests are applicable to the original fetch, xhr and websocket
+createTests(true, "before");
+createTests(true, "after");
 // tests with interceptor enabled
-createTests(false);
+createTests(false, "before");
+createTests(false, "after");

@@ -1,8 +1,8 @@
 /// <reference types="cypress" preserve="true" />
 
-import { ConsoleProxy } from "./ConsoleProxy";
-import { deepCopy, removeUndefinedFromObject } from "./utils";
-import { getFilePath } from "./utils.cypress";
+import { ConsoleProxy } from "./src/ConsoleProxy";
+import { cloneAndRemoveCircular, deepCopy, removeUndefinedFromObject } from "./src/utils";
+import { getFilePath } from "./src/utils.cypress";
 import {
     ConsoleLog,
     ConsoleLogType,
@@ -31,7 +31,7 @@ declare global {
             /**
              * Write the logged console output to a file
              *
-             * @example cy.writeConsoleLogToFile("./out") => the output file will be "./out/Description - It.stats.json"
+             * @example cy.writeConsoleLogToFile("./out") => the output file will be "./out/[Description] It.stats.json"
              * @example cy.writeConsoleLogToFile("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
              * @example cy.writeConsoleLogToFile("./out", { types: [ConsoleLogType.ConsoleError, ConsoleLogType.Error] }) => write only the
              * console errors and unhandled JavaScript errors to the output file
@@ -48,9 +48,6 @@ declare global {
         }
     }
 }
-
-const isObject = (val: unknown): val is Record<string, unknown> =>
-    typeof val === "object" && val !== null && !Array.isArray(val);
 
 const defaultOptions: Required<WatchTheConsoleOptions> = {
     cloneConsoleArguments: false
@@ -121,100 +118,18 @@ export class WatchTheConsole {
         return this.consoleProxy.win;
     }
 
-    private cloneAndRemoveCircular(value: unknown, recursiveStack: unknown[] = [], callCount = 0) {
-        if (
-            typeof value === "bigint" ||
-            typeof value === "boolean" ||
-            typeof value === "number" ||
-            typeof value === "string" ||
-            value === null ||
-            value === undefined
-        ) {
-            return value;
-        }
-
-        value = this.removeNonClonable(value);
-
-        if (isObject(value) && recursiveStack.includes(value)) {
-            return "[Circular]";
-        } else if (isObject(value) && Object.keys(value).length) {
-            const index = recursiveStack.push(value);
-            const result: Record<string, unknown> = {};
-
-            for (const key of Object.keys(value)) {
-                result[key] = this.cloneAndRemoveCircular(value[key], recursiveStack, ++callCount);
-            }
-
-            recursiveStack.splice(index - 1, 1);
-
-            return result;
-        } else if (Array.isArray(value) && recursiveStack.includes(value)) {
-            return "[Circular]";
-        } else if (Array.isArray(value)) {
-            const index = recursiveStack.push(value);
-            const result: unknown[] = [];
-
-            for (const entry of value) {
-                result.push(this.cloneAndRemoveCircular(entry, recursiveStack, ++callCount));
-            }
-
-            recursiveStack.splice(index - 1, 1);
-
-            return result;
-        } else {
-            return value;
-        }
-    }
-
     private cloneConsoleArguments(args: unknown[]) {
         const result: unknown[] = [];
 
         for (const arg of args) {
             try {
-                result.push(this.cloneAndRemoveCircular(arg));
+                result.push(cloneAndRemoveCircular(arg, this.win));
             } catch (e) {
                 result.push(String(e));
             }
         }
 
         return result;
-    }
-
-    private removeNonClonable(value: unknown) {
-        if (
-            value instanceof this.win.Element ||
-            value instanceof Element ||
-            value instanceof this.win.HTMLElement ||
-            value instanceof HTMLElement
-        ) {
-            return value.constructor.name;
-        }
-
-        if (isObject(value) && value.$$typeof === Symbol.for("react.element")) {
-            return "ReactElement";
-        }
-
-        if (typeof value === "function") {
-            return String(value);
-        }
-
-        if (value instanceof this.win.WeakMap || value instanceof WeakMap) {
-            return "WeakMap";
-        }
-
-        if (value instanceof this.win.WeakSet || value instanceof WeakSet) {
-            return "WeakSet";
-        }
-
-        if (value instanceof this.win.Window || value instanceof Window) {
-            return "Window";
-        }
-
-        if (typeof value === "symbol") {
-            return "Symbol";
-        }
-
-        return value;
     }
 
     /**

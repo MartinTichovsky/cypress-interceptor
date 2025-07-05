@@ -948,7 +948,7 @@ describe("Wait For Requests", () => {
                 ])
             );
 
-            cy.waitUntilRequestIsDone({ waitForNextRequest: 0 });
+            cy.waitUntilRequestIsDone({ waitForNextRequest: false });
 
             cy.stopTiming().should("be.gte", duration).should("be.lt", delay);
 

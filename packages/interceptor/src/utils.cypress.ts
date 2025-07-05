@@ -1,9 +1,24 @@
 /// <reference types="cypress" preserve="true" />
 
+/**
+ * Get the file name from the current test
+ *
+ * @returns The file name from the current test, the result will be:
+ *    `fileName.extension [description] it`
+ * or if no description, just:
+ *    `fileName.extension it`
+ */
 export const getFileNameFromCurrentTest = () => {
-    const currentTest = Cypress.currentTest;
+    const titlePath = Cypress.currentTest.titlePath;
 
-    return currentTest.titlePath.length ? currentTest.titlePath.join(" - ") : currentTest.title;
+    if (titlePath.length > 1) {
+        return `${titlePath
+            .slice(0, -1)
+            .map((title) => `[${normalizeFileName(title)}]`)
+            .join(" ")} ${normalizeFileName(titlePath[titlePath.length - 1])}`;
+    }
+
+    return titlePath[0];
 };
 
 export const getFilePath = (
@@ -23,9 +38,9 @@ export const getFilePath = (
 };
 
 export const getNormalizedFileNameFromCurrentTest = () => {
-    const filePath = Cypress.spec.relative.replace(/^(cypress\\(\w+)\\)|(cypress\/(\w+)\/)/i, "");
+    const filePath = Cypress.spec.relative.replace(/^(cypress\\e2e\\)|(cypress\/e2e\/)/i, "");
 
-    return `${normalizeFileName(filePath)} (${normalizeFileName(getFileNameFromCurrentTest())})`;
+    return `${filePath} ${getFileNameFromCurrentTest()}`;
 };
 
 export const maxLengthFileName = (fileName: string, extension: string) => {
@@ -36,7 +51,7 @@ export const maxLengthFileName = (fileName: string, extension: string) => {
 
 export const normalizeFileName = (fileName: string) =>
     fileName
-        .replace(/[^a-zA-Z0-9_\-. ]/gi, "-")
+        .replace(/[^a-zA-Z0-9_\-.() ]/gi, "")
         .replace(/(-)+/g, "-")
         .replace(/( )+/g, " ")
         .replace(/[- ]{4}/g, "");

@@ -4,6 +4,7 @@ import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
+import { OUTPUT_DIR } from "../src/constants";
 import { testCaseIt } from "../src/utils";
 
 function createOutputFileName(outputDir: string, fileName?: string) {
@@ -14,7 +15,7 @@ function createOutputFileName(outputDir: string, fileName?: string) {
         : getFilePath(undefined, outputDir, type);
 }
 
-const outputDir = "_stats";
+const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 const testPath_Fetch_1 = "stats/fetch-1";
 
 before(() => {
@@ -86,7 +87,6 @@ describe("Custom", () => {
             const testPath_Fetch1 = "stats/fetch-1";
             const testPath_Fetch2 = "stats/fetch-2";
             const fileName = "FILE_NAME_FILTER";
-            const outputDir = "_logs";
 
             const customHeader = (source: string) => ({
                 "custom-header": source
@@ -325,53 +325,94 @@ describe("Custom", () => {
                 "application/xml"
             );
             const result = await convertInputBodyToString(doc, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should return string as is", async () => {
             const input = "test string";
             const result = await convertInputBodyToString(input, win);
+
             expect(result).to.equal(input);
         });
 
         it("should convert Blob to string", async () => {
             const blob = new win.Blob(["test blob"], { type: "text/plain" });
             const result = await convertInputBodyToString(blob, win);
+
             expect(result).to.equal("test blob");
         });
 
         it("should convert FormData to JSON string", async () => {
             const formData = new win.FormData();
+
             formData.append("key", "value");
+
             const result = await convertInputBodyToString(formData, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should convert URLSearchParams to JSON string", async () => {
             const params = new win.URLSearchParams(testObject);
             const result = await convertInputBodyToString(params, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should convert ArrayBuffer to string", async () => {
             const buffer = new win.TextEncoder().encode("test buffer").buffer;
             const result = await convertInputBodyToString(buffer, win);
+
             expect(result).to.equal("test buffer");
         });
 
         it("should convert object to JSON string", async () => {
             const result = await convertInputBodyToString(testObject as unknown as BodyInit, win);
+
             expect(result).to.equal(xpectString);
         });
 
         it("should return empty string for null input", async () => {
             const result = await convertInputBodyToString(null, win);
+
             expect(result).to.equal("");
         });
 
         it("should return empty string for undefined input", async () => {
             const result = await convertInputBodyToString(undefined, win);
+
             expect(result).to.equal("");
+        });
+
+        it("should reject if FileReader throw an error", async () => {
+            class MockFileReader {
+                public error: Error = new Error("read error");
+                public onerror: (() => void) | null = null;
+                public onload: (() => void) | null = null;
+
+                readAsText() {
+                    setTimeout(() => {
+                        if (this.onerror) {
+                            this.onerror();
+                        }
+                    }, 0);
+                }
+            }
+
+            window.FileReader = MockFileReader as unknown as typeof window.FileReader;
+
+            const blob = new window.Blob(["test"]);
+
+            return convertInputBodyToString(blob, win).then(
+                () => {
+                    throw new Error("Promise should have been rejected");
+                },
+                (err) => {
+                    expect(err).to.exist;
+                    expect(err.message).to.eq("read error");
+                }
+            );
         });
     });
 
@@ -476,6 +517,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl1);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);
@@ -507,6 +549,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl2);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);
@@ -533,6 +576,7 @@ describe("Custom", () => {
         cy.window().then((win) => {
             return new Promise((resolve) => {
                 const xhr = new win.XMLHttpRequest();
+
                 xhr.open("GET", testUrl3);
                 xhr.onload = () => {
                     expect(xhr.status).to.eq(200);

@@ -10,15 +10,18 @@ import {
     WindowTypeOfRequestProxy,
     WriteStatsOptions
 } from "./Interceptor.types";
+import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "./src/createFetchProxy";
 import { createRequestProxy } from "./src/createRequestProxy";
+import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "./src/createXMLHttpRequestProxy";
 import { RequestProxy } from "./src/RequestProxy";
 
 (() => {
+    const startTime = new Date().getTime();
     let timeStart: number | undefined = undefined;
     let timeStop: number | undefined = undefined;
 
     const requestProxy = new RequestProxy();
-    let interceptor = new Interceptor(requestProxy);
+    let interceptor = new Interceptor(requestProxy, startTime);
 
     // to be able use it without cy.visit
     createRequestProxy(requestProxy)(window as WindowTypeOfRequestProxy);
@@ -28,9 +31,22 @@ import { RequestProxy } from "./src/RequestProxy";
 
     // register commands
     Cypress.Commands.add("destroyInterceptor", () => {
-        cy.window().then((_win) => {
-            const win = _win as WindowTypeOfRequestProxy;
+        Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, true);
+        Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, true);
 
+        const globalWin = window as WindowTypeOfRequestProxy;
+
+        if ("originFetch" in globalWin && globalWin.originFetch) {
+            globalWin.fetch = globalWin.originFetch;
+            delete globalWin["originFetch"];
+        }
+
+        if ("originXMLHttpRequest" in globalWin && globalWin.originXMLHttpRequest) {
+            globalWin.XMLHttpRequest = globalWin.originXMLHttpRequest;
+            delete globalWin["originXMLHttpRequest"];
+        }
+
+        cy.window().then((win: WindowTypeOfRequestProxy) => {
             if ("originFetch" in win && win.originFetch) {
                 win.fetch = win.originFetch;
                 delete win["originFetch"];
@@ -61,16 +77,25 @@ import { RequestProxy } from "./src/RequestProxy";
             cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
     );
     Cypress.Commands.add("recreateInterceptor", () => {
-        interceptor = new Interceptor(requestProxy);
-        cy.window().then((win) => createRequestProxy(requestProxy)(win));
+        Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, false);
+        Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, false);
+
+        interceptor = new Interceptor(requestProxy, startTime);
+
+        // to be able use it without cy.visit
+        createRequestProxy(requestProxy)(window as WindowTypeOfRequestProxy);
+
+        cy.window().then(createRequestProxy(requestProxy));
     });
     Cypress.Commands.add("resetInterceptorWatch", () => interceptor.resetWatch());
     Cypress.Commands.add("startTiming", () => {
         timeStart = performance.now();
+
         return cy.wrap(timeStart, { timeout: 0 });
     });
     Cypress.Commands.add("stopTiming", () => {
         timeStop = performance.now();
+
         return cy.wrap(timeStart !== undefined ? timeStop - timeStart : undefined, {
             timeout: 0
         });
@@ -95,7 +120,7 @@ import { RequestProxy } from "./src/RequestProxy";
 
     // reset the instance in each run
     Cypress.on("test:before:run", () => {
-        interceptor = new Interceptor(requestProxy);
+        interceptor = new Interceptor(requestProxy, startTime);
     });
 })();
 

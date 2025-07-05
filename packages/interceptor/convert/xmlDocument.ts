@@ -91,6 +91,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, win }: ObjectToX
         try {
             const appendValue = (value: string, type: string) => {
                 const element = document.createElement(isArray ? __ARRAY_ITEM__ : key);
+
                 element.setAttribute("type", type);
                 element.textContent = value;
                 isArray && element.setAttribute("index", key);
@@ -113,6 +114,7 @@ const objectToXMLDocument_recurisive = ({ data, document, node, win }: ObjectToX
             }
 
             const element = document.createElement(isArray ? __ARRAY_ITEM__ : key);
+
             isArray && element.setAttribute("index", key);
             node.appendChild(element);
 

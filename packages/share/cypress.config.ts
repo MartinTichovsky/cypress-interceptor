@@ -2,7 +2,8 @@ import registerCodeCoverageTasks from "@cypress/code-coverage/task";
 import webpackPreprocessor from "@cypress/webpack-preprocessor";
 import {
     createNetworkReportFromFile,
-    createNetworkReportFromFolder
+    createNetworkReportFromFolder,
+    ReportHtmlOptions
 } from "cypress-interceptor/report";
 import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
 import * as fs from "fs";
@@ -52,6 +53,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 },
                 copyToFixtures(filePath: string) {
                     filePath = path.resolve(filePath);
+
                     const fileName = path.basename(filePath);
 
                     if (!fs.existsSync(fixturesFolder)) {
@@ -63,13 +65,19 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                     return fileName;
                 },
                 createReportFromFile(fileName?: string, highDuration?: number) {
-                    createNetworkReportFromFile(`${mockFolderPath}/sources.stats.json`, {
+                    return createNetworkReportFromFile(`${mockFolderPath}/sources.stats.json`, {
                         fileName,
                         outputDir: fixturesFolder,
                         highDuration
                     });
-
-                    return `${fileName || "sources"}.html`;
+                },
+                createNetworkReportFromFile({
+                    filePath,
+                    ...options
+                }: {
+                    filePath: string;
+                } & ReportHtmlOptions) {
+                    return createNetworkReportFromFile(filePath, options);
                 },
                 createReportFromFolder() {
                     createNetworkReportFromFolder(mockFolderPath, {
@@ -83,6 +91,7 @@ export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
                 },
                 log(message) {
                     console.log(message);
+
                     return null;
                 }
             });

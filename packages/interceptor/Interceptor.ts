@@ -15,7 +15,7 @@ import {
     WriteStatsOptions
 } from "./Interceptor.types";
 import { RequestProxy } from "./src/RequestProxy";
-import { deepCopy, removeUndefinedFromObject, replacer, testUrlMatch } from "./src/utils";
+import { deepCopy, removeUndefinedFromObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
 import { waitTill } from "./src/wait";
 
@@ -23,10 +23,11 @@ declare global {
     namespace Cypress {
         interface Chainable {
             /**
-             * Destroy the Interceptor proxy. The original `fetch` and `XMLHttpRequest` will be restored.
-             * The latest Interceptor instance is still available.
+             * Destroy the interceptor by restoring the original fetch and
+             * XMLHttpRequest implementations. This command removes all proxy
+             * functionality and restores the browser's native implementations.
              */
-            destroyInterceptor(): Chainable<void>;
+            destroyInterceptor(): void;
             /**
              * Get an instance of the Interceptor
              *
@@ -81,7 +82,7 @@ declare global {
             /**
              * Recreate the Interceptor instance.
              */
-            recreateInterceptor(): Chainable<void>;
+            recreateInterceptor(): void;
             /**
              * Reset the Interceptor's watch. It sets the pointer to the last call. Resetting the pointer
              * is necessary when you want to wait for certain requests.
@@ -160,7 +161,7 @@ declare global {
             /**
              * Write the logged requests' information (or those filtered by the provided route matcher) to a file
              *
-             * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/Description - It.stats.json"
+             * @example cy.writeInterceptorStatsToLog("./out") => the output file will be "./out/[Description] It.stats.json"
              * @example cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
              * @example cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
              * @example cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
@@ -192,6 +193,7 @@ const parseResponseHeaders = (headersString: string) => {
 
     headerLines.forEach((line) => {
         const [key, value] = line.split(": ", 2);
+
         if (key && value !== undefined) {
             headers[key.toLowerCase()] = value;
         }
@@ -225,7 +227,12 @@ export class Interceptor {
     private _throttleId = 0;
     private win: Cypress.AUTWindow = window;
 
-    constructor(requestProxy: RequestProxy) {
+    constructor(
+        requestProxy: RequestProxy,
+        private startTime: number
+    ) {
+        let _sequenceId = 0;
+
         requestProxy.onCreate = () => {
             for (const request of this._callStack) {
                 if (
@@ -242,11 +249,13 @@ export class Interceptor {
             const _headerProcessStart = performance.now();
 
             this.win = win;
+
             const crossDomain = request.url.host !== document.location.host;
             // the pending status is not logged in cross-domain requests when ignoreCrossDomain is `true`
             // but it can be mocked or throttled
             const ignoreItem = this._options.ignoreCrossDomain && crossDomain;
             const query = Object.fromEntries(request.url.searchParams);
+            const runtime = new Date().getTime() - this.startTime;
 
             const item: CallStack = {
                 crossDomain,
@@ -258,11 +267,20 @@ export class Interceptor {
                     query: deepCopy(query)
                 },
                 resourceType,
+                sequenceId: ++_sequenceId,
                 timeStart: new Date("0000-00-00"),
-                url: request.url
+                url: request.url,
+                runtime,
+                runtimeString: this.getRuntimeString(runtime)
             };
 
             this._callStack.push(item);
+
+            /**
+             * when mocking the response, the priority is:
+             * - mock
+             * - throttle
+             */
 
             const throttle = this.getThrottle(item);
             const mock = this.getMock(item) ?? throttle.mockResponse;
@@ -277,11 +295,14 @@ export class Interceptor {
                     const _responseProcessDuration = performance.now();
 
                     item.duration = performance.now() - durationStart;
+
                     const timeEnd = new Date();
 
                     let body = "";
 
                     // store the response body as string (less demanding than an object) for possible logging
+
+                    // fetch
                     if ("clone" in response) {
                         const responseClone = response.clone();
 
@@ -290,10 +311,14 @@ export class Interceptor {
                         } catch {
                             //
                         }
-                    } else if ("responseText" in response) {
+                    }
+                    // XMLHttpRequest
+                    else if ("responseText" in response) {
                         body =
                             response.responseType === "json"
-                                ? JSON.stringify(response.response)
+                                ? typeof response.response === "object"
+                                    ? JSON.stringify(response.response)
+                                    : String(response.response)
                                 : response.responseText;
                     }
 
@@ -482,6 +507,15 @@ export class Interceptor {
         return items.length ? deepCopy(items[items.length - 1]) : undefined;
     }
 
+    private getRuntimeString(runtime: number) {
+        const hours = Math.floor(runtime / 3600000);
+        const minutes = Math.floor((runtime % 3600000) / 60000);
+        const seconds = Math.floor((runtime % 60000) / 1000);
+        const milliseconds = runtime % 1000;
+
+        return `${hours}h ${minutes}m ${seconds}s ${milliseconds}ms`;
+    }
+
     /**
      * Get statistics for all requests matching the provided route matcher since the beginning of the current test.
      *
@@ -554,6 +588,7 @@ export class Interceptor {
         options?: IMockResponseOptions
     ) {
         const mockEntry = { id: ++this._mockId, mock, options, routeMatcher };
+
         this._mock.push(mockEntry);
 
         return mockEntry.id;
@@ -641,6 +676,7 @@ export class Interceptor {
         options?: IThrottleRequestOptions
     ) {
         const throttleEntry = { delay, id: ++this._throttleId, options, routeMatcher };
+
         this._throttle.push(throttleEntry);
 
         return throttleEntry.id;
@@ -766,7 +802,11 @@ export class Interceptor {
             }
         ).then(() => {
             const waitForNextRequestTime =
-                stringMatcherOrOptions.waitForNextRequest ?? DEFAULT_WAIT_FOR_NEXT_REQUEST;
+                stringMatcherOrOptions.waitForNextRequest !== undefined
+                    ? stringMatcherOrOptions.waitForNextRequest === false
+                        ? 0
+                        : stringMatcherOrOptions.waitForNextRequest
+                    : DEFAULT_WAIT_FOR_NEXT_REQUEST;
 
             // check with a delay if there is an another request after the last one
             return waitForNextRequestTime > 0
@@ -821,7 +861,7 @@ export class Interceptor {
             getFilePath(options?.fileName, outputDir, "stats"),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
-                replacer,
+                undefined,
                 options?.prettyOutput ? 4 : undefined
             ),
             options

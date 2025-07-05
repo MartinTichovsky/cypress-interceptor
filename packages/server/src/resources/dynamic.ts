@@ -307,6 +307,7 @@ const processEntry = (entry: DynamicRequest) => {
                     const div = document.createElement("div");
 
                     const divResponse = document.createElement("div");
+
                     divResponse.setAttribute("data-response-type", "body");
 
                     if (!entry.bigData) {
@@ -319,18 +320,21 @@ const processEntry = (entry: DynamicRequest) => {
                     div.appendChild(divResponse);
 
                     const divStatusCode = document.createElement("div");
+
                     divStatusCode.setAttribute("data-response-type", "status-code");
                     divStatusCode.innerHTML = response.status.toString();
 
                     div.appendChild(divStatusCode);
 
                     const divHeaders = document.createElement("div");
+
                     divHeaders.setAttribute("data-response-type", "headers");
                     divHeaders.innerHTML = JSON.stringify([...response.headers.entries()]);
 
                     div.appendChild(divHeaders);
 
                     const divDuration = document.createElement("div");
+
                     divDuration.setAttribute("data-response-type", "duration");
                     divDuration.innerHTML = duration.toString();
 
@@ -372,6 +376,7 @@ const processEntry = (entry: DynamicRequest) => {
                 const div = document.createElement("div");
 
                 const divResponse = document.createElement("div");
+
                 divResponse.setAttribute("data-response-type", "body");
 
                 if (!entry.bigData) {
@@ -384,12 +389,14 @@ const processEntry = (entry: DynamicRequest) => {
                 div.appendChild(divResponse);
 
                 const divStatusCode = document.createElement("div");
+
                 divStatusCode.setAttribute("data-response-type", "status-code");
                 divStatusCode.innerHTML = request.status.toString();
 
                 div.appendChild(divStatusCode);
 
                 const divHeaders = document.createElement("div");
+
                 divHeaders.setAttribute("data-response-type", "headers");
                 divHeaders.innerHTML = JSON.stringify(
                     parseResponseHeaders(request.getAllResponseHeaders())
@@ -398,6 +405,7 @@ const processEntry = (entry: DynamicRequest) => {
                 div.appendChild(divHeaders);
 
                 const divDuration = document.createElement("div");
+
                 divDuration.setAttribute("data-response-type", "duration");
                 divDuration.innerHTML = duration.toString();
 
@@ -468,6 +476,7 @@ const processEntry = (entry: DynamicRequest) => {
 
         webSocket.onmessage = (response) => {
             const divResponse = document.createElement("div");
+
             divResponse.setAttribute("data-response-type", "message");
             divResponse.innerHTML = response.data;
 
@@ -519,6 +528,7 @@ const processRequests = (requests: DynamicRequest[] | undefined) => {
 
 const wrapInSection = (path: string, element: Node) => {
     const section = document.createElement("section");
+
     section.setAttribute("id", path);
 
     section.appendChild(element);

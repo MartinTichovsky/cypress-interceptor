@@ -4,6 +4,8 @@ import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
 
+export const CYPRESS_ENV_KEY_XHR_PROXY_DISABLED = "__xhrProxyDisabled";
+
 /**
  * !! IMPORTANT !!
  * There is a bug in the XMLHttpRequest implementation in Cypress. When use a wrapped function like:
@@ -44,6 +46,10 @@ export const createXMLHttpRequestProxy = (
     win: WindowTypeOfRequestProxy,
     requestProxy: RequestProxy
 ) => {
+    if (Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)) {
+        return;
+    }
+
     if (win.originXMLHttpRequest === undefined) {
         win.originXMLHttpRequest = win.XMLHttpRequest;
     }
@@ -83,26 +89,15 @@ export const createXMLHttpRequestProxy = (
             this.onreadystatechange = () => {
                 //
             };
-
-            this.ontimeout = () => {
-                //
-            };
         }
 
-        private createEvent(type: string, originalEvent: Event) {
-            if (originalEvent instanceof win.ProgressEvent) {
-                return new win.ProgressEvent(type, {
-                    bubbles: originalEvent.bubbles,
-                    cancelable: originalEvent.cancelable,
-                    lengthComputable: originalEvent.lengthComputable,
-                    loaded: originalEvent.loaded,
-                    total: originalEvent.total
-                });
-            }
-
-            return new win.Event(type, {
+        private createEvent(type: string, originalEvent: ProgressEvent<EventTarget>) {
+            return new win.ProgressEvent(type, {
                 bubbles: originalEvent.bubbles,
-                cancelable: originalEvent.cancelable
+                cancelable: originalEvent.cancelable,
+                lengthComputable: originalEvent.lengthComputable,
+                loaded: originalEvent.loaded,
+                total: originalEvent.total
             });
         }
 
@@ -144,59 +139,6 @@ export const createXMLHttpRequestProxy = (
             Object.defineProperty(this.shadowXhr, "responseURL", {
                 value: this._url.toString(),
                 writable: true,
-                configurable: true
-            });
-
-            // Handle different response types correctly
-            const currentResponseType = this.shadowXhr.responseType || "";
-
-            // Only set responseText if responseType is '' or 'text'
-            if (currentResponseType === "" || currentResponseType === "text") {
-                Object.defineProperty(this.shadowXhr, "responseText", {
-                    get: () => {
-                        const mockBody = this._getMockBody(); // Lazy evaluation - error thrown here if _getMockBody fails
-                        if (mockBody) {
-                            return typeof mockBody === "object"
-                                ? JSON.stringify(mockBody)
-                                : String(mockBody);
-                        } else {
-                            // Safely get responseText from super, avoiding our getter
-                            try {
-                                return super.responseText;
-                            } catch {
-                                return "";
-                            }
-                        }
-                    },
-                    configurable: true
-                });
-            }
-
-            // Set response property with lazy evaluation
-            Object.defineProperty(this.shadowXhr, "response", {
-                get: () => {
-                    const mockBody = this._getMockBody(); // Lazy evaluation - error thrown here if _getMockBody fails
-                    if (mockBody !== undefined) {
-                        switch (currentResponseType) {
-                            case "json":
-                                return typeof mockBody === "object" ? mockBody : mockBody;
-                            case "text":
-                            case "":
-                                return typeof mockBody === "object"
-                                    ? JSON.stringify(mockBody)
-                                    : String(mockBody);
-                            case "arraybuffer":
-                            case "blob":
-                            case "document":
-                                // For these types, use the actual response from the main XMLHttpRequest
-                                return this.response;
-                            default:
-                                return this.response;
-                        }
-                    } else {
-                        return this.response;
-                    }
-                },
                 configurable: true
             });
         }
@@ -317,13 +259,15 @@ export const createXMLHttpRequestProxy = (
                     const originalEvent = args[0] as Event;
                     // loadstart happens at the beginning, so no need to wait for response
                     const newEvent = this.createProgressEvent("loadstart", originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             } else {
                 // For other events, execute on shadow XMLHttpRequest
                 proxyListener = (...args) => {
-                    const originalEvent = args[0] as Event;
+                    const originalEvent = args[0] as ProgressEvent<EventTarget>;
                     const newEvent = this.createEvent(originalEvent.type, originalEvent);
+
                     this.shadowXhr.dispatchEvent(newEvent);
                 };
             }
@@ -390,6 +334,7 @@ export const createXMLHttpRequestProxy = (
                                                 new win.ProgressEvent("readystatechange")
                                             );
                                             this.dispatchEvent(new win.ProgressEvent("load"));
+                                            this.dispatchEvent(new win.ProgressEvent("loadend"));
                                         },
                                         true
                                     );
@@ -452,6 +397,7 @@ export const createXMLHttpRequestProxy = (
         get responseText() {
             // Check if responseType allows access to responseText
             const currentResponseType = this.responseType || "";
+
             if (currentResponseType !== "" && currentResponseType !== "text") {
                 throw new win.DOMException(
                     `Failed to read the 'responseText' property from 'XMLHttpRequest': The value is only accessible if the object's 'responseType' is '' or 'text' (was '${currentResponseType}').`,

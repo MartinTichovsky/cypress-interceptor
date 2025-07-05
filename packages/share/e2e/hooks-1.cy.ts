@@ -1,7 +1,7 @@
 import "cypress-interceptor/console";
 import "cypress-interceptor/websocket";
 
-import { ConsoleLogType } from "cypress-interceptor/src/WatchTheConsole.types";
+import { ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { fireRequest } from "../src/utils";

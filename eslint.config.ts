@@ -1,8 +1,8 @@
-const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
-const eslint = require('@eslint/js');
-const simpleImportSort = require("eslint-plugin-simple-import-sort");
-const stylistic = require('@stylistic/eslint-plugin');
-const tseslint = require('typescript-eslint');
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslint from '@eslint/js';
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import stylistic from '@stylistic/eslint-plugin';
+import tseslint from 'typescript-eslint';
 
 module.exports = tseslint.config(
     // Any other config imports go at the top
@@ -34,6 +34,33 @@ module.exports = tseslint.config(
                 }
             ],
             "no-unused-vars": "off",
+            "padding-line-between-statements": [
+                "warn",
+                {
+                    blankLine: "always", next: "*", prev: ["import", "export"]
+                },
+                {
+                    blankLine: "any", next: ["import", "export"], prev: ["import", "export"],
+                },
+                {
+                    blankLine: "always", next: ["const", "let", "var"], prev: ["*"],
+                },
+                {
+                    blankLine: "always", next: "*", prev: ["const", "let", "var"],
+                },
+                {
+                    blankLine: "any", next: ["const", "let", "var"], prev: ["const", "let", "var"],
+                },
+                {
+                    blankLine: "always", next: ["block", "class", "do", "function", "if", "switch", "try", "while", "with"], prev: ["*"],
+                },
+                {
+                    blankLine: "always", next: "*", prev: ["block", "class", "do", "function", "if", "switch", "try", "while", "with"],
+                },
+                {
+                    blankLine: "always", next: "return", prev: ["*"],
+                },
+            ],
             "prettier/prettier": "warn",
             quotes: ["warn", "double", { "avoidEscape": true }],
             "simple-import-sort/imports": "warn",

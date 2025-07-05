@@ -96,6 +96,13 @@ describe("Convert", () => {
             expect(formDataToJsonString(objectToFormData(data3, window), window)).to.equal(
                 JSON.stringify(data3)
             );
+
+            expect(
+                formDataToJsonString(
+                    objectToFormData("data" as unknown as Record<string, unknown>, window),
+                    window
+                )
+            ).to.equal(JSON.stringify({}));
         });
 
         it("should handle nested objects and arrays with numbers/booleans", () => {
@@ -151,6 +158,13 @@ describe("Convert", () => {
             expect(
                 urlSearchParamsToJsonString(objectToURLSearchParams(data3, window), window)
             ).to.equal(JSON.stringify(data3));
+
+            expect(
+                urlSearchParamsToJsonString(
+                    objectToURLSearchParams("data" as unknown as Record<string, unknown>, window),
+                    window
+                )
+            ).to.equal(JSON.stringify({}));
         });
 
         it("should handle nested objects and arrays with numbers/booleans", () => {
@@ -286,6 +300,16 @@ describe("Convert", () => {
             const convertedData = xmlDocumentToObject(xmlDocument, window);
 
             expect(convertedData.created).to.deep.equal(date);
+        });
+
+        it("should non object values", () => {
+            const xmlDocument = objectToXMLDocument(
+                "data" as unknown as Record<string, unknown>,
+                window
+            );
+            const convertedData = xmlDocumentToObject(xmlDocument, window);
+
+            expect(convertedData).to.deep.equal({});
         });
     });
 });

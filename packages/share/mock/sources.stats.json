@@ -1,24 +1,21 @@
 [
     {
+        "_headerProcessDuration": 0,
+        "_responseProcessDuration": 0.3,
         "crossDomain": false,
+        "duration": 1850.5,
         "isPending": false,
         "request": {
             "body": "{\"repository\":\"demo\",\"project\":\"WebApp\",\"userName\":\"testuser\",\"password\":\"demo123\",\"info\":{\"dpr\":1,\"agent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\",\"culture\":\"en-US\",\"dpi\":{\"screenX\":96,\"screenY\":96},\"scrollbars\":{\"vertical\":17,\"horizontal\":17},\"timeZone\":\"UTC\",\"orientation\":null}}",
             "headers": {
                 "Cache-Control": "no-cache",
-                "X-Csrf-Token": null,
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/json;charset=UTF-8"
+                "Content-Type": "application/json;charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:00.000Z",
-        "url": "https://api.example.com/auth/login",
-        "delay": null,
-        "_headerProcessDuration": 0,
-        "duration": 1850.5,
         "response": {
             "body": "{\"isAuthenticated\":true,\"user\":{\"displayName\":\"Test User\",\"role\":\"user\",\"permissions\":[\"read\",\"write\"]},\"token\":\"demo-token-123\",\"success\":true}",
             "headers": {
@@ -33,10 +30,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:04.251Z"
         },
-        "_responseProcessDuration": 0.3
+        "timeStart": "2024-01-15T10:30:00.000Z",
+        "url": "https://api.example.com/auth/login"
     },
     {
+        "_headerProcessDuration": 5.2,
+        "_responseProcessDuration": 0.2,
         "crossDomain": false,
+        "duration": 2189.1,
         "isPending": false,
         "request": {
             "body": "",
@@ -50,11 +51,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:05.000Z",
-        "url": "https://api.example.com/dashboard/status?_dc=1705314604500",
-        "delay": null,
-        "_headerProcessDuration": 5.2,
-        "duration": 2189.1,
         "response": {
             "body": "{\"status\":\"active\",\"version\":\"1.0.0\",\"uptime\":86400,\"success\":true}",
             "headers": {
@@ -69,10 +65,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:11.789Z"
         },
-        "_responseProcessDuration": 0.2
+        "timeStart": "2024-01-15T10:30:05.000Z",
+        "url": "https://api.example.com/dashboard/status?_dc=1705314604500"
     },
     {
+        "_headerProcessDuration": 8.5,
+        "_responseProcessDuration": 0.15,
         "crossDomain": false,
+        "duration": 3456.7,
         "isPending": false,
         "request": {
             "body": "",
@@ -83,17 +83,12 @@
             "method": "GET",
             "query": {
                 "_dc": "1705314612000",
+                "limit": "25",
                 "page": "1",
-                "start": "0",
-                "limit": "25"
+                "start": "0"
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:12.000Z",
-        "url": "https://api.example.com/data/items?_dc=1705314612000&page=1&start=0&limit=25",
-        "delay": null,
-        "_headerProcessDuration": 8.5,
-        "duration": 3456.7,
         "response": {
             "body": "{\"data\":[{\"id\":\"item-001\",\"name\":\"Sample Item\",\"type\":\"document\",\"created\":\"2024-01-15T09:00:00Z\"},{\"id\":\"item-002\",\"name\":\"Another Item\",\"type\":\"image\",\"created\":\"2024-01-15T08:30:00Z\"}],\"total\":2,\"success\":true}",
             "headers": {
@@ -108,27 +103,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:15.457Z"
         },
-        "_responseProcessDuration": 0.15
+        "timeStart": "2024-01-15T10:30:12.000Z",
+        "url": "https://api.example.com/data/items?_dc=1705314612000&page=1&start=0&limit=25"
     },
     {
+        "_headerProcessDuration": 12.3,
+        "_responseProcessDuration": 0.4,
         "crossDomain": false,
+        "duration": 2334.2,
         "isPending": false,
         "request": {
             "body": "{\"query\":\"SELECT * FROM products WHERE category = 'electronics'\",\"limit\":100}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:16.000Z",
-        "url": "https://api.example.com/database/query",
-        "delay": null,
-        "_headerProcessDuration": 12.3,
-        "duration": 2334.2,
         "response": {
             "body": "{\"data\":[{\"id\":\"prod-001\",\"name\":\"Smartphone\",\"category\":\"electronics\",\"price\":299.99},{\"id\":\"prod-002\",\"name\":\"Laptop\",\"category\":\"electronics\",\"price\":899.99},{\"id\":\"prod-003\",\"name\":\"Tablet\",\"category\":\"electronics\",\"price\":199.99}],\"count\":3,\"success\":true}",
             "headers": {
@@ -143,10 +137,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:24.934Z"
         },
-        "_responseProcessDuration": 0.4
+        "timeStart": "2024-01-15T10:30:16.000Z",
+        "url": "https://api.example.com/database/query"
     },
     {
+        "_headerProcessDuration": 3.1,
+        "_responseProcessDuration": 0.25,
         "crossDomain": false,
+        "duration": 1678.9,
         "isPending": false,
         "request": {
             "body": "",
@@ -161,11 +159,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:25.000Z",
-        "url": "https://api.example.com/user/profile?_dc=1705314625000&userId=user-123",
-        "delay": null,
-        "_headerProcessDuration": 3.1,
-        "duration": 1678.9,
         "response": {
             "body": "{\"user\":{\"id\":\"user-123\",\"name\":\"John Doe\",\"email\":\"john.doe@example.com\",\"role\":\"admin\",\"lastLogin\":\"2024-01-15T10:00:00Z\"},\"success\":true}",
             "headers": {
@@ -180,27 +173,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:30.679Z"
         },
-        "_responseProcessDuration": 0.25
+        "timeStart": "2024-01-15T10:30:25.000Z",
+        "url": "https://api.example.com/user/profile?_dc=1705314625000&userId=user-123"
     },
     {
+        "_headerProcessDuration": 15.7,
+        "_responseProcessDuration": 0.5,
         "crossDomain": false,
+        "duration": 2234.8,
         "isPending": false,
         "request": {
             "body": "{\"reportId\":\"rpt-001\",\"parameters\":{\"startDate\":\"2024-01-01\",\"endDate\":\"2024-01-15\"}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:31.000Z",
-        "url": "https://api.example.com/reports/generate",
-        "delay": null,
-        "_headerProcessDuration": 15.7,
-        "duration": 2234.8,
         "response": {
             "body": "{\"reportId\":\"rpt-001-exec-456\",\"status\":\"completed\",\"downloadUrl\":\"/downloads/report-456.pdf\",\"recordCount\":1542,\"success\":true}",
             "headers": {
@@ -215,10 +207,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:38.235Z"
         },
-        "_responseProcessDuration": 0.5
+        "timeStart": "2024-01-15T10:30:31.000Z",
+        "url": "https://api.example.com/reports/generate"
     },
     {
+        "_headerProcessDuration": 2.8,
+        "_responseProcessDuration": 0.18,
         "crossDomain": false,
+        "duration": 4567.3,
         "isPending": false,
         "request": {
             "body": "",
@@ -233,11 +229,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:39.000Z",
-        "url": "https://api.example.com/dashboard/widgets?_dc=1705314638500&category=analytics",
-        "delay": null,
-        "_headerProcessDuration": 2.8,
-        "duration": 4567.3,
         "response": {
             "body": "{\"widgets\":[{\"id\":\"widget-001\",\"name\":\"Sales Chart\",\"type\":\"chart\",\"config\":{\"chartType\":\"line\",\"dataSource\":\"sales-data\"}},{\"id\":\"widget-002\",\"name\":\"User Activity\",\"type\":\"table\",\"config\":{\"columns\":[\"user\",\"action\",\"timestamp\"]}}],\"success\":true}",
             "headers": {
@@ -252,27 +243,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:43.567Z"
         },
-        "_responseProcessDuration": 0.18
+        "timeStart": "2024-01-15T10:30:39.000Z",
+        "url": "https://api.example.com/dashboard/widgets?_dc=1705314638500&category=analytics"
     },
     {
+        "_headerProcessDuration": 21.4,
+        "_responseProcessDuration": 0.35,
         "crossDomain": false,
+        "duration": 1876.5,
         "isPending": false,
         "request": {
             "body": "{\"fileName\":\"data-export.csv\",\"format\":\"csv\",\"filters\":{\"dateRange\":\"last-30-days\"}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:44.000Z",
-        "url": "https://api.example.com/data/export",
-        "delay": null,
-        "_headerProcessDuration": 21.4,
-        "duration": 1876.5,
         "response": {
             "body": "{\"exportId\":\"exp-789\",\"status\":\"processing\",\"estimatedCompletion\":\"2024-01-15T10:31:00Z\",\"fileSize\":\"2.5MB\",\"success\":true}",
             "headers": {
@@ -287,10 +277,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:30:53.877Z"
         },
-        "_responseProcessDuration": 0.35
+        "timeStart": "2024-01-15T10:30:44.000Z",
+        "url": "https://api.example.com/data/export"
     },
     {
+        "_headerProcessDuration": 4.2,
+        "_responseProcessDuration": 0.22,
         "crossDomain": false,
+        "duration": 1543.2,
         "isPending": false,
         "request": {
             "body": "",
@@ -305,11 +299,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:30:54.000Z",
-        "url": "https://api.example.com/search?_dc=1705314654000&searchTerm=customer%20data",
-        "delay": null,
-        "_headerProcessDuration": 4.2,
-        "duration": 1543.2,
         "response": {
             "body": "{\"results\":[{\"id\":\"result-001\",\"title\":\"Customer Demographics Report\",\"type\":\"report\",\"score\":0.95},{\"id\":\"result-002\",\"title\":\"Customer Behavior Analysis\",\"type\":\"dashboard\",\"score\":0.87}],\"totalResults\":2,\"success\":true}",
             "headers": {
@@ -324,27 +313,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:00.543Z"
         },
-        "_responseProcessDuration": 0.22
+        "timeStart": "2024-01-15T10:30:54.000Z",
+        "url": "https://api.example.com/search?_dc=1705314654000&searchTerm=customer%20data"
     },
     {
+        "_headerProcessDuration": 1.8,
+        "_responseProcessDuration": 0.12,
         "crossDomain": false,
+        "duration": 1987.6,
         "isPending": false,
         "request": {
             "body": "{\"settings\":{\"theme\":\"dark\",\"language\":\"en\",\"notifications\":true}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "PUT",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:01.000Z",
-        "url": "https://api.example.com/user/settings",
-        "delay": null,
-        "_headerProcessDuration": 1.8,
-        "duration": 1987.6,
         "response": {
             "body": "{\"message\":\"Settings updated successfully\",\"updatedAt\":\"2024-01-15T10:31:05.000Z\",\"success\":true}",
             "headers": {
@@ -359,10 +347,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:04.988Z"
         },
-        "_responseProcessDuration": 0.12
+        "timeStart": "2024-01-15T10:31:01.000Z",
+        "url": "https://api.example.com/user/settings"
     },
     {
+        "_headerProcessDuration": 0.9,
+        "_responseProcessDuration": 0.28,
         "crossDomain": false,
+        "duration": 1765.4,
         "isPending": false,
         "request": {
             "body": "",
@@ -376,11 +368,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:05.000Z",
-        "url": "https://api.example.com/system/health?_dc=1705314665000",
-        "delay": null,
-        "_headerProcessDuration": 0.9,
-        "duration": 1765.4,
         "response": {
             "body": "{\"status\":\"healthy\",\"services\":{\"database\":\"up\",\"cache\":\"up\",\"storage\":\"up\"},\"responseTime\":\"15ms\",\"uptime\":\"99.9%\",\"success\":true}",
             "headers": {
@@ -395,27 +382,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:13.765Z"
         },
-        "_responseProcessDuration": 0.28
+        "timeStart": "2024-01-15T10:31:05.000Z",
+        "url": "https://api.example.com/system/health?_dc=1705314665000"
     },
     {
+        "_headerProcessDuration": 7.3,
+        "_responseProcessDuration": 0.31,
         "crossDomain": false,
+        "duration": 2432.1,
         "isPending": false,
         "request": {
             "body": "{\"chartType\":\"bar\",\"dataSource\":\"sales-monthly\",\"filters\":{\"year\":2024}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:14.000Z",
-        "url": "https://api.example.com/charts/generate",
-        "delay": null,
-        "_headerProcessDuration": 7.3,
-        "duration": 2432.1,
         "response": {
             "body": "{\"chartId\":\"chart-456\",\"imageUrl\":\"/charts/chart-456.png\",\"data\":[{\"month\":\"Jan\",\"sales\":45000},{\"month\":\"Feb\",\"sales\":52000},{\"month\":\"Mar\",\"sales\":48000}],\"success\":true}",
             "headers": {
@@ -430,10 +416,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:19.432Z"
         },
-        "_responseProcessDuration": 0.31
+        "timeStart": "2024-01-15T10:31:14.000Z",
+        "url": "https://api.example.com/charts/generate"
     },
     {
+        "_headerProcessDuration": 3.7,
+        "_responseProcessDuration": 0.19,
         "crossDomain": false,
+        "duration": 1321.9,
         "isPending": false,
         "request": {
             "body": "",
@@ -444,16 +434,11 @@
             "method": "GET",
             "query": {
                 "_dc": "1705314679500",
-                "page": "1",
-                "limit": "50"
+                "limit": "50",
+                "page": "1"
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:20.000Z",
-        "url": "https://api.example.com/notifications?_dc=1705314679500&page=1&limit=50",
-        "delay": null,
-        "_headerProcessDuration": 3.7,
-        "duration": 1321.9,
         "response": {
             "body": "{\"notifications\":[{\"id\":\"notif-001\",\"message\":\"System maintenance scheduled\",\"type\":\"info\",\"timestamp\":\"2024-01-15T10:00:00Z\"},{\"id\":\"notif-002\",\"message\":\"Report generation completed\",\"type\":\"success\",\"timestamp\":\"2024-01-15T09:45:00Z\"}],\"unreadCount\":2,\"success\":true}",
             "headers": {
@@ -468,27 +453,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:24.322Z"
         },
-        "_responseProcessDuration": 0.19
+        "timeStart": "2024-01-15T10:31:20.000Z",
+        "url": "https://api.example.com/notifications?_dc=1705314679500&page=1&limit=50"
     },
     {
+        "_headerProcessDuration": 18.9,
+        "_responseProcessDuration": 0.42,
         "crossDomain": false,
+        "duration": 2234.7,
         "isPending": false,
         "request": {
             "body": "{\"backupType\":\"incremental\",\"destination\":\"cloud-storage\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:25.000Z",
-        "url": "https://api.example.com/system/backup",
-        "delay": null,
-        "_headerProcessDuration": 18.9,
-        "duration": 2234.7,
         "response": {
             "body": "{\"backupId\":\"backup-789\",\"status\":\"initiated\",\"estimatedDuration\":\"15 minutes\",\"size\":\"1.2GB\",\"success\":true}",
             "headers": {
@@ -503,10 +487,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:34.235Z"
         },
-        "_responseProcessDuration": 0.42
+        "timeStart": "2024-01-15T10:31:25.000Z",
+        "url": "https://api.example.com/system/backup"
     },
     {
+        "_headerProcessDuration": 6.4,
+        "_responseProcessDuration": 0.33,
         "crossDomain": false,
+        "duration": 1654.3,
         "isPending": false,
         "request": {
             "body": "",
@@ -521,11 +509,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:35.000Z",
-        "url": "https://api.example.com/analytics/traffic?_dc=1705314694500&timeRange=7d",
-        "delay": null,
-        "_headerProcessDuration": 6.4,
-        "duration": 1654.3,
         "response": {
             "body": "{\"traffic\":{\"totalVisits\":15420,\"uniqueVisitors\":8734,\"pageViews\":42156,\"bounceRate\":0.32},\"topPages\":[\"/dashboard\",\"/reports\",\"/settings\"],\"success\":true}",
             "headers": {
@@ -540,27 +523,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:42.654Z"
         },
-        "_responseProcessDuration": 0.33
+        "timeStart": "2024-01-15T10:31:35.000Z",
+        "url": "https://api.example.com/analytics/traffic?_dc=1705314694500&timeRange=7d"
     },
     {
+        "_headerProcessDuration": 11.2,
+        "_responseProcessDuration": 0.27,
         "crossDomain": false,
+        "duration": 1789.4,
         "isPending": false,
         "request": {
             "body": "{\"templateId\":\"email-001\",\"recipients\":[\"user1@example.com\",\"user2@example.com\"],\"subject\":\"Weekly Report\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:43.000Z",
-        "url": "https://api.example.com/email/send",
-        "delay": null,
-        "_headerProcessDuration": 11.2,
-        "duration": 1789.4,
         "response": {
             "body": "{\"messageId\":\"msg-456\",\"status\":\"sent\",\"recipientCount\":2,\"deliveryTime\":\"2024-01-15T10:31:50.000Z\",\"success\":true}",
             "headers": {
@@ -575,10 +557,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:49.789Z"
         },
-        "_responseProcessDuration": 0.27
+        "timeStart": "2024-01-15T10:31:43.000Z",
+        "url": "https://api.example.com/email/send"
     },
     {
+        "_headerProcessDuration": 2.1,
+        "_responseProcessDuration": 0.21,
         "crossDomain": false,
+        "duration": 2432.8,
         "isPending": false,
         "request": {
             "body": "",
@@ -592,11 +578,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:50.000Z",
-        "url": "https://api.example.com/cache/stats?_dc=1705314710000",
-        "delay": null,
-        "_headerProcessDuration": 2.1,
-        "duration": 2432.8,
         "response": {
             "body": "{\"cache\":{\"hitRate\":0.94,\"missRate\":0.06,\"totalRequests\":125000,\"cacheSize\":\"2.1GB\",\"evictions\":342},\"success\":true}",
             "headers": {
@@ -611,27 +592,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:31:55.433Z"
         },
-        "_responseProcessDuration": 0.21
+        "timeStart": "2024-01-15T10:31:50.000Z",
+        "url": "https://api.example.com/cache/stats?_dc=1705314710000"
     },
     {
+        "_headerProcessDuration": 24.6,
+        "_responseProcessDuration": 0.38,
         "crossDomain": false,
+        "duration": 1765.2,
         "isPending": false,
         "request": {
             "body": "{\"source\":\"database\",\"destination\":\"warehouse\",\"tables\":[\"users\",\"orders\",\"products\"]}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:31:56.000Z",
-        "url": "https://api.example.com/data/sync",
-        "delay": null,
-        "_headerProcessDuration": 24.6,
-        "duration": 1765.2,
         "response": {
             "body": "{\"syncId\":\"sync-123\",\"status\":\"in-progress\",\"tablesProcessed\":1,\"totalTables\":3,\"recordsTransferred\":15420,\"estimatedCompletion\":\"2024-01-15T10:32:15Z\",\"success\":true}",
             "headers": {
@@ -646,10 +626,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:04.765Z"
         },
-        "_responseProcessDuration": 0.38
+        "timeStart": "2024-01-15T10:31:56.000Z",
+        "url": "https://api.example.com/data/sync"
     },
     {
+        "_headerProcessDuration": 8.7,
+        "_responseProcessDuration": 0.24,
         "crossDomain": false,
+        "duration": 1567.1,
         "isPending": false,
         "request": {
             "body": "",
@@ -664,11 +648,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:05.000Z",
-        "url": "https://api.example.com/logs/recent?_dc=1705314725000&format=json",
-        "delay": null,
-        "_headerProcessDuration": 8.7,
-        "duration": 1567.1,
         "response": {
             "body": "{\"logs\":[{\"timestamp\":\"2024-01-15T10:32:00Z\",\"level\":\"INFO\",\"message\":\"User login successful\",\"userId\":\"user-123\"},{\"timestamp\":\"2024-01-15T10:31:55Z\",\"level\":\"DEBUG\",\"message\":\"Cache hit for key: user-profile-123\"}],\"totalLogs\":2,\"success\":true}",
             "headers": {
@@ -683,27 +662,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:09.567Z"
         },
-        "_responseProcessDuration": 0.24
+        "timeStart": "2024-01-15T10:32:05.000Z",
+        "url": "https://api.example.com/logs/recent?_dc=1705314725000&format=json"
     },
     {
+        "_headerProcessDuration": 32.1,
+        "_responseProcessDuration": 0.45,
         "crossDomain": false,
+        "duration": 1832.6,
         "isPending": false,
         "request": {
             "body": "{\"moduleId\":\"user-management\",\"version\":\"2.1.0\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:10.000Z",
-        "url": "https://api.example.com/modules/install",
-        "delay": null,
-        "_headerProcessDuration": 32.1,
-        "duration": 1832.6,
         "response": {
             "body": "{\"installId\":\"install-xyz789\",\"status\":\"installing\",\"progress\":45,\"estimatedCompletion\":\"2024-01-15T10:32:25Z\",\"success\":true}",
             "headers": {
@@ -718,10 +696,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:17.833Z"
         },
-        "_responseProcessDuration": 0.45
+        "timeStart": "2024-01-15T10:32:10.000Z",
+        "url": "https://api.example.com/modules/install"
     },
     {
+        "_headerProcessDuration": 15.3,
+        "_responseProcessDuration": 0.52,
         "crossDomain": false,
+        "duration": 2123.7,
         "isPending": false,
         "request": {
             "body": "",
@@ -736,11 +718,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:18.000Z",
-        "url": "https://api.example.com/file-system/scan?_dc=1705314738000&depth=3",
-        "delay": null,
-        "_headerProcessDuration": 15.3,
-        "duration": 2123.7,
         "response": {
             "body": "{\"scan\":{\"totalFiles\":2847,\"totalSize\":\"1.8GB\",\"directories\":156,\"largestFile\":\"/uploads/video.mp4\"},\"structure\":[{\"name\":\"documents\",\"type\":\"folder\",\"size\":\"450MB\"},{\"name\":\"images\",\"type\":\"folder\",\"size\":\"890MB\"}],\"success\":true}",
             "headers": {
@@ -755,27 +732,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:27.124Z"
         },
-        "_responseProcessDuration": 0.52
+        "timeStart": "2024-01-15T10:32:18.000Z",
+        "url": "https://api.example.com/file-system/scan?_dc=1705314738000&depth=3"
     },
     {
+        "_headerProcessDuration": 8.9,
+        "_responseProcessDuration": 0.31,
         "crossDomain": false,
+        "duration": 1576.3,
         "isPending": false,
         "request": {
             "body": "{\"alertType\":\"performance\",\"threshold\":{\"cpu\":80,\"memory\":90},\"notifications\":[\"email\",\"sms\"]}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:28.000Z",
-        "url": "https://api.example.com/monitoring/alerts/create",
-        "delay": null,
-        "_headerProcessDuration": 8.9,
-        "duration": 1576.3,
         "response": {
             "body": "{\"alertId\":\"alert-perf-001\",\"status\":\"active\",\"createdAt\":\"2024-01-15T10:32:32Z\",\"nextCheck\":\"2024-01-15T10:33:00Z\",\"success\":true}",
             "headers": {
@@ -790,10 +766,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:32.576Z"
         },
-        "_responseProcessDuration": 0.31
+        "timeStart": "2024-01-15T10:32:28.000Z",
+        "url": "https://api.example.com/monitoring/alerts/create"
     },
     {
+        "_headerProcessDuration": 4.7,
+        "_responseProcessDuration": 0.28,
         "crossDomain": false,
+        "duration": 1234.9,
         "isPending": false,
         "request": {
             "body": "",
@@ -809,11 +789,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:33.000Z",
-        "url": "https://api.example.com/metrics/performance?_dc=1705314753000&metric=response-time&period=1h",
-        "delay": null,
-        "_headerProcessDuration": 4.7,
-        "duration": 1234.9,
         "response": {
             "body": "{\"metrics\":{\"averageResponseTime\":124.5,\"maxResponseTime\":892.3,\"minResponseTime\":23.1,\"p95\":456.2,\"p99\":743.8},\"dataPoints\":60,\"success\":true}",
             "headers": {
@@ -828,27 +803,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:39.235Z"
         },
-        "_responseProcessDuration": 0.28
+        "timeStart": "2024-01-15T10:32:33.000Z",
+        "url": "https://api.example.com/metrics/performance?_dc=1705314753000&metric=response-time&period=1h"
     },
     {
+        "_headerProcessDuration": 12.4,
+        "_responseProcessDuration": 0.39,
         "crossDomain": false,
+        "duration": 1456.3,
         "isPending": false,
         "request": {
             "body": "{\"action\":\"cleanup\",\"olderThan\":\"30d\",\"types\":[\"temp\",\"logs\",\"cache\"]}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:40.000Z",
-        "url": "https://api.example.com/system/maintenance",
-        "delay": null,
-        "_headerProcessDuration": 12.4,
-        "duration": 1456.3,
         "response": {
             "body": "{\"maintenanceId\":\"maint-456\",\"status\":\"running\",\"filesProcessed\":1247,\"spaceFreed\":\"234MB\",\"estimatedCompletion\":\"2024-01-15T10:33:00Z\",\"success\":true}",
             "headers": {
@@ -863,10 +837,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:41.456Z"
         },
-        "_responseProcessDuration": 0.39
+        "timeStart": "2024-01-15T10:32:40.000Z",
+        "url": "https://api.example.com/system/maintenance"
     },
     {
+        "_headerProcessDuration": 1.2,
+        "_responseProcessDuration": 0.05,
         "crossDomain": false,
+        "duration": 156.7,
         "isPending": false,
         "request": {
             "body": "",
@@ -878,11 +856,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:50.000Z",
-        "url": "https://api.example.com/ping",
-        "delay": null,
-        "_headerProcessDuration": 1.2,
-        "duration": 156.7,
         "response": {
             "body": "{\"status\":\"ok\",\"timestamp\":\"2024-01-15T10:32:50.157Z\"}",
             "headers": {
@@ -896,27 +869,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:50.157Z"
         },
-        "_responseProcessDuration": 0.05
+        "timeStart": "2024-01-15T10:32:50.000Z",
+        "url": "https://api.example.com/ping"
     },
     {
+        "_headerProcessDuration": 3.8,
+        "_responseProcessDuration": 0.18,
         "crossDomain": false,
+        "duration": 892.4,
         "isPending": false,
         "request": {
             "body": "{\"productId\":\"prod-456\",\"quantity\":2}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:51.000Z",
-        "url": "https://api.example.com/cart/add",
-        "delay": null,
-        "_headerProcessDuration": 3.8,
-        "duration": 892.4,
         "response": {
             "body": "{\"cartId\":\"cart-789\",\"itemCount\":3,\"total\":199.98,\"success\":true}",
             "headers": {
@@ -930,10 +902,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:51.892Z"
         },
-        "_responseProcessDuration": 0.18
+        "timeStart": "2024-01-15T10:32:51.000Z",
+        "url": "https://api.example.com/cart/add"
     },
     {
+        "_headerProcessDuration": 2.1,
+        "_responseProcessDuration": 0.22,
         "crossDomain": false,
+        "duration": 1234.6,
         "isPending": false,
         "request": {
             "body": "",
@@ -947,11 +923,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:52.000Z",
-        "url": "https://api.example.com/products/list?category=electronics&sort=price",
-        "delay": null,
-        "_headerProcessDuration": 2.1,
-        "duration": 1234.6,
         "response": {
             "body": "{\"products\":[{\"id\":\"prod-101\",\"name\":\"Headphones\",\"price\":79.99},{\"id\":\"prod-102\",\"name\":\"Keyboard\",\"price\":45.99}],\"total\":2,\"success\":true}",
             "headers": {
@@ -965,27 +936,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:53.235Z"
         },
-        "_responseProcessDuration": 0.22
+        "timeStart": "2024-01-15T10:32:52.000Z",
+        "url": "https://api.example.com/products/list?category=electronics&sort=price"
     },
     {
+        "_headerProcessDuration": 5.7,
+        "_responseProcessDuration": 0.31,
         "crossDomain": false,
+        "duration": 2198.3,
         "isPending": false,
         "request": {
             "body": "{\"message\":\"Hello, support team!\",\"category\":\"technical\",\"priority\":\"medium\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:54.000Z",
-        "url": "https://api.example.com/support/ticket",
-        "delay": null,
-        "_headerProcessDuration": 5.7,
-        "duration": 2198.3,
         "response": {
             "body": "{\"ticketId\":\"ticket-567\",\"status\":\"open\",\"assignedTo\":\"support-agent-1\",\"estimatedResponse\":\"2 hours\",\"success\":true}",
             "headers": {
@@ -999,10 +969,14 @@
             "statusText": "Created",
             "timeEnd": "2024-01-15T10:32:56.198Z"
         },
-        "_responseProcessDuration": 0.31
+        "timeStart": "2024-01-15T10:32:54.000Z",
+        "url": "https://api.example.com/support/ticket"
     },
     {
+        "_headerProcessDuration": 1.4,
+        "_responseProcessDuration": 0.08,
         "crossDomain": false,
+        "duration": 534.2,
         "isPending": false,
         "request": {
             "body": "",
@@ -1013,11 +987,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:57.000Z",
-        "url": "https://api.example.com/weather/current",
-        "delay": null,
-        "_headerProcessDuration": 1.4,
-        "duration": 534.2,
         "response": {
             "body": "{\"temperature\":22,\"humidity\":65,\"condition\":\"sunny\",\"windSpeed\":12,\"success\":true}",
             "headers": {
@@ -1031,27 +1000,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:32:57.534Z"
         },
-        "_responseProcessDuration": 0.08
+        "timeStart": "2024-01-15T10:32:57.000Z",
+        "url": "https://api.example.com/weather/current"
     },
     {
+        "_headerProcessDuration": 8.9,
+        "_responseProcessDuration": 0.42,
         "crossDomain": false,
+        "duration": 3456.7,
         "isPending": false,
         "request": {
             "body": "{\"orderId\":\"order-789\",\"items\":[{\"productId\":\"prod-123\",\"quantity\":1}],\"shippingAddress\":{\"street\":\"123 Main St\",\"city\":\"New York\",\"zip\":\"10001\"}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:32:58.000Z",
-        "url": "https://api.example.com/orders/create",
-        "delay": null,
-        "_headerProcessDuration": 8.9,
-        "duration": 3456.7,
         "response": {
             "body": "{\"orderId\":\"order-789\",\"status\":\"confirmed\",\"total\":299.99,\"estimatedDelivery\":\"2024-01-20\",\"success\":true}",
             "headers": {
@@ -1065,10 +1033,14 @@
             "statusText": "Created",
             "timeEnd": "2024-01-15T10:33:01.457Z"
         },
-        "_responseProcessDuration": 0.42
+        "timeStart": "2024-01-15T10:32:58.000Z",
+        "url": "https://api.example.com/orders/create"
     },
     {
+        "_headerProcessDuration": 0.8,
+        "_responseProcessDuration": 0.06,
         "crossDomain": false,
+        "duration": 287.5,
         "isPending": false,
         "request": {
             "body": "",
@@ -1080,11 +1052,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:02.000Z",
-        "url": "https://api.example.com/cache/clear",
-        "delay": null,
-        "_headerProcessDuration": 0.8,
-        "duration": 287.5,
         "response": {
             "body": "{\"message\":\"Cache cleared successfully\",\"itemsRemoved\":1542,\"success\":true}",
             "headers": {
@@ -1098,10 +1065,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:02.288Z"
         },
-        "_responseProcessDuration": 0.06
+        "timeStart": "2024-01-15T10:33:02.000Z",
+        "url": "https://api.example.com/cache/clear"
     },
     {
+        "_headerProcessDuration": 3.2,
+        "_responseProcessDuration": 0.28,
         "crossDomain": false,
+        "duration": 1876.4,
         "isPending": false,
         "request": {
             "body": "",
@@ -1115,11 +1086,6 @@
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:03.000Z",
-        "url": "https://api.example.com/blog/posts?page=1&size=10",
-        "delay": null,
-        "_headerProcessDuration": 3.2,
-        "duration": 1876.4,
         "response": {
             "body": "{\"posts\":[{\"id\":\"post-001\",\"title\":\"Getting Started with APIs\",\"author\":\"John Smith\",\"publishedAt\":\"2024-01-10T12:00:00Z\"}],\"totalPages\":5,\"success\":true}",
             "headers": {
@@ -1133,27 +1099,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:04.876Z"
         },
-        "_responseProcessDuration": 0.28
+        "timeStart": "2024-01-15T10:33:03.000Z",
+        "url": "https://api.example.com/blog/posts?page=1&size=10"
     },
     {
+        "_headerProcessDuration": 2.3,
+        "_responseProcessDuration": 0.15,
         "crossDomain": false,
+        "duration": 743.8,
         "isPending": false,
         "request": {
             "body": "{\"email\":\"user@example.com\",\"preferences\":{\"newsletter\":true,\"notifications\":false}}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "PUT",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:05.000Z",
-        "url": "https://api.example.com/user/preferences",
-        "delay": null,
-        "_headerProcessDuration": 2.3,
-        "duration": 743.8,
         "response": {
             "body": "{\"message\":\"Preferences updated\",\"updatedAt\":\"2024-01-15T10:33:05.744Z\",\"success\":true}",
             "headers": {
@@ -1167,10 +1132,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:05.744Z"
         },
-        "_responseProcessDuration": 0.15
+        "timeStart": "2024-01-15T10:33:05.000Z",
+        "url": "https://api.example.com/user/preferences"
     },
     {
+        "_headerProcessDuration": 0.5,
+        "_responseProcessDuration": 0.03,
         "crossDomain": false,
+        "duration": 123.7,
         "isPending": false,
         "request": {
             "body": "",
@@ -1181,11 +1150,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:06.000Z",
-        "url": "https://api.example.com/version",
-        "delay": null,
-        "_headerProcessDuration": 0.5,
-        "duration": 123.7,
         "response": {
             "body": "{\"version\":\"1.2.3\",\"buildDate\":\"2024-01-10\",\"environment\":\"production\"}",
             "headers": {
@@ -1199,27 +1163,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:06.124Z"
         },
-        "_responseProcessDuration": 0.03
+        "timeStart": "2024-01-15T10:33:06.000Z",
+        "url": "https://api.example.com/version"
     },
     {
+        "_headerProcessDuration": 6.4,
+        "_responseProcessDuration": 0.38,
         "crossDomain": false,
+        "duration": 4567.2,
         "isPending": false,
         "request": {
             "body": "{\"feedbackType\":\"bug\",\"description\":\"The submit button is not working on mobile devices\",\"priority\":\"high\",\"userAgent\":\"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:07.000Z",
-        "url": "https://api.example.com/feedback/submit",
-        "delay": null,
-        "_headerProcessDuration": 6.4,
-        "duration": 4567.2,
         "response": {
             "body": "{\"feedbackId\":\"fb-456\",\"status\":\"received\",\"assignedTo\":\"dev-team\",\"priorityLevel\":\"high\",\"success\":true}",
             "headers": {
@@ -1233,10 +1196,14 @@
             "statusText": "Created",
             "timeEnd": "2024-01-15T10:33:11.567Z"
         },
-        "_responseProcessDuration": 0.38
+        "timeStart": "2024-01-15T10:33:07.000Z",
+        "url": "https://api.example.com/feedback/submit"
     },
     {
+        "_headerProcessDuration": 4.1,
+        "_responseProcessDuration": 0.29,
         "crossDomain": false,
+        "duration": 2341.9,
         "isPending": false,
         "request": {
             "body": "",
@@ -1246,16 +1213,11 @@
             },
             "method": "GET",
             "query": {
-                "userId": "user-456",
-                "startDate": "2024-01-01"
+                "startDate": "2024-01-01",
+                "userId": "user-456"
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:12.000Z",
-        "url": "https://api.example.com/activity/log?userId=user-456&startDate=2024-01-01",
-        "delay": null,
-        "_headerProcessDuration": 4.1,
-        "duration": 2341.9,
         "response": {
             "body": "{\"activities\":[{\"action\":\"login\",\"timestamp\":\"2024-01-15T09:00:00Z\"},{\"action\":\"view_page\",\"page\":\"/dashboard\",\"timestamp\":\"2024-01-15T09:01:00Z\"}],\"totalActivities\":47,\"success\":true}",
             "headers": {
@@ -1269,10 +1231,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:14.342Z"
         },
-        "_responseProcessDuration": 0.29
+        "timeStart": "2024-01-15T10:33:12.000Z",
+        "url": "https://api.example.com/activity/log?userId=user-456&startDate=2024-01-01"
     },
     {
+        "_headerProcessDuration": 2.8,
+        "_responseProcessDuration": 0.21,
         "crossDomain": false,
+        "duration": 1567.3,
         "isPending": false,
         "request": {
             "body": "{\"type\":\"password_reset\",\"email\":\"user@example.com\"}",
@@ -1284,11 +1250,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:15.000Z",
-        "url": "https://api.example.com/auth/request-reset",
-        "delay": null,
-        "_headerProcessDuration": 2.8,
-        "duration": 1567.3,
         "response": {
             "body": "{\"message\":\"Password reset email sent\",\"resetToken\":\"reset-abc123\",\"expiresAt\":\"2024-01-15T11:33:15Z\",\"success\":true}",
             "headers": {
@@ -1302,10 +1263,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:16.567Z"
         },
-        "_responseProcessDuration": 0.21
+        "timeStart": "2024-01-15T10:33:15.000Z",
+        "url": "https://api.example.com/auth/request-reset"
     },
     {
+        "_headerProcessDuration": 1.1,
+        "_responseProcessDuration": 0.07,
         "crossDomain": false,
+        "duration": 398.6,
         "isPending": false,
         "request": {
             "body": "",
@@ -1316,11 +1281,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:17.000Z",
-        "url": "https://api.example.com/countries/list",
-        "delay": null,
-        "_headerProcessDuration": 1.1,
-        "duration": 398.6,
         "response": {
             "body": "{\"countries\":[{\"code\":\"US\",\"name\":\"United States\"},{\"code\":\"CA\",\"name\":\"Canada\"},{\"code\":\"UK\",\"name\":\"United Kingdom\"}],\"total\":195,\"success\":true}",
             "headers": {
@@ -1334,10 +1294,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:17.399Z"
         },
-        "_responseProcessDuration": 0.07
+        "timeStart": "2024-01-15T10:33:17.000Z",
+        "url": "https://api.example.com/countries/list"
     },
     {
+        "_headerProcessDuration": 3.7,
+        "_responseProcessDuration": 0.12,
         "crossDomain": false,
+        "duration": 867.4,
         "isPending": false,
         "request": {
             "body": "{\"from\":\"USD\",\"to\":\"EUR\",\"amount\":100}",
@@ -1349,11 +1313,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:18.000Z",
-        "url": "https://api.example.com/currency/convert",
-        "delay": null,
-        "_headerProcessDuration": 3.7,
-        "duration": 867.4,
         "response": {
             "body": "{\"from\":\"USD\",\"to\":\"EUR\",\"amount\":100,\"convertedAmount\":85.42,\"exchangeRate\":0.8542,\"success\":true}",
             "headers": {
@@ -1367,10 +1326,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:18.867Z"
         },
-        "_responseProcessDuration": 0.12
+        "timeStart": "2024-01-15T10:33:18.000Z",
+        "url": "https://api.example.com/currency/convert"
     },
     {
+        "_headerProcessDuration": 5.3,
+        "_responseProcessDuration": 0.34,
         "crossDomain": false,
+        "duration": 2234.7,
         "isPending": false,
         "request": {
             "body": "",
@@ -1380,16 +1343,11 @@
             },
             "method": "GET",
             "query": {
-                "type": "security",
-                "severity": "high"
+                "severity": "high",
+                "type": "security"
             }
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:19.000Z",
-        "url": "https://api.example.com/alerts/list?type=security&severity=high",
-        "delay": null,
-        "_headerProcessDuration": 5.3,
-        "duration": 2234.7,
         "response": {
             "body": "{\"alerts\":[{\"id\":\"alert-001\",\"message\":\"Suspicious login attempt detected\",\"severity\":\"high\",\"timestamp\":\"2024-01-15T10:30:00Z\"}],\"totalAlerts\":1,\"success\":true}",
             "headers": {
@@ -1403,27 +1361,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:21.235Z"
         },
-        "_responseProcessDuration": 0.34
+        "timeStart": "2024-01-15T10:33:19.000Z",
+        "url": "https://api.example.com/alerts/list?type=security&severity=high"
     },
     {
+        "_headerProcessDuration": 4.2,
+        "_responseProcessDuration": 0.25,
         "crossDomain": false,
+        "duration": 1345.8,
         "isPending": false,
         "request": {
             "body": "{\"taskId\":\"task-789\",\"status\":\"completed\",\"notes\":\"All requirements met successfully\"}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "PUT",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:22.000Z",
-        "url": "https://api.example.com/tasks/update",
-        "delay": null,
-        "_headerProcessDuration": 4.2,
-        "duration": 1345.8,
         "response": {
             "body": "{\"taskId\":\"task-789\",\"status\":\"completed\",\"completedAt\":\"2024-01-15T10:33:23Z\",\"success\":true}",
             "headers": {
@@ -1437,10 +1394,14 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:23.346Z"
         },
-        "_responseProcessDuration": 0.25
+        "timeStart": "2024-01-15T10:33:22.000Z",
+        "url": "https://api.example.com/tasks/update"
     },
     {
+        "_headerProcessDuration": 0.7,
+        "_responseProcessDuration": 0.04,
         "crossDomain": false,
+        "duration": 234.5,
         "isPending": false,
         "request": {
             "body": "",
@@ -1451,11 +1412,6 @@
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:24.000Z",
-        "url": "https://api.example.com/timezone/current",
-        "delay": null,
-        "_headerProcessDuration": 0.7,
-        "duration": 234.5,
         "response": {
             "body": "{\"timezone\":\"UTC\",\"offset\":\"+00:00\",\"currentTime\":\"2024-01-15T10:33:24.235Z\"}",
             "headers": {
@@ -1469,27 +1425,26 @@
             "statusText": "OK",
             "timeEnd": "2024-01-15T10:33:24.235Z"
         },
-        "_responseProcessDuration": 0.04
+        "timeStart": "2024-01-15T10:33:24.000Z",
+        "url": "https://api.example.com/timezone/current"
     },
     {
+        "_headerProcessDuration": 12.8,
+        "_responseProcessDuration": 0.51,
         "crossDomain": false,
+        "duration": 5234.6,
         "isPending": false,
         "request": {
             "body": "{\"files\":[\"document.pdf\",\"image.jpg\"],\"destination\":\"backup-server\",\"compression\":true}",
             "headers": {
-                "X-Csrf-Token": "demo-token-123",
                 "Content-Type": "application/json",
+                "X-Csrf-Token": "demo-token-123",
                 "X-Requested-With": "XMLHttpRequest"
             },
             "method": "POST",
             "query": {}
         },
         "resourceType": "xhr",
-        "timeStart": "2024-01-15T10:33:25.000Z",
-        "url": "https://api.example.com/files/upload",
-        "delay": null,
-        "_headerProcessDuration": 12.8,
-        "duration": 5234.6,
         "response": {
             "body": "{\"uploadId\":\"upload-456\",\"filesUploaded\":2,\"totalSize\":\"3.2MB\",\"status\":\"completed\",\"success\":true}",
             "headers": {
@@ -1503,6 +1458,7 @@
             "statusText": "Created",
             "timeEnd": "2024-01-15T10:33:30.235Z"
         },
-        "_responseProcessDuration": 0.51
+        "timeStart": "2024-01-15T10:33:25.000Z",
+        "url": "https://api.example.com/files/upload"
     }
 ]

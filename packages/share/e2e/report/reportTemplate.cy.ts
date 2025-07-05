@@ -1,13 +1,16 @@
-import { validateReportTemplate } from "../src/validateReportTemplate";
+import { validateReportTemplate } from "../../src/validateReportTemplate";
 
 describe("Report Template", () => {
     beforeEach(() => {
         cy.task("clearFixtures");
     });
 
+    /**
+     * The generated report is used as an example in `report-example\report.html`
+     */
     it("Should render single report template", () => {
-        cy.task<string>("createReportFromFile").then((htmlName) => {
-            cy.visit(`/fixtures/${htmlName}`);
+        cy.task<string>("createReportFromFile").then((outputFilePath) => {
+            cy.visit(`/fixtures/${outputFilePath.replaceAll("\\", "/").split("/").pop()}`);
 
             validateReportTemplate();
         });
