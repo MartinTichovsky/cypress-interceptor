@@ -91,20 +91,13 @@ export const createXMLHttpRequestProxy = (
             };
         }
 
-        private createEvent(type: string, originalEvent: Event) {
-            if (originalEvent instanceof win.ProgressEvent) {
-                return new win.ProgressEvent(type, {
-                    bubbles: originalEvent.bubbles,
-                    cancelable: originalEvent.cancelable,
-                    lengthComputable: originalEvent.lengthComputable,
-                    loaded: originalEvent.loaded,
-                    total: originalEvent.total
-                });
-            }
-
-            return new win.Event(type, {
+        private createEvent(type: string, originalEvent: ProgressEvent<EventTarget>) {
+            return new win.ProgressEvent(type, {
                 bubbles: originalEvent.bubbles,
-                cancelable: originalEvent.cancelable
+                cancelable: originalEvent.cancelable,
+                lengthComputable: originalEvent.lengthComputable,
+                loaded: originalEvent.loaded,
+                total: originalEvent.total
             });
         }
 
@@ -272,7 +265,7 @@ export const createXMLHttpRequestProxy = (
             } else {
                 // For other events, execute on shadow XMLHttpRequest
                 proxyListener = (...args) => {
-                    const originalEvent = args[0] as Event;
+                    const originalEvent = args[0] as ProgressEvent<EventTarget>;
                     const newEvent = this.createEvent(originalEvent.type, originalEvent);
 
                     this.shadowXhr.dispatchEvent(newEvent);
@@ -341,6 +334,7 @@ export const createXMLHttpRequestProxy = (
                                                 new win.ProgressEvent("readystatechange")
                                             );
                                             this.dispatchEvent(new win.ProgressEvent("load"));
+                                            this.dispatchEvent(new win.ProgressEvent("loadend"));
                                         },
                                         true
                                     );

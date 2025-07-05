@@ -318,7 +318,7 @@ export class Interceptor {
                             response.responseType === "json"
                                 ? typeof response.response === "object"
                                     ? JSON.stringify(response.response)
-                                    : response.response
+                                    : String(response.response)
                                 : response.responseText;
                     }
 

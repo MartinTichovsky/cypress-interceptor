@@ -60,16 +60,16 @@ export enum ReportClassName {
 interface GetHtmlTemplateProps {
     avgDuration: string;
     dataCount: number;
-    durations: string; // JSON string
+    durations: string;
     generationDate: string;
-    highDuration: string;
-    highDurations: string; // new
-    isSlow: string; // new
-    isCustomHighDuration: string; // new
-    labels: string; // JSON string
+    highDuration: number | null;
+    highDurations: string;
+    isSlow: string;
+    isCustomHighDuration: boolean;
+    labels: string;
     maxDuration: string;
     minDuration: string;
-    tableData: string; // JSON string with detailed request data
+    tableData: string;
     title?: string;
     totalRequests: number;
 }
@@ -954,24 +954,22 @@ export const getHtmlTemplate = ({
                 <div class="performance-legend" data-testid="${ReportTestId.PERFORMANCE_LEGEND}">
                     <div class="legend-item" data-testid="${ReportTestId.LEGEND_FAST}">
                         <div class="legend-dot fast"></div>
-                        <span class="legend-fast">Fast${isCustomHighDuration === "false" && highDuration !== "null" && highDuration !== "0" ? ` (< ${highDuration}ms)` : ""}</span>
+                        <span class="legend-fast">Fast${!isCustomHighDuration ? ` (< ${highDuration}ms)` : ""}</span>
                     </div>
                     ${
-                        isCustomHighDuration === "true"
+                        isCustomHighDuration
                             ? `
                     <div class="legend-item" data-testid="${ReportTestId.LEGEND_SLOW}">
                         <div class="legend-dot slow"></div>
                         <span class="legend-slow">Custom</span>
                     </div>
                     `
-                            : highDuration !== "null" && highDuration !== "0"
-                              ? `
+                            : `
                     <div class="legend-item" data-testid="${ReportTestId.LEGEND_SLOW}">
                         <div class="legend-dot slow"></div>
                         <span class="legend-slow">Slow (≥ ${highDuration}ms)</span>
                     </div>
                     `
-                              : ""
                     }
                 </div>
                 <div class="chart-y-axis" data-testid="${ReportTestId.CHART_Y_AXIS}">
@@ -991,24 +989,22 @@ export const getHtmlTemplate = ({
         <div class="mobile-legend" aria-label="Performance legend" tabindex="0" style="display:none">
             <div class="legend-item">
                 <div class="legend-dot fast"></div>
-                <span class="legend-fast">Fast${isCustomHighDuration === "false" && highDuration !== "null" && highDuration !== "0" ? ` (< ${highDuration}ms)` : ""}</span>
+                <span class="legend-fast">Fast${!isCustomHighDuration ? ` (< ${highDuration}ms)` : ""}</span>
             </div>
             ${
-                isCustomHighDuration === "true"
+                isCustomHighDuration
                     ? `
             <div class="legend-item">
                 <div class="legend-dot slow"></div>
                 <span class="legend-slow">Custom</span>
             </div>
             `
-                    : highDuration !== "null" && highDuration !== "0"
-                      ? `
+                    : `
             <div class="legend-item">
                 <div class="legend-dot slow"></div>
                 <span class="legend-slow">Slow (≥ ${highDuration}ms)</span>
             </div>
             `
-                      : ""
             }
         </div>
 
@@ -1052,7 +1048,7 @@ export const getHtmlTemplate = ({
         const highDuration = ${highDuration};
         const highDurations = JSON.parse('${highDurations}');
         const isSlow = JSON.parse('${isSlow}');
-        const isCustomHighDuration = '${isCustomHighDuration}' === 'true';
+        const isCustomHighDuration = ${isCustomHighDuration};
         
         // Chart configuration
         const config = {
@@ -1335,7 +1331,7 @@ export const getHtmlTemplate = ({
                 
                 // Determine color based on per-request threshold
                 let isBarSlow = false;
-                if (isCustomHighDuration === 'true' || isCustomHighDuration === true) {
+                if (isCustomHighDuration === true) {
                     isBarSlow = isSlow[index];
                 } else {
                     isBarSlow = value >= config.thresholdMs;
@@ -1553,7 +1549,7 @@ export const getHtmlTemplate = ({
                 // Duration cell
                 const durationCell = document.createElement('td');
                 let isRowSlow = false;
-                if (isCustomHighDuration === 'true' || isCustomHighDuration === true) {
+                if (isCustomHighDuration === true) {
                     isRowSlow = row.isSlow;
                 } else {
                     isRowSlow = row.duration >= highDuration;

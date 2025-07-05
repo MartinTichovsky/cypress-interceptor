@@ -8,6 +8,7 @@ import { getResponseHeaders } from "./selectors";
 
 export enum XMLHttpRequestLoad {
     AddEventListener_Load = "`addEventListener` - load",
+    AddEventListener_Loadend = "`addEventListener` - loadend",
     AddEventListener_Readystatechange = "`addEventListener` - readystatechange",
     Onload = "`onreadystatechange`",
     Onreadystatechange = "`onload`"
@@ -74,6 +75,12 @@ const createXMLHttpRequestTestFunction = (
         switch (value) {
             case XMLHttpRequestLoad.AddEventListener_Load:
                 request.addEventListener("load", () => {
+                    resolve();
+                });
+
+                return;
+            case XMLHttpRequestLoad.AddEventListener_Loadend:
+                request.addEventListener("loadend", () => {
                     resolve();
                 });
 

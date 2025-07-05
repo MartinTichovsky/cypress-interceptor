@@ -167,7 +167,7 @@ export function generateReport(
             if (isCustomHighDuration) {
                 const url = new URL(item.url, "http://dummy");
 
-                return highDuration(url) ?? 0;
+                return highDuration(url);
             }
 
             return highDuration as number;
@@ -194,10 +194,10 @@ export function generateReport(
             dataCount: dataWithDuration.length,
             durations: JSON.stringify(durations),
             generationDate: new Date().toLocaleString(),
-            highDuration: isCustomHighDuration ? "null" : highDuration.toString(),
+            highDuration: isCustomHighDuration ? null : highDuration,
             highDurations: JSON.stringify(highDurations),
             isSlow: JSON.stringify(isSlow),
-            isCustomHighDuration: isCustomHighDuration.toString(),
+            isCustomHighDuration,
             labels: JSON.stringify(labels),
             maxDuration: maxDuration.toFixed(2),
             minDuration: minDuration.toFixed(2),

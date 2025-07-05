@@ -2,6 +2,7 @@ import "cypress-interceptor";
 import "cypress-interceptor/websocket";
 import "cypress-interceptor/test.unit.commands";
 
+import { objectToURLSearchParams } from "cypress-interceptor/convert/formData";
 import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "cypress-interceptor/src/createFetchProxy";
 import { CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED } from "cypress-interceptor/src/createWebsocketProxy";
 import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "cypress-interceptor/src/createXMLHttpRequestProxy";
@@ -210,6 +211,35 @@ const createTests = (disableInterceptor: boolean, withvisit?: "after" | "before"
         );
 
         createXMLHttpRequestTest(
+            "Should fail with the correct error message when cancelled and onabort is set to null",
+            async (onResponse) => {
+                const request = new XMLHttpRequest();
+
+                request.open("GET", url + "?duration=2000");
+
+                new Promise((resolve) => {
+                    request.onabort = null;
+
+                    onResponse(request, () => {
+                        setTimeout(() => {
+                            resolve(null);
+                        }, 500);
+                    });
+
+                    request.send();
+                });
+
+                setTimeout(() => {
+                    request.abort();
+                }, 100);
+
+                await wait(1000);
+
+                expect(request.readyState).to.eq(XMLHttpRequest.UNSENT);
+            }
+        );
+
+        createXMLHttpRequestTest(
             "Should work when passing null - without error",
             async (onResponse) => {
                 const request = new XMLHttpRequest();
@@ -298,6 +328,82 @@ const createTests = (disableInterceptor: boolean, withvisit?: "after" | "before"
                 };
             });
         });
+
+        createXMLHttpRequestTest(
+            "Should return the correct response body - JSON when number is passed",
+            (onResponse) => {
+                const responseString = "123";
+
+                wrap(async () => {
+                    const request = new XMLHttpRequest();
+
+                    request.responseType = "json";
+
+                    const searchParams = objectToURLSearchParams({ responseString }, window);
+                    const requestUrl = new URL(url);
+
+                    requestUrl.search = searchParams.toString();
+
+                    request.open("GET", requestUrl);
+
+                    return new Promise<void>((resolve) => {
+                        onResponse(request, () => {
+                            expect(request.response).to.eq(JSON.parse(responseString));
+                            resolve();
+                        });
+
+                        request.send();
+                    });
+                });
+
+                cy.interceptorStats().then((stats) => {
+                    expect(stats.length).to.eq(disableInterceptor ? 0 : 1);
+
+                    if (!disableInterceptor) {
+                        expect(stats[0].response).not.to.be.undefined;
+                        expect(stats[0].response!.body).to.eq(responseString);
+                    }
+                });
+            }
+        );
+
+        createXMLHttpRequestTest(
+            "Should return the correct response body - null when string is passed",
+            (onResponse) => {
+                const responseString = "abc";
+
+                wrap(async () => {
+                    const request = new XMLHttpRequest();
+
+                    request.responseType = "json";
+
+                    const searchParams = objectToURLSearchParams({ responseString }, window);
+                    const requestUrl = new URL(url);
+
+                    requestUrl.search = searchParams.toString();
+
+                    request.open("GET", requestUrl);
+
+                    return new Promise<void>((resolve) => {
+                        onResponse(request, () => {
+                            expect(request.response).to.eq(null);
+                            resolve();
+                        });
+
+                        request.send();
+                    });
+                });
+
+                cy.interceptorStats().then((stats) => {
+                    expect(stats.length).to.eq(disableInterceptor ? 0 : 1);
+
+                    if (!disableInterceptor) {
+                        expect(stats[0].response).not.to.be.undefined;
+                        expect(stats[0].response!.body).to.eq("null");
+                    }
+                });
+            }
+        );
     });
 };
 
