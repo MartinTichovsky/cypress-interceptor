@@ -4,16 +4,72 @@
  * @author AI
  */
 
+export enum ReportTestId {
+    AVG_DURATION_CARD = "avg-duration-card",
+    CHART_CONTAINER = "chart-container",
+    CHART_CONTENT = "chart-content",
+    CHART_SCROLL_AREA = "chart-scroll-area",
+    CHART_WRAPPER = "chart-wrapper",
+    CHART_Y_AXIS = "chart-y-axis",
+    DATA_TABLE = "data-table",
+    DURATION_CHART_CANVAS = "duration-chart-canvas",
+    DURATION_COLUMN = "duration-column",
+    EXPAND_COLUMN = "expand-column",
+    LEGEND_FAST = "legend-fast",
+    LEGEND_SLOW = "legend-slow",
+    MAX_DURATION_CARD = "max-duration-card",
+    METHOD_COLUMN = "method-column",
+    MIN_DURATION_CARD = "min-duration-card",
+    PERFORMANCE_LEGEND = "performance-legend",
+    SCROLL_INDICATOR = "scroll-indicator",
+    STATS_CONTAINER = "stats-container",
+    TABLE_BODY = "table-body",
+    TABLE_CONTAINER = "table-container",
+    TABLE_HEADER = "table-header",
+    TABLE_HEAD = "table-head",
+    TIME_COLUMN = "time-column",
+    TOTAL_REQUESTS_CARD = "total-requests-card",
+    URL_COLUMN = "url-column",
+    Y_AXIS_CANVAS = "y-axis-canvas"
+}
+
+export enum ReportTestIdPrefix {
+    TABLE_ROW = "table-row",
+    EXPAND_BTN = "expand-btn",
+    DURATION_CELL = "duration-cell",
+    EXPANDABLE_ROW = "expandable-row",
+    FULL_URL_SECTION = "full-url-section",
+    FULL_URL_CONTENT = "full-url-content",
+    PARAMS_SECTION = "params-section",
+    PARAMS_CONTENT = "params-content",
+    HEADERS_SECTION = "headers-section",
+    HEADERS_CONTENT = "headers-content",
+    REQUEST_BODY_SECTION = "request-body-section",
+    REQUEST_BODY_CONTENT = "request-body-content",
+    RESPONSE_HEADERS_SECTION = "response-headers-section",
+    RESPONSE_HEADERS_CONTENT = "response-headers-content",
+    RESPONSE_BODY_SECTION = "response-body-section",
+    RESPONSE_BODY_CONTENT = "response-body-content"
+}
+
+export enum ReportClassName {
+    DURATION_FAST = "duration-fast",
+    DURATION_SLOW = "duration-slow"
+}
+
 interface GetHtmlTemplateProps {
     avgDuration: string;
     dataCount: number;
-    durations: string; // JSON string
+    durations: string;
     generationDate: string;
-    highDuration: string;
-    labels: string; // JSON string
+    highDuration: number | null;
+    highDurations: string;
+    isSlow: string;
+    isCustomHighDuration: boolean;
+    labels: string;
     maxDuration: string;
     minDuration: string;
-    tableData: string; // JSON string with detailed request data
+    tableData: string;
     title?: string;
     totalRequests: number;
 }
@@ -24,6 +80,9 @@ export const getHtmlTemplate = ({
     durations,
     generationDate,
     highDuration,
+    highDurations,
+    isSlow,
+    isCustomHighDuration,
     labels,
     maxDuration,
     minDuration,
@@ -68,6 +127,7 @@ export const getHtmlTemplate = ({
             overflow: hidden;
             backdrop-filter: blur(10px);
             border: 2px solid rgba(240, 240, 240, 0.8);
+            width: 100%;
         }
 
         .header {
@@ -80,6 +140,7 @@ export const getHtmlTemplate = ({
             text-align: center;
             border-bottom: 3px solid rgba(226, 232, 240, 0.6);
             position: relative;
+            width: 100%;
         }
 
         .header::before {
@@ -203,7 +264,7 @@ export const getHtmlTemplate = ({
         .chart-y-axis {
             position: sticky;
             left: 0;
-            width: 80px;
+            width: 40px;
             height: 100%;
             background: #ffffff;
             z-index: 10;
@@ -301,6 +362,25 @@ export const getHtmlTemplate = ({
                 rgba(255, 255, 255, 0.8) 0%, 
                 rgba(252, 254, 255, 0.8) 100%);
             border-top: 2px solid rgba(226, 232, 240, 0.4);
+            width: 100%;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .table-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30px;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(to left, rgba(255,255,255,0.95) 60%, rgba(255,255,255,0));
+            display: none;
+        }
+
+        .table-container.scrollable::after {
+            display: block;
         }
 
         .table-header {
@@ -333,6 +413,14 @@ export const getHtmlTemplate = ({
                 0 1px 2px rgba(0, 0, 0, 0.05),
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(226, 232, 240, 0.4);
+            min-width: 600px;
+        }
+
+        .data-table th, .data-table td {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 180px;
         }
 
         .data-table th {
@@ -586,12 +674,12 @@ export const getHtmlTemplate = ({
             position: relative;
         }
 
-        .duration-fast {
+        .${ReportClassName.DURATION_FAST} {
             color: #22c55e;
             text-shadow: 0 1px 2px rgba(34, 197, 94, 0.2);
         }
 
-        .duration-slow {
+        .${ReportClassName.DURATION_SLOW} {
             color: #ef4444;
             text-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
         }
@@ -603,7 +691,7 @@ export const getHtmlTemplate = ({
             opacity: 0.8;
         }
 
-        .duration-slow::before {
+        .${ReportClassName.DURATION_SLOW}::before {
             content: '🐌';
         }
 
@@ -620,127 +708,217 @@ export const getHtmlTemplate = ({
         }
 
         @media (max-width: 768px) {
+            .container {
+                max-width: 100vw;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            .header {
+                padding: 18px 5px 18px 5px;
+            }
             .header h1 {
-                font-size: 2.2rem;
+                font-size: 1.3rem;
             }
-            
-            .chart-container {
-                padding: 25px;
-            }
-            
-            .chart-wrapper {
-                height: 420px;
-                padding: 15px;
-            }
-
-            .performance-legend {
-                position: static;
-                justify-content: center;
-                margin-bottom: 15px;
-                gap: 15px;
-            }
-
-            .scroll-indicator {
-                font-size: 10px;
-                bottom: 2px;
-                right: 10px;
-            }
-
-            .table-container {
-                padding: 25px;
-            }
-
-            .data-table {
-                font-size: 0.85rem;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 12px 8px;
-            }
-
-            .url-cell {
-                max-width: 150px;
-                font-size: 0.8rem;
-            }
-
-            .time-cell {
-                font-size: 0.8rem;
-            }
-
-            .duration-cell {
-                font-size: 0.95rem;
-            }
-
-            .url-cell::before,
-            .time-cell::before,
-            .duration-cell::before {
-                display: none;
-            }
-
-            .expandable-details {
-                padding: 15px;
-                margin: 4px;
-            }
-
-            .details-title {
-                font-size: 0.9rem;
-            }
-
-            .details-content {
-                padding: 10px;
-                font-size: 0.8rem;
-            }
-
-            .param-key {
-                min-width: 80px;
-                font-size: 0.8rem;
-            }
-
-            .param-value {
-                font-size: 0.8rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                padding: 25px;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 10px 6px;
-            }
-
-            .url-cell {
-                max-width: 120px;
-            }
-
-            .expand-btn {
-                width: 24px;
-                height: 24px;
+            .header p {
                 font-size: 1rem;
             }
-
+            .stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding: 10px 5px;
+            }
+            .stat-card {
+                padding: 12px 5px;
+                border-radius: 10px;
+            }
+            .stat-value {
+                font-size: 1.1rem;
+            }
+            .stat-label {
+                font-size: 0.7rem;
+            }
+            .chart-container {
+                padding: 5px;
+            }
+            .chart-wrapper {
+                height: 220px;
+                padding: 5px;
+                border-radius: 10px;
+            }
+            .chart-y-axis {
+                width: 28px;
+            }
+            .performance-legend {
+                display: none !important;
+            }
+            .mobile-legend {
+                display: flex !important;
+                justify-content: center;
+                gap: 32px;
+            }
+            .legend-item {
+                flex-direction: row;
+                align-items: center;
+                margin-bottom: 2px;
+            }
+            .scroll-indicator {
+                font-size: 9px;
+                bottom: 2px;
+                right: 5px;
+            }
+            .table-container {
+                padding: 5px;
+                border-radius: 0;
+            }
+            .data-table {
+                font-size: 0.75rem;
+                min-width: 420px;
+            }
+            .data-table th,
+            .data-table td {
+                padding: 8px 4px;
+                max-width: 100px;
+            }
+            .url-cell {
+                max-width: 90px;
+                font-size: 0.7rem;
+            }
+            .time-cell {
+                font-size: 0.7rem;
+            }
+            .duration-cell {
+                font-size: 0.8rem;
+            }
+            .expand-btn {
+                width: 22px;
+                height: 22px;
+                font-size: 0.9rem;
+            }
             .expandable-details {
-                padding: 12px;
+                padding: 7px;
                 margin: 2px;
             }
-
-            .details-section {
-                margin-bottom: 15px;
+            .details-title {
+                font-size: 0.8rem;
             }
-
-            .param-item {
-                flex-direction: column;
-                gap: 4px;
+            .details-content {
+                padding: 6px;
+                font-size: 0.7rem;
             }
-
             .param-key {
-                min-width: auto;
-                margin-right: 0;
+                min-width: 60px;
+                font-size: 0.7rem;
+            }
+            .param-value {
+                font-size: 0.7rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100vw;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            .header {
+                padding: 10px 2px 10px 2px;
+            }
+            .header h1 {
+                font-size: 1rem;
+            }
+            .header p {
+                font-size: 0.8rem;
+            }
+            .stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                padding: 5px 2px;
+            }
+            .stat-card {
+                padding: 7px 2px;
+                border-radius: 6px;
+            }
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            .stat-label {
+                font-size: 0.6rem;
+            }
+            .chart-container {
+                padding: 2px;
+            }
+            .chart-wrapper {
+                /* Keep height at 220px for <=480px */
+                height: 220px;
+                padding: 2px;
+                border-radius: 6px;
+            }
+            .chart-y-axis {
+                width: 28px;
+            }
+            .performance-legend {
+                font-size: 0.6rem;
+                flex-direction: column;
+                gap: 2px;
+                align-items: flex-start;
+            }
+            .mobile-legend {
+                justify-content: center;
+                gap: 32px;
+            }
+            .legend-item {
+                flex-direction: row;
+                align-items: center;
+                margin-bottom: 1px;
+            }
+            .table-container {
+                padding: 2px;
+                border-radius: 0;
+            }
+            .data-table {
+                font-size: 0.65rem;
+                min-width: 300px;
+            }
+            .data-table th,
+            .data-table td {
+                padding: 5px 2px;
+                max-width: 60px;
+            }
+            .url-cell {
+                max-width: 60px;
+                font-size: 0.6rem;
+            }
+            .time-cell {
+                font-size: 0.6rem;
+            }
+            .duration-cell {
+                font-size: 0.7rem;
+            }
+            .expand-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 0.7rem;
+            }
+            .expandable-details {
+                padding: 3px;
+                margin: 1px;
+            }
+            .details-title {
+                font-size: 0.7rem;
+            }
+            .details-content {
+                padding: 3px;
+                font-size: 0.6rem;
+            }
+            .param-key {
+                min-width: 40px;
+                font-size: 0.6rem;
+            }
+            .param-value {
+                font-size: 0.6rem;
             }
         }
     </style>
@@ -752,67 +930,100 @@ export const getHtmlTemplate = ({
             <p>Performance metrics over time - ${dataCount} data points</p>
         </div>
 
-        <div class="stats" data-testid="stats-container">
-            <div class="stat-card" data-testid="max-duration-card">
+        <div class="stats" data-testid="${ReportTestId.STATS_CONTAINER}">
+            <div class="stat-card" data-testid="${ReportTestId.MAX_DURATION_CARD}">
                 <div class="stat-value">${maxDuration}ms</div>
                 <div class="stat-label">Max Duration</div>
             </div>
-            <div class="stat-card" data-testid="min-duration-card">
+            <div class="stat-card" data-testid="${ReportTestId.MIN_DURATION_CARD}">
                 <div class="stat-value">${minDuration}ms</div>
                 <div class="stat-label">Min Duration</div>
             </div>
-            <div class="stat-card" data-testid="avg-duration-card">
+            <div class="stat-card" data-testid="${ReportTestId.AVG_DURATION_CARD}">
                 <div class="stat-value">${avgDuration}ms</div>
                 <div class="stat-label">Average Duration</div>
             </div>
-            <div class="stat-card" data-testid="total-requests-card">
+            <div class="stat-card" data-testid="${ReportTestId.TOTAL_REQUESTS_CARD}">
                 <div class="stat-value">${totalRequests}</div>
                 <div class="stat-label">Total Requests</div>
             </div>
         </div>
 
-        <div class="chart-container" data-testid="chart-container">
-            <div class="chart-wrapper" data-testid="chart-wrapper">
-                <div class="performance-legend" data-testid="performance-legend">
-                    <div class="legend-item" data-testid="legend-fast">
+        <div class="chart-container" data-testid="${ReportTestId.CHART_CONTAINER}">
+            <div class="chart-wrapper" data-testid="${ReportTestId.CHART_WRAPPER}">
+                <div class="performance-legend" data-testid="${ReportTestId.PERFORMANCE_LEGEND}">
+                    <div class="legend-item" data-testid="${ReportTestId.LEGEND_FAST}">
                         <div class="legend-dot fast"></div>
-                        <span class="legend-fast">Fast (&lt; ${highDuration}ms)</span>
+                        <span class="legend-fast">Fast${!isCustomHighDuration ? ` (< ${highDuration}ms)` : ""}</span>
                     </div>
-                    <div class="legend-item" data-testid="legend-slow">
+                    ${
+                        isCustomHighDuration
+                            ? `
+                    <div class="legend-item" data-testid="${ReportTestId.LEGEND_SLOW}">
+                        <div class="legend-dot slow"></div>
+                        <span class="legend-slow">Custom</span>
+                    </div>
+                    `
+                            : `
+                    <div class="legend-item" data-testid="${ReportTestId.LEGEND_SLOW}">
                         <div class="legend-dot slow"></div>
                         <span class="legend-slow">Slow (≥ ${highDuration}ms)</span>
                     </div>
+                    `
+                    }
                 </div>
-                <div class="chart-y-axis" data-testid="chart-y-axis">
-                    <canvas id="yAxisChart" data-testid="y-axis-canvas"></canvas>
+                <div class="chart-y-axis" data-testid="${ReportTestId.CHART_Y_AXIS}">
+                    <canvas id="yAxisChart" data-testid="${ReportTestId.Y_AXIS_CANVAS}"></canvas>
                 </div>
-                <div class="chart-scroll-area" data-testid="chart-scroll-area">
-                    <div class="chart-content" data-testid="chart-content">
-                        <canvas id="durationChart" data-testid="duration-chart-canvas"></canvas>
+                <div class="chart-scroll-area" data-testid="${ReportTestId.CHART_SCROLL_AREA}">
+                    <div class="chart-content" data-testid="${ReportTestId.CHART_CONTENT}">
+                        <canvas id="durationChart" data-testid="${ReportTestId.DURATION_CHART_CANVAS}"></canvas>
                     </div>
-                    <div class="scroll-indicator" id="scrollIndicator" data-testid="scroll-indicator" style="display: none;">
+                    <div class="scroll-indicator" id="scrollIndicator" data-testid="${ReportTestId.SCROLL_INDICATOR}" style="display: none;">
                         ← Scroll to see more requests →
                     </div>
                 </div>
             </div>
         </div>
+        <!-- Mobile legend below the graph -->
+        <div class="mobile-legend" aria-label="Performance legend" tabindex="0" style="display:none">
+            <div class="legend-item">
+                <div class="legend-dot fast"></div>
+                <span class="legend-fast">Fast${!isCustomHighDuration ? ` (< ${highDuration}ms)` : ""}</span>
+            </div>
+            ${
+                isCustomHighDuration
+                    ? `
+            <div class="legend-item">
+                <div class="legend-dot slow"></div>
+                <span class="legend-slow">Custom</span>
+            </div>
+            `
+                    : `
+            <div class="legend-item">
+                <div class="legend-dot slow"></div>
+                <span class="legend-slow">Slow (≥ ${highDuration}ms)</span>
+            </div>
+            `
+            }
+        </div>
 
-        <div class="table-container" data-testid="table-container">
-            <div class="table-header" data-testid="table-header">
-                <h2>📋 Request Details</h2>
+        <div class="table-container" data-testid="${ReportTestId.TABLE_CONTAINER}">
+            <div class="table-header" data-testid="${ReportTestId.TABLE_HEADER}">
+                <h2>Request Details</h2>
                 <p>Detailed breakdown of all requests sorted by time</p>
             </div>
-            <table class="data-table" id="requestTable" data-testid="data-table">
-                <thead data-testid="table-head">
+            <table class="data-table" id="requestTable" data-testid="${ReportTestId.DATA_TABLE}">
+                <thead data-testid="${ReportTestId.TABLE_HEAD}">
                     <tr>
-                        <th style="width: 40px;" data-testid="expand-column">📋</th>
-                        <th class="sortable" data-sort="url" data-testid="url-column">🌐 URL</th>
-                        <th class="sortable" data-sort="method" data-testid="method-column">📝 Method</th>
-                        <th class="sortable" data-sort="time" data-testid="time-column">⏰ Time</th>
-                        <th class="sortable" data-sort="duration" data-testid="duration-column">⚡ Duration</th>
+                        <th style="width: 40px;" data-testid="${ReportTestId.EXPAND_COLUMN}">📋</th>
+                        <th class="sortable" data-sort="url" data-testid="${ReportTestId.URL_COLUMN}">🌐 URL</th>
+                        <th class="sortable" data-sort="method" data-testid="${ReportTestId.METHOD_COLUMN}">📝 Method</th>
+                        <th class="sortable" data-sort="time" data-testid="${ReportTestId.TIME_COLUMN}">⏰ Time</th>
+                        <th class="sortable" data-sort="duration" data-testid="${ReportTestId.DURATION_COLUMN}">⚡ Duration</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody" data-testid="table-body">
+                <tbody id="tableBody" data-testid="${ReportTestId.TABLE_BODY}">
                     <!-- Table rows will be populated by JavaScript -->
                 </tbody>
             </table>
@@ -835,6 +1046,9 @@ export const getHtmlTemplate = ({
         const data = ${durations};
         const tableData = ${tableData};
         const highDuration = ${highDuration};
+        const highDurations = JSON.parse('${highDurations}');
+        const isSlow = JSON.parse('${isSlow}');
+        const isCustomHighDuration = ${isCustomHighDuration};
         
         // Chart configuration
         const config = {
@@ -951,9 +1165,14 @@ export const getHtmlTemplate = ({
             const minBarWidth = 30; // Minimum bar width in pixels
             const barSpacing = 15; // Spacing between bars
             const minWidthPerBar = minBarWidth + barSpacing;
+            // Determine Y-axis width based on media query
+            let yAxisWidth = 40;
+            if (window.matchMedia('(max-width: 768px)').matches) {
+                yAxisWidth = 28;
+            }
             const calculatedWidth = Math.max(
                 data.length * minWidthPerBar + config.padding * 2,
-                rect.width - 80 // Subtract Y-axis width
+                rect.width - yAxisWidth // Subtract Y-axis width
             );
             
             // Set container width to enable scrolling
@@ -967,27 +1186,66 @@ export const getHtmlTemplate = ({
             canvas.width = calculatedWidth * dpr;
             canvas.height = rect.height * dpr;
             
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
             ctx.scale(dpr, dpr);
             ctx.imageSmoothingEnabled = true;
             
             // Setup Y-axis canvas
-            yAxisCanvas.style.width = '80px';
+            yAxisCanvas.style.width = yAxisWidth + 'px';
             yAxisCanvas.style.height = rect.height + 'px';
-            
-            yAxisCanvas.width = 80 * dpr;
+            yAxisCanvas.width = yAxisWidth * dpr;
             yAxisCanvas.height = rect.height * dpr;
-            
+            yAxisCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
             yAxisCtx.scale(dpr, dpr);
             yAxisCtx.imageSmoothingEnabled = true;
             
-            drawChart();
+            drawChart(yAxisWidth);
         }
         
+        // Centralized function to get bar rectangle
+        function getBarRect(index) {
+            const dpr = window.devicePixelRatio || 1;
+            const width = canvas.width / dpr;
+            const height = canvas.height / dpr;
+            const chartWidth = width - config.padding;
+            const chartHeight = height - config.padding * 2;
+            const chartX = 8;
+            const chartY = config.padding;
+
+            const minBarWidth = 30;
+            const barSpacing = 15;
+            const barWidth = Math.max(minBarWidth, (chartWidth - (data.length - 1) * barSpacing) / data.length);
+            const actualBarSpacing = data.length > 1 ? (chartWidth - data.length * barWidth) / (data.length - 1) : 0;
+
+            const value = data[index];
+            const maxValue = Math.max(...data, 0);
+            const yScale = maxValue > 0 ? chartHeight / maxValue : 1;
+            const barHeight = value * yScale;
+            const barX = chartX + index * (barWidth + actualBarSpacing);
+            const barY = chartY + chartHeight - barHeight;
+
+            return {
+                x: barX,
+                y: barY,
+                width: barWidth,
+                height: barHeight
+            };
+        }
+        window.getBarCoordinates = function(index) {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = getBarRect(index);
+            return {
+                x: Math.round(rect.x * dpr),
+                y: Math.round(rect.y * dpr),
+                width: Math.round(rect.width * dpr),
+                height: Math.round(rect.height * dpr)
+            };
+        };
+        
         // Draw the chart
-        function drawChart() {
+        function drawChart(yAxisWidth = 40) {
             const width = canvas.width / (window.devicePixelRatio || 1);
             const height = canvas.height / (window.devicePixelRatio || 1);
-            const yAxisWidth = 80;
             const yAxisHeight = height;
             
             // Clear both canvases
@@ -1006,7 +1264,7 @@ export const getHtmlTemplate = ({
             // Calculate chart area (main chart doesn't need left padding for Y-axis anymore)
             const chartWidth = width - config.padding;
             const chartHeight = height - config.padding * 2;
-            const chartX = 20; // Small left margin
+            const chartX = 8; // Smaller left margin
             const chartY = config.padding;
             
             // Y-axis chart area - must match exactly with main chart
@@ -1036,20 +1294,20 @@ export const getHtmlTemplate = ({
                 if (maxValue > 0) {
                     const value = (i * maxValue / gridLines).toFixed(0);
                     yAxisCtx.fillStyle = config.textColor;
-                    yAxisCtx.font = '12px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+                    yAxisCtx.font = '11px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
                     yAxisCtx.textAlign = 'right';
-                    yAxisCtx.fillText(value + 'ms', yAxisWidth - 5, y + 4);
+                    yAxisCtx.fillText(value + 'ms', yAxisWidth - 2, y + 4);
                 }
             }
             
             // Draw Y-axis title on fixed canvas
             yAxisCtx.fillStyle = config.textColor;
-            yAxisCtx.font = '15px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+            yAxisCtx.font = '13px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
             yAxisCtx.textAlign = 'center';
             yAxisCtx.fontWeight = '600';
             
             yAxisCtx.save();
-            yAxisCtx.translate(15, yAxisHeight / 2);
+            yAxisCtx.translate(yAxisWidth / 2 - 24, yAxisHeight / 2); // Add 24px padding from right
             yAxisCtx.rotate(-Math.PI / 2);
             yAxisCtx.fillText('📈 Duration (ms)', 0, 0);
             yAxisCtx.restore();
@@ -1069,12 +1327,16 @@ export const getHtmlTemplate = ({
             
             // Draw bars
             data.forEach((value, index) => {
-                const barHeight = value * yScale;
-                const barX = chartX + index * (barWidth + actualBarSpacing);
-                const barY = chartY + chartHeight - barHeight;
+                const { x: barX, y: barY, width: barWidth, height: barHeight } = getBarRect(index);
                 
-                // Determine color based on duration threshold
-                const isFast = value < config.thresholdMs;
+                // Determine color based on per-request threshold
+                let isBarSlow = false;
+                if (isCustomHighDuration === true) {
+                    isBarSlow = isSlow[index];
+                } else {
+                    isBarSlow = value >= config.thresholdMs;
+                }
+                const isFast = !isBarSlow;
                 const baseColor = isFast ? config.fastColor : config.slowColor;
                 const hoverColor = isFast ? config.fastHoverColor : config.slowHoverColor;
                 const currentColor = hoveredIndex === index ? hoverColor : baseColor;
@@ -1144,20 +1406,17 @@ export const getHtmlTemplate = ({
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
             const chartWidth = canvas.width / (window.devicePixelRatio || 1) - config.padding;
-            const chartX = 20; // Small left margin to match drawChart
-            
+            const chartX = 8; // Small left margin to match drawChart
             // Calculate bar dimensions (same as in drawChart)
             const minBarWidth = 30;
             const barSpacing = 15;
             const barWidth = Math.max(minBarWidth, (chartWidth - (data.length - 1) * barSpacing) / data.length);
             const actualBarSpacing = data.length > 1 ? (chartWidth - data.length * barWidth) / (data.length - 1) : 0;
-            
             // Find which bar is being hovered
             let newHoveredIndex = -1;
             for (let i = 0; i < data.length; i++) {
-                const barX = chartX + i * (barWidth + actualBarSpacing);
+                const { x: barX, width: barWidth } = getBarRect(i);
                 if (x >= barX && x <= barX + barWidth) {
                     newHoveredIndex = i;
                     break;
@@ -1196,20 +1455,17 @@ export const getHtmlTemplate = ({
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            
             const chartWidth = canvas.width / (window.devicePixelRatio || 1) - config.padding;
-            const chartX = 20; // Small left margin to match drawChart
-            
+            const chartX = 8; // Small left margin to match drawChart
             // Calculate bar dimensions (same as in drawChart and mousemove)
             const minBarWidth = 30;
             const barSpacing = 15;
             const barWidth = Math.max(minBarWidth, (chartWidth - (data.length - 1) * barSpacing) / data.length);
             const actualBarSpacing = data.length > 1 ? (chartWidth - data.length * barWidth) / (data.length - 1) : 0;
-            
             // Find which bar was clicked
             let clickedIndex = -1;
             for (let i = 0; i < data.length; i++) {
-                const barX = chartX + i * (barWidth + actualBarSpacing);
+                const { x: barX, width: barWidth } = getBarRect(i);
                 if (x >= barX && x <= barX + barWidth) {
                     clickedIndex = i;
                     break;
@@ -1238,14 +1494,6 @@ export const getHtmlTemplate = ({
             const allUrls = tableData.map(row => String(row.url));
             const displayUrls = processUrlsForDisplay(allUrls);
             
-            // Debug: Log the processing results
-            if (console) {
-                console.log('URL processing results:');
-                for (let i = 0; i < Math.min(5, allUrls.length); i++) {
-                    console.log(\`\${i}: "\${allUrls[i]}" -> "\${displayUrls[i]}"\`);
-                }
-            }
-            
             tableData.forEach((row, index) => {
                 // Get the original index for this row
                 const originalIndex = row.originalIndex !== undefined ? row.originalIndex : index;
@@ -1254,13 +1502,13 @@ export const getHtmlTemplate = ({
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
                 tr.setAttribute('data-original-index', originalIndex);
-                tr.setAttribute('data-testid', \`table-row-\${originalIndex}\`);
+                tr.setAttribute('data-testid', \`${ReportTestIdPrefix.TABLE_ROW}-\${originalIndex}\`);
                 
                 // Expand button cell
                 const expandCell = document.createElement('td');
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-btn';
-                expandBtn.setAttribute('data-testid', \`expand-btn-\${originalIndex}\`);
+                expandBtn.setAttribute('data-testid', \`${ReportTestIdPrefix.EXPAND_BTN}-\${originalIndex}\`);
                 expandBtn.innerHTML = '▶';
                 expandBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -1300,10 +1548,15 @@ export const getHtmlTemplate = ({
                 
                 // Duration cell
                 const durationCell = document.createElement('td');
-                const isFast = row.duration < highDuration;
-                durationCell.className = \`duration-cell \${isFast ? "duration-fast" : "duration-slow"}\`;
-                durationCell.setAttribute('data-testid', \`duration-cell-\${originalIndex}\`);
-                durationCell.setAttribute('data-duration-type', isFast ? 'fast' : 'slow');
+                let isRowSlow = false;
+                if (isCustomHighDuration === true) {
+                    isRowSlow = row.isSlow;
+                } else {
+                    isRowSlow = row.duration >= highDuration;
+                }
+                durationCell.className = \`${ReportTestIdPrefix.DURATION_CELL} \${isRowSlow ? "${ReportClassName.DURATION_SLOW}" : "${ReportClassName.DURATION_FAST}"}\`;
+                durationCell.setAttribute('data-testid', \`${ReportTestIdPrefix.DURATION_CELL}-\${originalIndex}\`);
+                durationCell.setAttribute('data-duration-type', isRowSlow ? 'slow' : 'fast');
                 durationCell.textContent = \`\${row.duration.toFixed(0)}ms\`;
                 tr.appendChild(durationCell);
                 
@@ -1316,7 +1569,7 @@ export const getHtmlTemplate = ({
                 const expandRow = document.createElement('tr');
                 expandRow.className = 'expandable-content';
                 expandRow.id = \`expand-\${originalIndex}\`;
-                expandRow.setAttribute('data-testid', \`expandable-row-\${originalIndex}\`);
+                expandRow.setAttribute('data-testid', \`${ReportTestIdPrefix.EXPANDABLE_ROW}-\${originalIndex}\`);
                 
                 const expandTd = document.createElement('td');
                 expandTd.colSpan = 5;
@@ -1328,12 +1581,12 @@ export const getHtmlTemplate = ({
                 if (displayUrl !== String(row.url)) {
                     const fullUrlSection = document.createElement('div');
                     fullUrlSection.className = 'details-section';
-                    fullUrlSection.setAttribute('data-testid', \`full-url-section-\${originalIndex}\`);
+                    fullUrlSection.setAttribute('data-testid', \`${ReportTestIdPrefix.FULL_URL_SECTION}-\${originalIndex}\`);
                     fullUrlSection.innerHTML = \`
                         <div class="details-title">
                             🔗 Full URL
                         </div>
-                        <div class="details-content" style="word-break: break-all; font-family: monospace;" data-testid="full-url-content-\${originalIndex}">
+                        <div class="details-content" style="word-break: break-all; font-family: monospace;" data-testid="${ReportTestIdPrefix.FULL_URL_CONTENT}-\${originalIndex}">
                             \${String(row.url)}
                         </div>
                     \`;
@@ -1343,12 +1596,12 @@ export const getHtmlTemplate = ({
                 // Parameters section
                 const paramsSection = document.createElement('div');
                 paramsSection.className = 'details-section';
-                paramsSection.setAttribute('data-testid', \`params-section-\${originalIndex}\`);
+                paramsSection.setAttribute('data-testid', \`${ReportTestIdPrefix.PARAMS_SECTION}-\${originalIndex}\`);
                 paramsSection.innerHTML = \`
                     <div class="details-title">
                         🔍 URL Parameters
                     </div>
-                    <div class="details-content params" id="params-\${originalIndex}" data-testid="params-content-\${originalIndex}">
+                    <div class="details-content params" id="params-\${originalIndex}" data-testid="${ReportTestIdPrefix.PARAMS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.query || {})}
                     </div>
                 \`;
@@ -1357,12 +1610,12 @@ export const getHtmlTemplate = ({
                 // Headers section
                 const headersSection = document.createElement('div');
                 headersSection.className = 'details-section';
-                headersSection.setAttribute('data-testid', \`headers-section-\${originalIndex}\`);
+                headersSection.setAttribute('data-testid', \`${ReportTestIdPrefix.HEADERS_SECTION}-\${originalIndex}\`);
                 headersSection.innerHTML = \`
                     <div class="details-title">
                         📋 Request Headers
                     </div>
-                    <div class="details-content params" id="headers-\${originalIndex}" data-testid="headers-content-\${originalIndex}">
+                    <div class="details-content params" id="headers-\${originalIndex}" data-testid="${ReportTestIdPrefix.HEADERS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.headers || {})}
                     </div>
                 \`;
@@ -1371,23 +1624,23 @@ export const getHtmlTemplate = ({
                 // Request body section
                 const bodySection = document.createElement('div');
                 bodySection.className = 'details-section';
-                bodySection.setAttribute('data-testid', \`request-body-section-\${originalIndex}\`);
+                bodySection.setAttribute('data-testid', \`${ReportTestIdPrefix.REQUEST_BODY_SECTION}-\${originalIndex}\`);
                 // No extra space for the request body to be well formatted
                 bodySection.innerHTML = \`
                     <div class="details-title">📄 Request Body</div>
-                    <div class="details-content json" id="body-\${originalIndex}" data-testid="request-body-content-\${originalIndex}">\${formatRequestBody(row.body || '')}</div>
+                    <div class="details-content json" id="request-body-\${originalIndex}" data-testid="${ReportTestIdPrefix.REQUEST_BODY_CONTENT}-\${originalIndex}">\${formatRequestBody(row.requestBody || '')}</div>
                 \`;
                 detailsDiv.appendChild(bodySection);
                 
                 // Response headers section
                 const responseHeadersSection = document.createElement('div');
                 responseHeadersSection.className = 'details-section';
-                responseHeadersSection.setAttribute('data-testid', \`response-headers-section-\${originalIndex}\`);
+                responseHeadersSection.setAttribute('data-testid', \`${ReportTestIdPrefix.RESPONSE_HEADERS_SECTION}-\${originalIndex}\`);
                 responseHeadersSection.innerHTML = \`
                     <div class="details-title">
                         📨 Response Headers \${row.statusCode ? \`(Status: \${row.statusCode})\` : ''}
                     </div>
-                    <div class="details-content params" id="response-headers-\${originalIndex}" data-testid="response-headers-content-\${originalIndex}">
+                    <div class="details-content params" id="response-headers-\${originalIndex}" data-testid="${ReportTestIdPrefix.RESPONSE_HEADERS_CONTENT}-\${originalIndex}">
                         \${formatParameters(row.responseHeaders || {})}
                     </div>
                 \`;
@@ -1396,10 +1649,10 @@ export const getHtmlTemplate = ({
                 // Response body section
                 const responseBodySection = document.createElement('div');
                 responseBodySection.className = 'details-section';
-                responseBodySection.setAttribute('data-testid', \`response-body-section-\${originalIndex}\`);
+                responseBodySection.setAttribute('data-testid', \`${ReportTestIdPrefix.RESPONSE_BODY_SECTION}-\${originalIndex}\`);
                 responseBodySection.innerHTML = \`
                     <div class="details-title">📥 Response Body</div>
-                    <div class="details-content json" id="response-body-\${originalIndex}" data-testid="response-body-content-\${originalIndex}">\${formatRequestBody(row.responseBody || '')}</div>
+                    <div class="details-content json" id="response-body-\${originalIndex}" data-testid="${ReportTestIdPrefix.RESPONSE_BODY_CONTENT}-\${originalIndex}">\${formatRequestBody(row.responseBody || '')}</div>
                 \`;
                 detailsDiv.appendChild(responseBodySection);
                 
@@ -1443,11 +1696,57 @@ export const getHtmlTemplate = ({
             if (!body || body.trim() === '') {
                 return '<div class="empty-state">No request body</div>';
             }
-            
+
+            const isTruncated = body.trim().endsWith('...');
+            let bodyToFormat = body;
+            if (isTruncated) {
+                bodyToFormat = body.trim().slice(0, -3); // Remove '...'
+            }
+
+            // Try to parse as JSON
             try {
-                const parsed = JSON.parse(body);
-                return JSON.stringify(parsed, null, 2);
-            } catch {
+                const parsed = JSON.parse(bodyToFormat);
+                const pretty = JSON.stringify(parsed, null, 2);
+                return isTruncated ? pretty + '...' : pretty;
+            } catch (err) {
+                // If not valid JSON, try to pretty-print as much as possible
+                if (isTruncated) {
+                    // Custom pretty-print for truncated JSON-like string
+                    let result = '';
+                    let indent = 0;
+                    let inString = false;
+                    let lastChar = '';
+                    const tab = '  ';
+                    for (let i = 0; i < bodyToFormat.length; i++) {
+                        const char = bodyToFormat[i];
+                        if (char === '"' && lastChar !== '\\\\') {
+                            inString = !inString;
+                        }
+                        if (!inString) {
+                            if (char === '{' || char === '[') {
+                                result += char + '\\n' + tab.repeat(++indent);
+                            } else if (char === '}' || char === ']') {
+                                result += '\\n' + tab.repeat(--indent) + char;
+                            } else if (char === ',') {
+                                result += char + '\\n' + tab.repeat(indent);
+                            } else if (char === ':') {
+                                result += ': ';
+                            } else if (char === '\\n' || char === '\\r') {
+                                // skip
+                            } else {
+                                result += char;
+                            }
+                        } else {
+                            result += char;
+                        }
+                        lastChar = char;
+                    }
+                    return result.trimEnd() + '...';
+                }
+                // Log error for debugging
+                if (typeof console !== 'undefined') {
+                    console.error('formatRequestBody error:', err, body);
+                }
                 return body;
             }
         }
@@ -1760,6 +2059,36 @@ export const getHtmlTemplate = ({
                 });
             });
         }
+
+        // Accessibility: Add tabindex, aria-label, and keyboard support to expand buttons
+        function addAccessibilityToExpandButtons() {
+            const expandBtns = document.querySelectorAll('.expand-btn');
+            expandBtns.forEach((btn, idx) => {
+                btn.setAttribute('tabindex', '0');
+                btn.setAttribute('aria-label', 'Expand row details');
+                btn.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        btn.click();
+                    }
+                });
+            });
+        }
+        // Call after table is populated
+        setTimeout(addAccessibilityToExpandButtons, 100);
+
+        // Table scrollable visual cue
+        function updateTableScrollableCue() {
+            const tableContainer = document.querySelector('.table-container');
+            if (!tableContainer) return;
+            if (tableContainer.scrollWidth > tableContainer.clientWidth) {
+                tableContainer.classList.add('scrollable');
+            } else {
+                tableContainer.classList.remove('scrollable');
+            }
+        }
+        window.addEventListener('resize', updateTableScrollableCue);
+        setTimeout(updateTableScrollableCue, 200);
     </script>
 </body>
 </html>

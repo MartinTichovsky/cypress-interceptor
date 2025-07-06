@@ -1,6 +1,9 @@
 /// <reference types="cypress" preserve="true" />
 
-import { createWebsocketProxy } from "./src/createWebsocketProxy";
+import {
+    createWebsocketProxy,
+    CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED
+} from "./src/createWebsocketProxy";
 import { WebsocketListener } from "./src/websocketListener";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
 import {
@@ -21,6 +24,33 @@ export * from "./WebsocketInterceptor";
     // create the proxy in each window
     Cypress.on("window:before:load", createWebsocketProxy(websocketListener));
 
+    Cypress.Commands.add("destroyWsInterceptor", () => {
+        Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, true);
+
+        cy.window().then((win: WindowTypeOfWebsocketProxy) => {
+            const globalWin = window as WindowTypeOfWebsocketProxy;
+
+            if ("originWebSocket" in win && win.originWebSocket) {
+                win.WebSocket = win.originWebSocket;
+                delete win["originWebSocket"];
+            }
+
+            if ("originWebSocket" in globalWin && globalWin.originWebSocket) {
+                globalWin.WebSocket = globalWin.originWebSocket;
+                delete globalWin["originWebSocket"];
+            }
+        });
+    });
+    Cypress.Commands.add("recreateWsInterceptor", () => {
+        cy.window().then((win: WindowTypeOfWebsocketProxy) => {
+            Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, false);
+
+            // to be able use it without cy.visit
+            createWebsocketProxy(websocketListener)(window as WindowTypeOfWebsocketProxy);
+
+            createWebsocketProxy(websocketListener)(win);
+        });
+    });
     // register commands
     Cypress.Commands.add("wsInterceptor", () => cy.wrap(websocketInterceptor));
     Cypress.Commands.add("wsInterceptorLastRequest", (matcher?: IWSMatcher) =>

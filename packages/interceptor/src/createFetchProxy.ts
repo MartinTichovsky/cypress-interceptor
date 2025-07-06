@@ -4,7 +4,13 @@ import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
 
+export const CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED = "__fetchProxyDisabled";
+
 export const createFetchProxy = (win: WindowTypeOfRequestProxy, requestProxy: RequestProxy) => {
+    if (Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)) {
+        return;
+    }
+
     if (win.originFetch === undefined) {
         win.originFetch = win.fetch;
     }
@@ -137,15 +143,13 @@ export const createFetchProxy = (win: WindowTypeOfRequestProxy, requestProxy: Re
 
                                 resolve(response);
                             });
-                    } else if (proxy) {
+                    } else {
                         try {
                             proxy.done(response, () => resolve(response));
                         } catch {
                             lineCalled(CallLineEnum.n000007);
                             resolve(response);
                         }
-                    } else {
-                        resolve(response);
                     }
                 })
                 .catch((error) => {

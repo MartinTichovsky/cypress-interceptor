@@ -4,13 +4,9 @@ node_modules
 **/cypress/screenshots
 **/cypress/videos
 lib
-_console*
-_coverage
-_logs
-_network_report
-_stats
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
 .nyc_output
 **/cypress-*/coverage*
+**/cypress-*/_output
 packages/server/fixtures

@@ -19,6 +19,7 @@ The **Network Report** feature is a powerful enhancement for analyzing network r
   - [Generate Reports Only for Failed Tests](#generate-reports-only-for-failed-tests)
   - [Custom File Names](#custom-file-names)
   - [Performance Threshold Configuration](#performance-threshold-configuration)
+  - [Per-Request Thresholds](#per-request-thresholds)
 - [API Reference](#api-reference)
   - [`createNetworkReport(options)`](#createnetworkreportoptions)
   - [`createNetworkReportFromFile(filePath, options)`](#createnetworkreportfromfilefilepath-options)
@@ -102,6 +103,19 @@ afterEach(() => {
 });
 ```
 
+### Per-Request Thresholds
+
+You can use a function for `highDuration` to set different thresholds for different requests:
+
+```typescript
+afterEach(() => {
+    createNetworkReport({
+        highDuration: (url) => url.pathname.startsWith('/api/') ? 1000 : 3000,
+        outputDir: 'reports'
+    });
+});
+```
+
 ## API Reference
 
 ### `createNetworkReport(options)`
@@ -116,6 +130,12 @@ Creates an HTML report from the current Cypress test execution. This function mu
 createNetworkReport({
     fileName: 'api-performance-report',
     highDuration: 2500,
+    outputDir: './test-reports'
+});
+
+// Or use a function for per-request thresholds
+createNetworkReport({
+    highDuration: (url) => url.pathname.startsWith('/api/') ? 1000 : 3000,
     outputDir: './test-reports'
 });
 ```
@@ -177,7 +197,7 @@ The configuration object used by all report generation functions:
 ```typescript
 interface ReportHtmlOptions {
     fileName?: string;        // Optional: Custom name for the report file (without extension)
-    highDuration?: number;    // Optional: Threshold in milliseconds for highlighting slow requests (default: 3000)
+    highDuration?: number | (url: URL) => number; // Optional: Threshold in ms or function per request
     outputDir: string;        // Required: Directory where the HTML report will be saved
 }
 ```

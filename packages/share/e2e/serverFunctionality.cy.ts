@@ -12,7 +12,7 @@ import {
 } from "cypress-interceptor-server/src/utils";
 
 import { getLoadedSector, getResponseBody } from "../src/selectors";
-import { fireRequest, resourceTypeIt } from "../src/utils";
+import { fireRequest, resourceTypeIt, wrap } from "../src/utils";
 
 beforeEach(function () {
     Cypress.on("uncaught:exception", () => false);
@@ -336,7 +336,7 @@ describe("Testing that the server works correctly", () => {
             expect(stats[2].delay).to.be.undefined;
             expect(stats[2].duration).to.be.gte(duration4);
             expect(stats[2].isPending).to.be.false;
-            console.log(stats[2].url);
+
             expect(stats[2].url.pathname.endsWith(testPath4)).to.be.true;
         });
 
@@ -526,18 +526,21 @@ describe("Testing that the server works correctly", () => {
             type: "fetch"
         };
 
-        return new Cypress.Promise((resolve, reject) => {
-            // do something custom here
+        wrap(
+            () =>
+                new Promise<void>((resolve, reject) => {
+                    // do something custom here
 
-            fetch(...getInitForFetchFromParams(entry, getParamsFromDynamicRequest(entry)))
-                .then((res) => {
-                    // Check that the response contains the expected custom headers from responseHeaders
-                    Object.entries(responseHeaders).forEach(([key, value]) => {
-                        expect(res.headers.get(key)).to.equal(value);
-                    });
-                    resolve();
+                    fetch(...getInitForFetchFromParams(entry, getParamsFromDynamicRequest(entry)))
+                        .then((res) => {
+                            // Check that the response contains the expected custom headers from responseHeaders
+                            Object.entries(responseHeaders).forEach(([key, value]) => {
+                                expect(res.headers.get(key)).to.equal(value);
+                            });
+                            resolve();
+                        })
+                        .catch(reject);
                 })
-                .catch(reject);
-        });
+        );
     });
 });

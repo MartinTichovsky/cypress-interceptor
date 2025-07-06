@@ -71,7 +71,7 @@ export interface WaitUntilActionOptions {
 }
 
 export type WindowTypeOfWebsocketProxy = Cypress.AUTWindow & {
-    originWebSocket: typeof WebSocket;
+    originWebSocket?: typeof WebSocket;
 };
 
 export interface WriteStatsOptions {
