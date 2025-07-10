@@ -63,11 +63,29 @@ declare global {
 }
 
 (() => {
+    const callLineEnable = (win: Window) => {
+        enableCallLine(win);
+        // enable it for the next visit
+        cy.on("window:load", callLineEnable);
+    };
+
+    const callLineDisable = (win: Window) => {
+        disableCallLine(win);
+    };
+
     Cypress.Commands.add("callLine", () => cy.wrap(getCallLine()));
     Cypress.Commands.add("callLineClean", () => getCallLine().clean());
     Cypress.Commands.add("callLineCurrent", () => cy.wrap(getCallLine().current));
-    Cypress.Commands.add("callLineDisable", () => disableCallLine());
-    Cypress.Commands.add("callLineEnable", () => enableCallLine());
+    Cypress.Commands.add("callLineDisable", () => {
+        cy.off("window:load", callLineEnable);
+        cy.on("window:load", callLineDisable);
+        cy.window().then(callLineDisable);
+    });
+    Cypress.Commands.add("callLineEnable", () => {
+        cy.off("window:load", callLineDisable);
+        cy.on("window:load", callLineEnable);
+        cy.window().then(callLineEnable);
+    });
     Cypress.Commands.addQuery("callLineLength", () => () => getCallLine().length);
     Cypress.Commands.addQuery("callLineNext", () => () => getCallLine().next);
     Cypress.Commands.add("callLineReset", () => getCallLine().reset());

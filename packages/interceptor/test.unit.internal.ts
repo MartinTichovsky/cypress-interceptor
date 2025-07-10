@@ -57,15 +57,11 @@ export const enableCallLine = (childWindow?: CallLineWindowType) => {
  *
  * @returns True if the call line is enabled
  */
-export const isCallLineEnabled = () => {
-    const win: CallLineWindowType = window;
-
-    return (
-        win[__CALL_LINE__] !== undefined &&
-        "name" in win[__CALL_LINE__] &&
-        win[__CALL_LINE__].name === __CALL_LINE_NAME__
-    );
-};
+export const isCallLineEnabled = (win: CallLineWindowType = window) =>
+    __CALL_LINE__ in win &&
+    win[__CALL_LINE__] !== undefined &&
+    "name" in win[__CALL_LINE__] &&
+    win[__CALL_LINE__].name === __CALL_LINE_NAME__;
 
 /**
  * Get a created instance of the CallLine class. It is not intended to be used,
@@ -76,7 +72,7 @@ export const isCallLineEnabled = () => {
 export const getCallLine = () => {
     const win: CallLineWindowType = window;
 
-    return isCallLineEnabled() ? win[__CALL_LINE__]! : new CallLine();
+    return isCallLineEnabled(win) ? win[__CALL_LINE__]! : new CallLine();
 };
 
 // #endregion

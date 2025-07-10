@@ -13,6 +13,10 @@ import { CallLineStack } from "cypress-interceptor/test.unit.types";
 import { OUTPUT_DIR } from "../src/constants";
 import { wrap } from "../src/utils";
 
+type WindowWithTestUnit = Cypress.AUTWindow & {
+    testUnit: { lineCalled: (...args: unknown[]) => void };
+};
+
 function createOutputFileName(outputDir: string, fileName?: string) {
     const type = "callLine";
 
@@ -23,10 +27,13 @@ function createOutputFileName(outputDir: string, fileName?: string) {
 
 const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
 
+beforeEach(() => {
+    cy.task("clearLogs", [outputDir]);
+});
+
 describe("test.unit", () => {
     beforeEach(() => {
         cy.callLineEnable();
-        cy.task("clearLogs", [outputDir]);
     });
 
     /**
@@ -400,65 +407,6 @@ describe("test.unit", () => {
         cy.callLineNext().should("eq", callLine7);
     });
 
-    it("cy.callLine in the context of Cypress window", () => {
-        cy.on("uncaught:exception", () => {
-            return false;
-        });
-
-        cy.visit("/public/index.html");
-
-        cy.window().then((_win) => {
-            const win = _win as unknown as Window & {
-                testUnit: { lineCalled: (...args: unknown[]) => void };
-            };
-
-            context("With disabled call line", () => {
-                const callLine = "call-line";
-
-                wrap(() => win.testUnit.lineCalled(callLine));
-
-                cy.callLineNext().should("be.undefined");
-            });
-
-            wrap(() => enableCallLine(win));
-
-            context("With enabled call line", () => {
-                const callLine1 = "call-line-1";
-                const callLine2 = "call-line-2";
-
-                wrap(() => win.testUnit.lineCalled(callLine1));
-
-                cy.callLineNext().should("eq", callLine1);
-                cy.callLineNext().should("be.undefined");
-
-                wrap(() => lineCalled(callLine2));
-
-                cy.callLineNext().should("eq", callLine2);
-                cy.callLineNext().should("be.undefined");
-
-                cy.callLineReset();
-
-                cy.callLineNext().should("eq", callLine1);
-                cy.callLineNext().should("eq", callLine2);
-                cy.callLineNext().should("be.undefined");
-
-                cy.callLineClean();
-
-                cy.callLineNext().should("be.undefined");
-            });
-
-            wrap(() => disableCallLine(win));
-
-            context("With disabled call line", () => {
-                const callLine = "call-line";
-
-                wrap(() => win.testUnit.lineCalled(callLine));
-
-                cy.callLineNext().should("be.undefined");
-            });
-        });
-    });
-
     it("cy.callLineToFile in context of the global window", () => {
         const outputFileName = createOutputFileName(outputDir);
 
@@ -506,6 +454,298 @@ describe("test.unit", () => {
 
         cy.callLineToFile(outputDir).then(() => {
             cy.task("doesFileExist", outputFileName).should("be.false");
+        });
+    });
+});
+
+describe("callLine", () => {
+    const publicUrl = "/public/index.html";
+
+    const testCallLine = (win: WindowWithTestUnit, logEntries: unknown[], isEnabled: boolean) => {
+        const fileName1 = `call-line-file-1-${new Date().getTime()}`;
+        const fileName2 = `call-line-file-2-${new Date().getTime()}`;
+
+        for (const entry of logEntries) {
+            wrap(() => win.testUnit.lineCalled(entry));
+
+            if (isEnabled) {
+                cy.callLineNext().should("eq", entry);
+            }
+
+            cy.callLineNext().should("be.undefined");
+        }
+
+        cy.callLineReset();
+
+        for (const entry of logEntries) {
+            if (isEnabled) {
+                cy.callLineNext().should("eq", entry);
+            } else {
+                cy.callLineNext().should("be.undefined");
+            }
+        }
+
+        cy.callLineNext().should("be.undefined");
+
+        const outputFileName1 = getFilePath(fileName1, outputDir, "callLine");
+
+        cy.task("doesFileExist", outputFileName1).should("be.false");
+
+        if (isEnabled) {
+            cy.callLineToFile(outputDir, {
+                fileName: fileName1
+            }).then(() => {
+                cy.readFile<CallLineStack[]>(outputFileName1).then((entries) => {
+                    expect(entries.length).to.eq(logEntries.length);
+                    expect(entries.map((entry) => entry.args)).to.deep.equal(
+                        logEntries.map((entry) => (!Array.isArray(entry) ? [entry] : entry))
+                    );
+                });
+            });
+        } else {
+            cy.task("doesFileExist", outputFileName1).should("be.false");
+        }
+
+        cy.callLineClean();
+
+        cy.callLineNext().should("be.undefined");
+
+        const outputFileName2 = getFilePath(fileName2, outputDir, "callLine");
+
+        cy.task("doesFileExist", outputFileName2).should("be.false");
+
+        cy.callLineToFile(outputDir, {
+            fileName: fileName2
+        });
+
+        cy.task("doesFileExist", outputFileName2).should("be.false");
+    };
+
+    beforeEach(() => {
+        cy.on("uncaught:exception", () => false);
+    });
+
+    it("By default call line should be disabled", () => {
+        cy.visit(publicUrl);
+
+        cy.window().then((_win) => {
+            const win = _win as WindowWithTestUnit;
+            const callLine1 = "call-line-1-b";
+            const callLine2 = "call-line-2-b";
+
+            testCallLine(win, [callLine1, callLine2], false);
+        });
+    });
+
+    it("Enable call line during the test after visit", () => {
+        cy.visit(publicUrl);
+
+        cy.callLineEnable();
+
+        cy.window().then((_win) => {
+            const win = _win as WindowWithTestUnit;
+
+            context("With enabled call line", () => {
+                const callLine1 = "call-line-1";
+                const callLine2 = "call-line-2";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+
+            cy.callLineDisable();
+
+            context("With disabled call line", () => {
+                const callLine3 = "call-line-3";
+                const fileName3 = "call-line-file-3";
+
+                wrap(() => win.testUnit.lineCalled(callLine3));
+
+                cy.callLineNext().should("be.undefined");
+
+                cy.callLine().then((callLine) => {
+                    expect(callLine.array.length).to.eq(0);
+                });
+
+                const outputFileName3 = getFilePath(fileName3, outputDir, "callLine");
+
+                cy.task("doesFileExist", outputFileName3).should("be.false");
+
+                cy.callLineToFile(outputDir, {
+                    fileName: fileName3
+                });
+
+                cy.task("doesFileExist", outputFileName3).should("be.false");
+            });
+        });
+    });
+
+    it("Enable call line during the test before visit", () => {
+        cy.callLineEnable();
+
+        cy.visit(publicUrl);
+
+        cy.window().then((_win) => {
+            const win = _win as WindowWithTestUnit;
+
+            context("With enabled call line", () => {
+                const callLine1 = "call-line-1-a";
+                const callLine2 = "call-line-2-a";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+
+            cy.callLineDisable();
+
+            context("With disabled call line", () => {
+                const callLine3 = "call-line-3-a";
+                const fileName3 = "call-line-file-3";
+
+                wrap(() => win.testUnit.lineCalled(callLine3));
+
+                cy.callLineNext().should("be.undefined");
+
+                const outputFileName3 = getFilePath(fileName3, outputDir, "callLine");
+
+                cy.task("doesFileExist", outputFileName3).should("be.false");
+
+                cy.callLineToFile(outputDir, {
+                    fileName: fileName3
+                });
+
+                cy.task("doesFileExist", outputFileName3).should("be.false");
+            });
+        });
+    });
+
+    it("Should work with multiple visits", () => {
+        cy.callLineEnable();
+
+        context("First visit", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                const callLine1 = "record-1";
+                const callLine2 = "record-2";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+        });
+
+        context("Second visit", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                const callLine1 = "record-3";
+                const callLine2 = "record-4";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+        });
+    });
+
+    describe("Enable call line in beforeEach and before visit", () => {
+        beforeEach(() => {
+            cy.callLineEnable();
+        });
+
+        it("Should work with multiple visits", () => {
+            context("First visit", () => {
+                cy.visit(publicUrl);
+
+                cy.window().then((_win) => {
+                    const win = _win as WindowWithTestUnit;
+
+                    const callLine1 = "record-1-a";
+                    const callLine2 = "record-2-a";
+
+                    testCallLine(win, [callLine1, callLine2], true);
+                });
+            });
+
+            context("Second visit", () => {
+                cy.visit(publicUrl);
+
+                cy.window().then((_win) => {
+                    const win = _win as WindowWithTestUnit;
+
+                    const callLine1 = "record-3-a";
+                    const callLine2 = "record-4-a";
+
+                    testCallLine(win, [callLine1, callLine2], true);
+                });
+            });
+        });
+    });
+
+    describe("Enable call line in beforeEach and before visit", () => {
+        beforeEach(() => {
+            cy.callLineEnable();
+        });
+
+        it("call line should be enabled - first test", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                const callLine1 = "call-line-a1";
+                const callLine2 = "call-line-b1";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+        });
+
+        it("call line should be enabled - second test", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                const callLine1 = "call-line-a2";
+                const callLine2 = "call-line-b2";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+        });
+    });
+
+    describe("Enable call line in before and before visit", () => {
+        before(() => {
+            cy.callLineEnable();
+        });
+
+        it("The first test should have enabled call line", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                expect(isCallLineEnabled(win)).to.be.true;
+
+                const callLine1 = "call-line-c1";
+                const callLine2 = "call-line-d1";
+
+                testCallLine(win, [callLine1, callLine2], true);
+            });
+        });
+
+        it("The second test should have disabled call line", () => {
+            cy.visit(publicUrl);
+
+            cy.window().then((_win) => {
+                const win = _win as WindowWithTestUnit;
+
+                expect(isCallLineEnabled(win)).to.be.false;
+
+                const callLine1 = "call-line-c2";
+                const callLine2 = "call-line-d2";
+
+                testCallLine(win, [callLine1, callLine2], false);
+            });
         });
     });
 });
