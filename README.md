@@ -1872,7 +1872,7 @@ interface WriteStatsOptions {
 
 # `test.unit`
 
-This is a simple helper designed to store arguments passed to [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone) and then call them in your application for testing in Cypress. By default, the call line is not enabled — you must enable it first in your Cypress test. There's no need to worry; in the application, it does nothing and does not slow down performance.
+This is a simple helper designed to store arguments passed to [`lineCalled`](#linecalled) or [`lineCalledWithClone`](#linecalledwithclone) and then call them in your application for testing in Cypress. By default, the call line is NOT ENABLED — you must enable it first in your Cypress test. There's no need to worry; in the application, it does nothing and does not slow down performance.
 
 ## How to use
 
@@ -1891,9 +1891,7 @@ Then, enable it in your Cypress test setup before running the test:
 
 ```ts
 beforeEach(() => {
-    cy.window().then((win) => {
-        cy.callLineEnable(win);
-    });
+    cy.callLineEnable();
 });
 ```
 
@@ -2055,7 +2053,11 @@ Enable the call line feature. This allows calls to `lineCalled` or `lineCalledWi
 ```ts
 beforeEach(() => {
     cy.callLineEnable();
-})
+});
+// or at the beginning of your test or just anytime
+it("My Test", () => {
+     cy.callLineEnable();
+});
 ```
 
 ## cy.callLineLength
