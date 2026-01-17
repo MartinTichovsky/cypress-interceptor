@@ -214,9 +214,9 @@ export const createRequestProxy = (requestProxy: RequestProxy) => {
                         callback,
                         Boolean(
                             this._mockBody ||
-                                this._proxy.mock?.headers ||
-                                this._proxy.mock?.statusCode ||
-                                this._proxy.mock?.statusText
+                            this._proxy.mock?.headers ||
+                            this._proxy.mock?.statusCode ||
+                            this._proxy.mock?.statusText
                         )
                     );
                 } catch {

@@ -29,6 +29,23 @@ declare global {
              */
             destroyInterceptor(): void;
             /**
+             * Destroy all Interceptors registered inside IFRAMEs
+             */
+            destroyInterceptorInsideIframe(): void;
+            /**
+             * Enable Interceptor inside an IFRAME
+             *
+             * @param selector A selector or an element
+             */
+            enableInterceptorInsideIframe(
+                selector:
+                    | string
+                    | JQuery<HTMLElement>
+                    | JQuery<HTMLIFrameElement>
+                    | Chainable<JQuery<HTMLElement>>
+                    | Chainable<JQuery<HTMLIFrameElement>>
+            ): void;
+            /**
              * Get an instance of the Interceptor
              *
              * @returns An instance of the Interceptor
@@ -327,7 +344,7 @@ export class Interceptor {
                         headers: Object.fromEntries(
                             new Headers(
                                 response instanceof this.win.XMLHttpRequest ||
-                                response instanceof XMLHttpRequest
+                                    response instanceof XMLHttpRequest
                                     ? parseResponseHeaders(response.getAllResponseHeaders())
                                     : (response.headers as HeadersInit)
                             ).entries()

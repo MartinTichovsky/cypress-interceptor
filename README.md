@@ -21,6 +21,7 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
 Beyond logging, Cypress Interceptor now includes [**Network Report Generation**](./README.report.md) that transforms raw network data into beautiful, interactive HTML reports. These reports feature performance charts, detailed request/response tables, and comprehensive statistics, making it easier than ever to analyze and understand your application's network behavior. [See an example report here](https://martintichovsky.github.io/cypress-interceptor/report-example/report.html) to experience the visual power of network analysis.
 
 ## What's new
+- Added [`cy.enableInterceptorInsideIframe`]() and [`cy.destroyInterceptorInsideIframe`]() to enable Interceptor inside an IFRAME
 - Added [**Network Report Generation**](./README.report.md) feature that creates beautiful HTML reports with interactive charts and detailed network analysis
 - Added [`cy.destroyInterceptor`](#cydestroyinterceptor) and [`cy.recreateInterceptor`](#cyrecreateinterceptor) commands for better control over interceptor lifecycle
 - Fixed navigation issue with XMLHttpRequest where relative paths were incorrectly resolved in Cypress iframe context
@@ -43,6 +44,8 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
     - [Cypress environment variables](#cypress-environment-variables)
     - [Documentation and examples](#documentation-and-examples)
         - [cy.destroyInterceptor](#cydestroyinterceptor)
+        - [cy.destroyInterceptorInsideIframe](#cydestroyInterceptorInsideIframe)
+        - [cy.enableInterceptorInsideIframe](#cyenableInterceptorInsideIframe)
         - [cy.interceptor](#cyinterceptor)
         - [cy.interceptorLastRequest](#cyinterceptorlastrequest)
         - [cy.interceptorOptions](#cyinterceptoroptions)
@@ -316,6 +319,51 @@ Destroy the interceptor by restoring the original fetch and XMLHttpRequest imple
 ```ts
 // Destroy the interceptor to restore native behavior
 cy.destroyInterceptor();
+```
+
+## cy.destroyInterceptorInsideIframe
+
+```ts
+destroyInterceptorInsideIframe: () => void;
+```
+
+Destroy all Interceptors registered inside IFRAMEs.
+
+### Example
+
+```ts
+// Destroy the interceptor to restore native behavior
+cy.destroyInterceptorInsideIframe();
+```
+
+## cy.enableInterceptorInsideIframe
+
+```ts
+enableInterceptorInsideIframe(
+    selector:
+        | string
+        | JQuery<HTMLElement>
+        | JQuery<HTMLIFrameElement>
+        | Chainable<JQuery<HTMLElement>>
+        | Chainable<JQuery<HTMLIFrameElement>>
+): void;
+```
+
+By default every IFRAME is a separated web so Interceptor is not available there and it does not monitor the network communication. This command enables Interceptor inside an IFRAME or multiple IFRAME elements. You can call it in `beforeEach` or after `cy.visit`.
+
+### Example
+
+```ts
+// pass a selector
+cy.enableInterceptorInsideIframe("#id");
+// or multiple selectors, this will register Interceptor in all IFRAME elements
+cy.enableInterceptorInsideIframe("iframe");
+// or pass a selected element
+cy.enableInterceptorInsideIframe(cy.get("my-iframe-selector"));
+// or pass jQuery
+cy.get("my-iframe-selector").then($element => {
+    cy.enableInterceptorInsideIframe($element);
+});
 ```
 
 ## cy.interceptor

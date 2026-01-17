@@ -1,14 +1,11 @@
-import { DynamicRequest } from "./types";
+import { IncomingHttpHeaders } from "http";
 
-interface URLOptions {
-    duration?: number;
-    status?: number;
-    requests?: Record<string, unknown>[];
-}
+import { I_TEST_ID_HEADER } from "./resources/constants";
+import { DynamicRequest } from "./types";
 
 export const DEFAULT_WAITTIME = 500;
 
-export const generateUrl = (path: string, options: URLOptions = {}) => {
+export const generateUrl = (path: string, options: Record<string, unknown> = {}) => {
     const searchParams = new URLSearchParams(optionsToURLSearch(options));
     const searchString = searchParams.toString();
 
@@ -25,6 +22,19 @@ export const getDelayWait = (delay: number) => delay + DEFAULT_WAITTIME;
 
 export const getDynamicUrl = (requests: DynamicRequest[]) =>
     generateUrl("/public/dynamic.html", { requests });
+
+export const getIframeDynamicUrl = (data: { id: string; requests: DynamicRequest[] }[]) =>
+    generateUrl("/public/iframe-dynamic.html", {
+        data
+    });
+
+export const headerWithTestId = (
+    headers: Record<string, string>,
+    testId: string
+): Record<string, string> => ({
+    ...headers,
+    [I_TEST_ID_HEADER]: testId
+});
 
 const optionsToURLSearch = <T>(object: T) => {
     const result: Record<string, string> = {};

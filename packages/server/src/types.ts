@@ -148,4 +148,10 @@ export type DynamicRequest = {
       }
 );
 
+export interface RequestServerLog {
+    pathname: string;
+    query: Record<string, string | undefined>;
+    url: string;
+}
+
 export type ResponseCatchType = "addEventListener" | "onload" | "onreadystatechange";
