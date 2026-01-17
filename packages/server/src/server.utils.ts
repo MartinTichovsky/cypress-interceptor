@@ -1,14 +1,14 @@
 import express from "express";
 import { WebSocket } from "ws";
 
-import { I_TEST_NAME_HEADER } from "./resources/constants";
+import { I_TEST_ID_HEADER } from "./resources/constants";
 import { TestingEndpointRequest } from "./server.types";
 import { WSMessage } from "./types";
 
 export const XHRContentType = "application/json";
 
 export const getITestNameHeader = (req: express.Request) => {
-    const iTestNameHeaderKey = I_TEST_NAME_HEADER.toLowerCase();
+    const iTestNameHeaderKey = I_TEST_ID_HEADER.toLowerCase();
 
     for (const headerKey of Object.keys(req.headers)) {
         if (headerKey.toLowerCase() === iTestNameHeaderKey) {

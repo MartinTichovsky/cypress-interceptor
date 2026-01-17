@@ -1,3 +1,4 @@
+import { getFileNameFromCurrentTest } from "cypress-interceptor/src/utils.cypress";
 import {
     BodyFormatFetch,
     BodyFormatXHR,
@@ -114,6 +115,20 @@ export const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && !Array.isArray(val) && val !== null;
 
 export const fireRequest = () => cy.get("#fire_request").click();
+
+// Simple request tracking utilities using originFetch to bypass proxy
+export const getTestId = () => {
+    // Use Cypress function if available, otherwise fallback to a simple ID
+    if (typeof Cypress !== "undefined" && Cypress.currentTest && getFileNameFromCurrentTest) {
+        try {
+            return getFileNameFromCurrentTest().slice(0, 200); // Limit length to avoid header issues
+        } catch {
+            return `test-${Date.now()}`;
+        }
+    }
+
+    return `test-${Date.now()}`;
+};
 
 export const objectIncludes = (
     object1: Record<string, unknown> | undefined,

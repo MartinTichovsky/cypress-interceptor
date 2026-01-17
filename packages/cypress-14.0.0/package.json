@@ -1,0 +1,17 @@
+{
+  "name": "cypress-interceptor-tests-14.0.0",
+  "version": "1.0.0",
+  "scripts": {
+    "cy:open": "cypress open --e2e --browser chrome",
+    "cy:run": "cypress run",
+    "cy:run:chrome": "cypress run -b chrome",
+    "cy:run:edge": "cypress run -b edge",
+    "cy:run:firefox": "cypress run -b firefox",
+    "lint": "eslint .",
+    "tsc": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "cypress": "14.0.0"
+  },
+  "private": true
+}

@@ -23,6 +23,8 @@ import { RequestProxy } from "./src/RequestProxy";
     const requestProxy = new RequestProxy();
     let interceptor = new Interceptor(requestProxy, startTime);
 
+    const destroyRegisteredIframes: VoidFunction[] = [];
+
     // to be able use it without cy.visit
     createRequestProxy(requestProxy)(window as WindowTypeOfRequestProxy);
 
@@ -57,6 +59,74 @@ import { RequestProxy } from "./src/RequestProxy";
                 delete win["originXMLHttpRequest"];
             }
         });
+    });
+    Cypress.Commands.add("destroyInterceptorInsideIframe", () => {
+        destroyRegisteredIframes.forEach((destroy) => {
+            destroy();
+        });
+
+        destroyRegisteredIframes.splice(0, destroyRegisteredIframes.length);
+    });
+    Cypress.Commands.add("enableInterceptorInsideIframe", (target) => {
+        const setupWindow = ($iframe: JQuery<HTMLElement>) => {
+            const win = $iframe.prop("contentWindow");
+
+            createRequestProxy(requestProxy)(win);
+
+            destroyRegisteredIframes.push(() => {
+                if ("originFetch" in win && win.originFetch) {
+                    win.fetch = win.originFetch;
+                    delete win["originFetch"];
+                }
+
+                if ("originXMLHttpRequest" in win && win.originXMLHttpRequest) {
+                    win.XMLHttpRequest = win.originXMLHttpRequest;
+                    delete win["originXMLHttpRequest"];
+                }
+            });
+        };
+
+        const registerInsideIframe = (iframe: Cypress.Chainable) => {
+            // the iframe must have an event to react when the content is changed
+            iframe.then((iframe) => {
+                // proceed with every founded element
+                iframe.each(function (this: HTMLElement) {
+                    const $iframe = Cypress.$(this);
+
+                    expect($iframe[0].tagName).to.equal(
+                        "IFRAME",
+                        "The founded element is not an `IFRAME` when calling `cy.enableInterceptorInsideIframe(element)`"
+                    );
+                    setupWindow($iframe);
+
+                    const onLoadFunction = () => {
+                        setupWindow($iframe);
+                    };
+
+                    $iframe.on("load", onLoadFunction);
+                    destroyRegisteredIframes.push(() => $iframe.off("load", onLoadFunction));
+                });
+            });
+        };
+
+        if (typeof target === "string") {
+            // reaction to change the content of window
+            const loadFunction = () => {
+                registerInsideIframe(cy.get(target));
+            };
+
+            cy.on("window:load", loadFunction);
+
+            destroyRegisteredIframes.push(() => cy.off("window:load", loadFunction));
+        }
+
+        if (typeof target === "string" && Cypress.$(target).length) {
+            // the iframe exists
+            registerInsideIframe(cy.get(target));
+        } else if (typeof target !== "string") {
+            // just pass the element
+            registerInsideIframe(Cypress.isCy(target) ? target : cy.wrap(target));
+        }
     });
     Cypress.Commands.add("interceptor", () => cy.wrap(interceptor));
     Cypress.Commands.add("interceptorLastRequest", (routeMatcher?: IRouteMatcher) =>

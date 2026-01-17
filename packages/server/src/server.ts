@@ -8,7 +8,7 @@ import * as ts from "typescript";
 
 import { bigDataGenerator } from "./bigDataGenerator";
 import { getExampleResponse } from "./exampleResponse";
-import { COUNTER_SERVER_URL, I_TEST_NAME_HEADER, SERVER_URL } from "./resources/constants";
+import { COUNTER_SERVER_URL, HOST, I_TEST_ID_HEADER, SERVER_URL } from "./resources/constants";
 import { CookiesRequest, TestingEndpointRequest, WsEndpointRequest } from "./server.types";
 import {
     executeAutoResponse,
@@ -18,7 +18,7 @@ import {
     wait,
     XHRContentType
 } from "./server.utils";
-import { WSMessage } from "./types";
+import { RequestServerLog, WSMessage } from "./types";
 
 const app = expressWs(express()).app;
 const secondApp = expressWs(express()).app;
@@ -29,47 +29,56 @@ const secondPort = 3001;
 const cypressInterceptorString = "cypress-interceptor";
 const resourcesPath = "/public/resources/";
 
+// Simple test-scoped request tracking
+const requestServerLog: Record<string, RequestServerLog[]> = {};
+
 app.use(cors());
 secondApp.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "../public"), { redirect: false }));
 app.use("/fixtures", express.static(path.join(__dirname, "../fixtures"), { redirect: false }));
 
-// Logging middleware for I-Test-Name header
-const testNameLogs: Record<string, string[]> = {};
-
+// logging requests
 app.use((req, res, next) => {
-    const testName = getITestNameHeader(req);
+    const testId = getITestNameHeader(req);
 
     if (
         req.originalUrl !== COUNTER_SERVER_URL.GetCounter &&
         req.originalUrl !== COUNTER_SERVER_URL.ResetCounter &&
-        testName
+        testId
     ) {
+        const pathname = new URL(req.url, `http://${HOST}`).pathname;
         const url = new URL(`${req.protocol}://${req.get("host")}${req.originalUrl}`);
 
-        testNameLogs[testName] = [
-            ...(testNameLogs[testName] ?? []),
-            `${url.origin}${url.pathname}`
-        ];
+        if (!requestServerLog[testId]) {
+            requestServerLog[testId] = [];
+        }
 
-        res.setHeader(I_TEST_NAME_HEADER, testName);
+        requestServerLog[testId].push({
+            pathname,
+            query: req.query as RequestServerLog["query"],
+            url: `${url.origin}${url.pathname}`
+        });
+
+        res.setHeader(I_TEST_ID_HEADER, testId);
     }
 
     next();
 });
 
+// get logged requests
 app.get(COUNTER_SERVER_URL.GetCounter, (req, res) => {
-    const testName = getITestNameHeader(req);
+    const testId = getITestNameHeader(req);
 
-    res.json((testName && testNameLogs[testName]) ?? []);
+    res.json((testId && requestServerLog[testId]) ?? []);
 });
 
+// reset logged requests
 app.post(COUNTER_SERVER_URL.ResetCounter, (req, res) => {
-    const testName = getITestNameHeader(req);
+    const testId = getITestNameHeader(req);
 
-    if (testName) {
-        testNameLogs[testName] = [];
+    if (testId) {
+        requestServerLog[testId] = [];
     }
 
     res.sendStatus(200);
