@@ -14,16 +14,15 @@ Cypress Interceptor replaces `cy.intercept` with a more powerful alternative tha
 
 | Feature | cy.intercept | Cypress Interceptor |
 |---------|-------------|-------------------|
-| Log all requests | ❌ | ✅ |
-| Request statistics | ❌ | ✅ |
-| Timing data | ❌ | ✅ |
+| Log all requests | ⚠️ Complex | ✅ Built-in |
+| Request statistics | ⚠️ Complex | ✅ Built-in |
+| Timing data | ⚠️ Complex | ✅ Built-in |
+| Throttle requests | ⚠️ Complex | ✅ Built-in |
 | Wait for requests reliably | ⚠️ Flaky | ✅ Stable |
 | Mock responses | ✅ | ✅ |
-| Throttle requests | ❌ | ✅ |
 | Export logs on failure | ❌ | ✅ |
-| Works with global catching | ❌ | ✅ |
-| WebSocket support | ❌ | ✅ |
-| Console monitoring | ❌ | ✅ |
+| WebSocket support | ❌ | ✅ Optional |
+| Console monitoring | ❌ | ✅ Optional |
 
 ## Installation
 

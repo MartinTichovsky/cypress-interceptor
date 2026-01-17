@@ -7,7 +7,7 @@ on:
         paths-ignore:
             - "**/package.json"
             - "**/package-lock.json"
-            - README.md
+            - "**/*.md"
         tags-ignore:
             - v*
     pull_request:
