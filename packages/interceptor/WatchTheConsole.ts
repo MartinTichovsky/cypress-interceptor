@@ -67,13 +67,13 @@ const getCurrentTime = (): [number, string] => {
 };
 
 export class WatchTheConsole {
-    private _log: ConsoleLog[] = [];
+    private _records: ConsoleLog[] = [];
     private _options: Required<WatchTheConsoleOptions> = {
         ...defaultOptions
     };
 
     constructor(private consoleProxy: ConsoleProxy) {
-        this._log = [];
+        this._records = [];
 
         consoleProxy.onLog = (type, ...args) => {
             const [dateTime, currentTime] = getCurrentTime();
@@ -82,7 +82,7 @@ export class WatchTheConsole {
                 case ConsoleLogType.Error: {
                     const e = args[0] as ErrorEvent;
 
-                    this._log.push({
+                    this._records.push({
                         args: [e.error.message, e.error.stack],
                         currentTime,
                         dateTime,
@@ -94,7 +94,7 @@ export class WatchTheConsole {
                 case ConsoleLogType.ConsoleInfo:
                 case ConsoleLogType.ConsoleWarn:
                 case ConsoleLogType.ConsoleError: {
-                    this._log.push({
+                    this._records.push({
                         args: this._options.cloneConsoleArguments
                             ? this.cloneConsoleArguments(args)
                             : args,
@@ -108,10 +108,53 @@ export class WatchTheConsole {
     }
 
     /**
-     * Get the logged console output
+     * console.error
+     */
+    get error() {
+        return deepCopy(this._records).filter(
+            (record) => record.type === ConsoleLogType.ConsoleError
+        );
+    }
+
+    /**
+     * console.info
+     */
+    get info() {
+        return deepCopy(this._records).filter(
+            (record) => record.type === ConsoleLogType.ConsoleInfo
+        );
+    }
+
+    /**
+     * JavaScript errors
+     */
+    get jsError() {
+        return deepCopy(this._records).filter((record) => record.type === ConsoleLogType.Error);
+    }
+
+    /**
+     * console.log
      */
     get log() {
-        return deepCopy(this._log);
+        return deepCopy(this._records).filter(
+            (record) => record.type === ConsoleLogType.ConsoleLog
+        );
+    }
+
+    /**
+     * Get the logged console output
+     */
+    get records() {
+        return deepCopy(this._records);
+    }
+
+    /**
+     * console.warn
+     */
+    get warn() {
+        return deepCopy(this._records).filter(
+            (record) => record.type === ConsoleLogType.ConsoleWarn
+        );
     }
 
     private get win() {
@@ -166,7 +209,7 @@ export class WatchTheConsole {
     ) {
         const types = options?.types;
 
-        let filteredLog = this._log;
+        let filteredLog = this._records;
 
         if (types) {
             filteredLog = filteredLog.filter(({ type }) => types.includes(type));

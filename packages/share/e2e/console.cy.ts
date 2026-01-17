@@ -81,10 +81,11 @@ describe("Custom log", () => {
         });
 
         cy.watchTheConsole().then((watchTheConsole) => {
-            checkTheLog(watchTheConsole.log);
+            checkTheLog(watchTheConsole.records);
             expect(
-                watchTheConsole.log.filter((entry) => entry.type === ConsoleLogType.ConsoleError)
-                    .length
+                watchTheConsole.records.filter(
+                    (entry) => entry.type === ConsoleLogType.ConsoleError
+                ).length
             ).to.eq(0);
         });
     });

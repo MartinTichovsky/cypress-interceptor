@@ -1,5 +1,3 @@
-import { IncomingHttpHeaders } from "http";
-
 import { I_TEST_ID_HEADER } from "./resources/constants";
 import { DynamicRequest } from "./types";
 

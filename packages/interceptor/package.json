@@ -33,7 +33,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MartinTichovsky/cypress-interceptor"
+    "url": "git+https://github.com/MartinTichovsky/cypress-interceptor.git"
   },
   "scripts": {
     "build": "npm run clean && tsc --project tsconfig.build.json",
