@@ -1275,7 +1275,7 @@ const createTests = (disableInterceptor: boolean) => {
                     });
 
                     // Try to make a request to an invalid URL to trigger error
-                    xhr.open("GET", "http://invalid-url-that-should-fail");
+                    xhr.open("GET", "http://invalid-url-that-should-fail:1");
                     xhr.setRequestHeader(I_TEST_ID_HEADER, iTestId);
                     xhr.send();
                 });

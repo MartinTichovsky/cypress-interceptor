@@ -10,7 +10,7 @@ after(() => {
     cy.interceptorStats().should("have.length", 3);
     cy.wsInterceptorStats({ type: "send" }).should("have.length", 1);
     cy.watchTheConsole().then((console) => {
-        expect(console.log).to.have.length(4);
+        expect(console.records).to.have.length(4);
     });
 });
 
@@ -30,11 +30,11 @@ describe("Hooks - Case 1", () => {
             cy.wsInterceptorStats({ type: "send" }).should("have.length", 1);
 
             cy.watchTheConsole().then((console) => {
-                expect(console.log).to.have.length(4);
-                expect(console.log[2].type).to.eq(ConsoleLogType.ConsoleError);
-                expect(console.log[2].args).to.deep.eq([log3]);
-                expect(console.log[3].type).to.eq(ConsoleLogType.ConsoleInfo);
-                expect(console.log[3].args).to.deep.eq([log4]);
+                expect(console.records).to.have.length(4);
+                expect(console.records[2].type).to.eq(ConsoleLogType.ConsoleError);
+                expect(console.records[2].args).to.deep.eq([log3]);
+                expect(console.records[3].type).to.eq(ConsoleLogType.ConsoleInfo);
+                expect(console.records[3].args).to.deep.eq([log4]);
             });
         };
 
@@ -97,11 +97,11 @@ describe("Hooks - Case 1", () => {
             });
 
             cy.watchTheConsole().then((console) => {
-                expect(console.log).to.have.length(2);
-                expect(console.log[0].type).to.eq(ConsoleLogType.ConsoleLog);
-                expect(console.log[0].args).to.deep.eq([log1]);
-                expect(console.log[1].type).to.eq(ConsoleLogType.ConsoleWarn);
-                expect(console.log[1].args).to.deep.eq([log2]);
+                expect(console.records).to.have.length(2);
+                expect(console.records[0].type).to.eq(ConsoleLogType.ConsoleLog);
+                expect(console.records[0].args).to.deep.eq([log1]);
+                expect(console.records[1].type).to.eq(ConsoleLogType.ConsoleWarn);
+                expect(console.records[1].args).to.deep.eq([log2]);
             });
         });
 

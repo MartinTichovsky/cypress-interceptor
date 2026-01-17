@@ -150,7 +150,7 @@ it("WatchTheConsole", () => {
 
     proxy.onLog(ConsoleLogType.ConsoleLog, deepObject);
 
-    expect(watchTheConsole.log[0].args).to.deep.eq([
+    expect(watchTheConsole.records[0].args).to.deep.eq([
         "RangeError: Maximum call stack size exceeded"
     ]);
 });
