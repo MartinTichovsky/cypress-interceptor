@@ -97,6 +97,7 @@ import { RequestProxy } from "./src/RequestProxy";
                         "IFRAME",
                         "The founded element is not an `IFRAME` when calling `cy.enableInterceptorInsideIframe(element)`"
                     );
+
                     setupWindow($iframe);
 
                     const onLoadFunction = () => {
@@ -112,7 +113,9 @@ import { RequestProxy } from "./src/RequestProxy";
         if (typeof target === "string") {
             // reaction to change the content of window
             const loadFunction = () => {
-                registerInsideIframe(cy.get(target));
+                if (Cypress.$(target).length) {
+                    registerInsideIframe(cy.get(target));
+                }
             };
 
             cy.on("window:load", loadFunction);

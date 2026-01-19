@@ -345,7 +345,7 @@ enableInterceptorInsideIframe(
 ): void;
 ```
 
-By default every IFRAME is a separated web so Interceptor is not available there and it does not monitor the network communication. This command enables Interceptor inside an IFRAME or multiple IFRAME elements. You can call it in `beforeEach` or after `cy.visit`.
+By default every IFRAME is a separated web so Interceptor is not available there and it does not monitor the network communication. This command enables Interceptor inside an IFRAME or multiple IFRAME elements. You can call it in `beforeEach` or after `cy.visit`. If the iframe is generated dynamically, you must call this command after the IFRAME is created, otherwise it will not work.
 
 ### Example
 

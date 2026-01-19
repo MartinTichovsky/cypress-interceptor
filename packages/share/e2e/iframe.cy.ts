@@ -1,4 +1,4 @@
-import { getIframeDynamicUrl } from "cypress-interceptor-server/src/utils";
+import { getDynamicUrl, getIframeDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 const iframeId_1 = "dynamicFrame-1";
 const iframeId_2 = "dynamicFrame-2";
@@ -6,6 +6,7 @@ const testPath_Fetch_1 = "iframe/fetch-1";
 const testPath_Fetch_2 = "iframe/fetch-2";
 const testPath_Fetch_3 = "iframe/fetch-3";
 const testPath_Fetch_4 = "iframe/fetch-4";
+const testPath_Fetch_5 = "iframe/fetch-5";
 
 describe("Using Interceptor inside an IFRAME", () => {
     const multipIframeTest = (type: "fetch" | "xhr") => {
@@ -51,7 +52,7 @@ describe("Using Interceptor inside an IFRAME", () => {
                     id: iframeId_2,
                     requests: [
                         {
-                            delay: 150,
+                            delay: 200,
                             method: "POST",
                             path: testPath_Fetch_4,
                             type
@@ -176,7 +177,7 @@ describe("Using Interceptor inside an IFRAME", () => {
                     id: iframeId_2,
                     requests: [
                         {
-                            delay: 100,
+                            delay: 200,
                             method: "POST",
                             path: testPath_Fetch_2,
                             type
@@ -330,6 +331,38 @@ describe("Using Interceptor inside an IFRAME", () => {
             cy.enableInterceptorInsideIframe("iframe");
 
             multipIframeTest("xhr");
+        });
+    });
+
+    describe("Should not fail when changing the url", () => {
+        it("Visit an another URL after the test", () => {
+            visit("fetch");
+
+            cy.enableInterceptorInsideIframe("iframe");
+
+            cy.waitUntilRequestIsDone();
+
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        method: "POST",
+                        path: testPath_Fetch_5,
+                        type: "fetch"
+                    }
+                ])
+            );
+
+            cy.get("iframe").should("not.exist");
+
+            cy.waitUntilRequestIsDone();
+
+            cy.interceptorStats().then((stats) => {
+                expect(stats.length).to.eq(3);
+                expect(stats[0].url.pathname.endsWith(testPath_Fetch_1)).to.be.true;
+                expect(stats[1].url.pathname.endsWith(testPath_Fetch_2)).to.be.true;
+                expect(stats[2].url.pathname.endsWith(testPath_Fetch_5)).to.be.true;
+            });
         });
     });
 });
