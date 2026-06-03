@@ -2,6 +2,7 @@
 
 import { Interceptor } from "./Interceptor";
 import {
+    IDelayRequestOptions,
     IMockResponse,
     IMockResponseOptions,
     InterceptorOptions,
@@ -32,6 +33,11 @@ import { RequestProxy } from "./src/RequestProxy";
     Cypress.on("window:before:load", createRequestProxy(requestProxy));
 
     // register commands
+    Cypress.Commands.add(
+        "delayInterceptorRequest",
+        (routeMatcher: IRouteMatcher, delay: number, options?: IDelayRequestOptions) =>
+            cy.wrap(interceptor.delayRequest(routeMatcher, delay, options))
+    );
     Cypress.Commands.add("destroyInterceptor", () => {
         Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, true);
         Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, true);

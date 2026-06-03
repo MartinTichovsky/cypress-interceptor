@@ -31,6 +31,11 @@ export interface CallStack {
      */
     request: IRequest;
     /**
+     * The delay applied before the request is sent. It is set by calling `delayRequest` or
+     * `cy.delayInterceptorRequest`. If the request is not delayed, this property is `undefined`.
+     */
+    requestDelay?: number;
+    /**
      * An error that occurs when the request fails
      */
     requestError?: unknown;
@@ -260,6 +265,14 @@ export interface IThrottleRequestOptions {
     /**
      * The number of times the request should be throttled. By default, it is set to 1.
      * Set it to Number.POSITIVE_INFINITY to throttle the request indefinitely.
+     */
+    times?: number;
+}
+
+export interface IDelayRequestOptions {
+    /**
+     * The number of times the request should be delayed. By default, it is set to 1.
+     * Set it to Number.POSITIVE_INFINITY to delay the request indefinitely.
      */
     times?: number;
 }

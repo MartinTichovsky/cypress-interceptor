@@ -18,6 +18,7 @@ Cypress Interceptor replaces `cy.intercept` with a more powerful alternative tha
 | Request statistics | ⚠️ Complex | ✅ Built-in |
 | Timing data | ⚠️ Complex | ✅ Built-in |
 | Throttle requests | ⚠️ Complex | ✅ Built-in |
+| Delay requests before send | ❌ | ✅ Built-in |
 | Wait for requests reliably | ⚠️ Flaky | ✅ Stable |
 | Mock responses | ✅ | ✅ |
 | Export logs on failure | ❌ | ✅ |
@@ -78,11 +79,31 @@ cy.mockInterceptorResponse(
 ### 4. Throttle a request
 
 ```typescript
-// Simulate slow network
+// Simulate slow network: the request hits the back-end, then the response is
+// held for 5 seconds before it returns to your code
 cy.throttleInterceptorRequest("**/api/users", 5000); // 5 second delay
 ```
 
-### 5. Log all requests on test failure
+### 5. Delay a request before it is sent
+
+```typescript
+// Hold the request for 5 seconds BEFORE it reaches the back-end
+cy.delayInterceptorRequest("**/api/users", 5000); // 5 second delay
+```
+
+#### Delay vs. Throttle
+
+A request has three phases. `delayInterceptorRequest` waits before the back-end is hit, `throttleInterceptorRequest` waits after:
+
+```text
+  1. request starts          2. request hits               3. request done
+     (your code)               the back-end              (back to your code)
+         │                          │                             │
+         │ <-- delayInterceptor --> │ <-- throttleInterceptor --> │
+         │         Request          │          Request            │
+```
+
+### 6. Log all requests on test failure
 
 ```typescript
 afterEach(() => {
@@ -92,13 +113,13 @@ afterEach(() => {
 
 This creates a JSON file with all requests, responses, timing, and headers—perfect for debugging why tests fail.
 
-### 6. Count requests
+### 7. Count requests
 
 ```typescript
 cy.interceptorRequestCalls("**/api/users").should("eq", 1);
 ```
 
-### 7. Get the last request
+### 8. Get the last request
 
 ```typescript
 cy.interceptorLastRequest("**/api/users").then((request) => {
@@ -106,7 +127,7 @@ cy.interceptorLastRequest("**/api/users").then((request) => {
 });
 ```
 
-### 8. Verify request performance
+### 9. Verify request performance
 
 ```typescript
 // Ensure API calls complete within SLA
@@ -117,7 +138,7 @@ cy.interceptorStats("**/api/data").then((stats) => {
 });
 ```
 
-### 9. Mock dynamic responses based on request
+### 10. Mock dynamic responses based on request
 
 ```typescript
 // Generate response based on what was requested
@@ -133,7 +154,7 @@ cy.mockInterceptorResponse(
 );
 ```
 
-### 10. Monitor WebSocket connections
+### 11. Monitor WebSocket connections
 
 ```typescript
 import "cypress-interceptor/websocket";
@@ -147,7 +168,7 @@ cy.wsInterceptorStats({ url: "**/socket" }).then((stats) => {
 });
 ```
 
-### 11. Monitor console errors
+### 12. Monitor console errors
 
 ```typescript
 import "cypress-interceptor/console";

@@ -10,6 +10,7 @@ export enum ValidationErrorMessages {
     URL_MUST_BE_URL = "url must be a URL object",
     DELAY_MUST_BE_NUMBER = "delay must be a number when provided",
     DURATION_MUST_BE_NUMBER = "duration must be a number when provided",
+    REQUEST_DELAY_MUST_BE_NUMBER = "requestDelay must be a number when provided",
     REQUEST_REQUIRED = "request is required",
     REQUEST_BODY_REQUIRED = "request.body is required",
     REQUEST_BODY_MUST_BE_STRING = "request.body must be a string",
@@ -38,6 +39,7 @@ export const convertCallStackJsonToCallStack = (callStackJson: CallStackJson[]):
         ...item,
         delay: item.delay === null ? undefined : item.delay,
         duration: item.duration === null ? undefined : item.duration,
+        requestDelay: item.requestDelay === null ? undefined : item.requestDelay,
         timeStart: new Date(item.timeStart),
         url: new URL(item.url),
         response: item.response
@@ -121,6 +123,18 @@ const validateRootProperties = (callStack: CallStackJson, index: number): void =
             index,
             "duration",
             ValidationErrorMessages.DURATION_MUST_BE_NUMBER
+        );
+    }
+
+    if (
+        callStack.requestDelay !== undefined &&
+        callStack.requestDelay !== null &&
+        typeof callStack.requestDelay !== "number"
+    ) {
+        throw createValidationError(
+            index,
+            "requestDelay",
+            ValidationErrorMessages.REQUEST_DELAY_MUST_BE_NUMBER
         );
     }
 };

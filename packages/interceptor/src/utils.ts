@@ -87,6 +87,9 @@ export const isNonNullableObject = (
 export const isObject = (val: unknown): val is Record<string, unknown> =>
     typeof val === "object" && val !== null && !Array.isArray(val);
 
+export const sleep = (timeout: number, win: Window = window) =>
+    new Promise<void>((resolve) => win.setTimeout(resolve, timeout));
+
 export const removeNonClonable = (value: unknown, win: Cypress.AUTWindow) => {
     if (
         value instanceof win.Element ||

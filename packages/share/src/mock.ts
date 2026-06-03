@@ -10,6 +10,29 @@ interface MockRequire {
     writeFileSync?: (...args: string[]) => void;
 }
 
+type MockStub = ReturnType<ReturnType<typeof cy.stub>["returns"]>;
+
+interface MockRequireResult {
+    mockFs: {
+        existsSync: MockStub;
+        mkdirSync: MockStub;
+        readFileSync: MockStub;
+        readdirSync: MockStub;
+        writeFileSync: MockStub;
+    };
+    mockPath: {
+        basename: MockStub;
+        dirname: MockStub;
+        join: MockStub;
+        resolve: MockStub;
+    };
+    win: Window & {
+        Cypress?: Cypress.Cypress;
+        cy?: Cypress.cy;
+        require?: (module: string) => unknown;
+    };
+}
+
 const emptyFunction = () => {
     //
 };
@@ -36,7 +59,7 @@ export const mockRequire = ({
     readdirSync = [],
     resolve = (...args: string[]) => args.join("/"),
     writeFileSync = emptyFunction
-}: MockRequire) => {
+}: MockRequire): MockRequireResult => {
     const win = window as Window & {
         Cypress?: Cypress.Cypress;
         cy?: Cypress.cy;

@@ -118,7 +118,7 @@ export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
                 };
             }
 
-            send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
+            send(data: string | Blob | BufferSource): void {
                 websocketListener.fireAction({
                     data,
                     protocols: this.protocols,
