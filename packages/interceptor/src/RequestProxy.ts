@@ -9,6 +9,11 @@ export type RequestProxyFunction = (
 ) => Promise<RequestProxyFunctionResult>;
 
 export interface RequestProxyFunctionResult {
+    /**
+     * The delay (in milliseconds) that should be applied before the real request is sent.
+     * It is `undefined` when the request should not be delayed.
+     */
+    delay?: number;
     done: (response: XMLHttpRequest | Response, resolve: VoidFunction, isMock?: boolean) => void;
     error: (error: Error) => void;
     mock: IMockResponse | undefined;

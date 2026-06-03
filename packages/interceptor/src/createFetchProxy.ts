@@ -3,6 +3,7 @@ import { WindowTypeOfRequestProxy } from "../Interceptor.types";
 import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
+import { sleep } from "./utils";
 
 export const CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED = "__fetchProxyDisabled";
 
@@ -47,6 +48,11 @@ export const createFetchProxy = (win: WindowTypeOfRequestProxy, requestProxy: Re
 
                 return emptyProxy;
             });
+
+        // delay the request before it is sent
+        if (proxy.delay) {
+            await sleep(proxy.delay, win);
+        }
 
         return new Promise((resolve, reject) => {
             const mock = proxy.mock;

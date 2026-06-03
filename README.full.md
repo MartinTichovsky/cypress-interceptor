@@ -17,6 +17,7 @@ This diagnostic tool is born out of extensive firsthand experience tracking down
 Beyond logging, Cypress Interceptor now includes [**Network Report Generation**](./README.report.md) that transforms raw network data into beautiful, interactive HTML reports. These reports feature performance charts, detailed request/response tables, and comprehensive statistics, making it easier than ever to analyze and understand your application's network behavior. [See an example report here](https://martintichovsky.github.io/cypress-interceptor/report-example/report.html) to experience the visual power of network analysis.
 
 ## What's new
+- Added [`cy.delayInterceptorRequest`](#cydelayinterceptorrequest)
 - Added [`cy.enableInterceptorInsideIframe`](#cyenableInterceptorInsideIframe) and [`cy.destroyInterceptorInsideIframe`](#cydestroyInterceptorInsideIframe) to enable Interceptor inside an IFRAME
 - Added [**Network Report Generation**](./README.report.md) feature that creates beautiful HTML reports with interactive charts and detailed network analysis
 - Added [`cy.destroyInterceptor`](#cydestroyinterceptor) and [`cy.recreateInterceptor`](#cyrecreateinterceptor) commands for better control over interceptor lifecycle
@@ -39,6 +40,7 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
     - [Interceptor Cypress commands](#the-cypress-interceptor-commands)
     - [Cypress environment variables](#cypress-environment-variables)
     - [Documentation and examples](#documentation-and-examples)
+        - [cy.delayInterceptorRequest](#cydelayinterceptorrequest)
         - [cy.destroyInterceptor](#cydestroyinterceptor)
         - [cy.destroyInterceptorInsideIframe](#cydestroyInterceptorInsideIframe)
         - [cy.enableInterceptorInsideIframe](#cyenableInterceptorInsideIframe)
@@ -56,6 +58,7 @@ Beyond logging, Cypress Interceptor now includes [**Network Report Generation**]
     - [Interceptor public methods](#interceptor-public-methods)
         - [callStack](#callstack)
         - [onRequestError](#onrequesterror)
+        - [removeDelay](#removedelay)
         - [removeMock](#removemock)
         - [removeThrottle](#removethrottle)
     - [Interfaces](#interfaces)
@@ -130,6 +133,25 @@ import "cypress-interceptor";
 ## The Cypress Interceptor commands
 
 ```ts
+/**
+ * Delay requests matching the provided route matcher by waiting before the request is sent.
+ * By default, it delays the first matching request, and then the delay is removed. Set
+ * `times` in the options to change how many times the matching requests should be delayed.
+ *
+ * Unlike `throttleInterceptorRequest`, which delays the response once the request is done,
+ * this command delays the request before it is sent. The route matcher therefore only works
+ * with request data (not response data).
+ *
+ * @param routeMatcher A route matcher
+ * @param delay The delay in ms
+ * @param options The delay options
+ * @returns The ID of the created delay. This is needed if you want to remove the delay manually.
+ */
+delayInterceptorRequest(
+    routeMatcher: IRouteMatcher,
+    delay: number,
+    options?: IDelayRequestOptions
+): Chainable<number>;
 /**
  * Destroy the interceptor by restoring the original fetch and
  * XMLHttpRequest implementations. This command removes all proxy
@@ -301,6 +323,66 @@ __`INTERCEPTOR_REQUEST_TIMEOUT`__ - the value (in ms) that defines how long the 
 # Documentation and examples
 
 In almost all methods, there is a route matcher ([`IRouteMatcher`](#iroutematcher)) that can be a string, a RegExp ([`StringMatcher`](#stringmatcher)), or an object with multiple matching options. For more information about matching options, explore [`IRouteMatcherObject`](#iroutematcherobject).
+
+## cy.delayInterceptorRequest
+
+```ts
+/**
+ * @param routeMatcher A route matcher
+ * @param delay The delay in ms
+ * @param options The delay options
+ * @returns The ID of the created delay. This is needed if you want to remove the delay manually.
+ */
+delayInterceptorRequest(
+    routeMatcher: IRouteMatcher,
+    delay: number,
+    options?: IDelayRequestOptions
+): Chainable<number>;
+```
+
+_References:_
+  - [`IRouteMatcher`](#iroutematcher)
+  - [`IDelayRequestOptions`](#idelayrequestoptions)
+
+Delay requests matching the provided route matcher by waiting before the request is sent. By default, it delays the first matching request, and then the delay is removed. Set `times` in the options to change how many times the matching requests should be delayed.
+
+#### Delay vs. Throttle
+
+Every request goes through three phases. `cy.delayInterceptorRequest` and [cy.throttleInterceptorRequest](#cythrottleinterceptorrequest) wait in two different spaces between them:
+
+```text
+TIME ───────────────────────────────────────────────────────────────────────────────────────▶
+
+  ┌──────────────┐                      ┌──────────────┐                      ┌──────────────┐
+  │ 1. Request   │    delayRequest      │ 2. Request   │    throttleRequest   │ 3. Request   │
+  │    starts    │  <-- waits here -->  │    hits the  │  <-- waits here -->  │    done →    │
+  │ (your code   │   (before the BE)    │    back-end  │   (after the BE)     │   back to    │
+  │   fires it)  │                      │              │                      │   your code  │
+  └──────────────┘                      └──────────────┘                      └──────────────┘
+```
+
+- __`delayRequest`__ waits between phase 1 and phase 2 - the request is held in your code and the back-end is __not__ hit until the delay elapses.
+- __`throttleRequest`__ waits between phase 2 and phase 3 - the request hits the back-end first, and then the response is held before it is returned to your code.
+
+Because the request has not been sent yet, the route matcher only works with request data (not response data).
+
+### Example
+
+```ts
+// wait 5 seconds before the request to `/api/getUser` reaches the back-end
+cy.delayInterceptorRequest("**/api/getUser", 5000);
+```
+
+```ts
+// delay a request which has the URL query string containing key `page` equal to 5
+cy.delayInterceptorRequest({ queryMatcher: (query) => query?.page === 5}, 5000);
+```
+
+```ts
+// delay all requests for 5 seconds, indefinitely
+cy.delayInterceptorRequest({ resourceType: "all" }, 5000, { times: Number.POSITIVE_INFINITY });
+cy.delayInterceptorRequest("*", 5000, { times: Number.POSITIVE_INFINITY });
+```
 
 ## cy.destroyInterceptor
 
@@ -698,6 +780,8 @@ _References:_
 
 Throttle requests matching the provided route matcher by setting a delay. By default, it throttles the first matching request, and then the throttle is removed. Set times in the options to change how many times the matching requests should be throttled.
 
+The delay is applied __after__ the request finishes - the request hits the back-end first, and then the response is held for the given delay before it is returned to the code that called it. To delay a request __before__ it is sent (so the back-end is not hit during the delay), use [cy.delayInterceptorRequest](#cydelayinterceptorrequest) instead. See [Delay vs. Throttle](#delay-vs-throttle) for an illustration of the difference.
+
 In the options, the `mockResponse` property can accept the same mocking object as shown in [cy.mockInterceptorResponse](#cymockinterceptorresponse).
 
 ### Example
@@ -913,6 +997,10 @@ get callStack(): CallStack[];
 
 Return a copy of all logged requests since the Interceptor has been created (the Interceptor is created in `beforeEach`).
 
+## delayRequest
+
+Same as [`cy.delayInterceptorRequest`](#cydelayinterceptorrequest).
+
 ## getLastRequest
 
 Same as [`cy.interceptorLastRequest`](#cyinterceptorlastrequest).
@@ -936,6 +1024,14 @@ Function called when a request is cancelled, aborted or fails.
 ```ts
 onRequestError(func: OnRequestError);
 ```
+
+## removeDelay
+
+```ts
+removeDelay(id: number): boolean;
+```
+
+Remove the delay entry by ID.
 
 ## removeMock
 
@@ -974,6 +1070,18 @@ Same as [`cy.waitUntilRequestIsDone`](#cywaituntilrequestisdone).
 Same as [`cy.writeInterceptorStatsToLog`](#cywriteinterceptorstatstolog).
 
 # Interfaces
+
+### IDelayRequestOptions
+
+```ts
+interface IDelayRequestOptions {
+    /**
+     * The number of times the request should be delayed. By default, it is set to 1.
+     * Set it to Number.POSITIVE_INFINITY to delay the request indefinitely.
+     */
+    times?: number;
+}
+```
 
 ### IHeadersNormalized
 

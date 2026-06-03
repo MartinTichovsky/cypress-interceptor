@@ -3,6 +3,7 @@ import { WindowTypeOfRequestProxy } from "../Interceptor.types";
 import { lineCalled } from "../test.unit";
 import { emptyProxy, RequestProxy, RequestProxyFunctionResult } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
+import { sleep } from "./utils";
 
 export const CYPRESS_ENV_KEY_XHR_PROXY_DISABLED = "__xhrProxyDisabled";
 
@@ -207,7 +208,7 @@ export const createXMLHttpRequestProxy = (
             listener: (this: XMLHttpRequest, ev: XMLHttpRequestEventMap[K]) => unknown,
             options?: boolean | AddEventListenerOptions
         ) {
-            let proxyListener = listener;
+            let proxyListener: typeof listener;
 
             if (
                 type === "load" ||
@@ -315,47 +316,58 @@ export const createXMLHttpRequestProxy = (
                     this._mockBody = Boolean(proxy.mock?.body || proxy.mock?.generateBody);
                     this._proxy = proxy;
 
-                    if (!proxy || !this._mockBody) {
-                        return super.send(body);
-                    }
-
-                    convertInputBodyToString(body, win)
-                        .then((convertedBody) => {
-                            this._convertedBody = convertedBody;
-
-                            if (proxy.mock?.allowHitTheNetwork) {
-                                return super.send(body);
-                            } else {
-                                try {
-                                    return proxy.done(
-                                        this,
-                                        () => {
-                                            this.dispatchEvent(
-                                                new win.ProgressEvent("readystatechange")
-                                            );
-                                            this.dispatchEvent(new win.ProgressEvent("load"));
-                                            this.dispatchEvent(new win.ProgressEvent("loadend"));
-                                        },
-                                        true
-                                    );
-                                } catch {
-                                    lineCalled(CallLineEnum.n000018);
-
-                                    return super.send(body);
-                                }
-                            }
-                        })
-                        .catch(() => {
-                            lineCalled(CallLineEnum.n000019);
-
-                            try {
-                                this._proxy.error(new Error("convertInputBodyToString"));
-                            } catch {
-                                lineCalled(CallLineEnum.n000020);
-                            }
-
+                    const send = () => {
+                        if (!proxy || !this._mockBody) {
                             return super.send(body);
-                        });
+                        }
+
+                        convertInputBodyToString(body, win)
+                            .then((convertedBody) => {
+                                this._convertedBody = convertedBody;
+
+                                if (proxy.mock?.allowHitTheNetwork) {
+                                    return super.send(body);
+                                } else {
+                                    try {
+                                        return proxy.done(
+                                            this,
+                                            () => {
+                                                this.dispatchEvent(
+                                                    new win.ProgressEvent("readystatechange")
+                                                );
+                                                this.dispatchEvent(new win.ProgressEvent("load"));
+                                                this.dispatchEvent(
+                                                    new win.ProgressEvent("loadend")
+                                                );
+                                            },
+                                            true
+                                        );
+                                    } catch {
+                                        lineCalled(CallLineEnum.n000018);
+
+                                        return super.send(body);
+                                    }
+                                }
+                            })
+                            .catch(() => {
+                                lineCalled(CallLineEnum.n000019);
+
+                                try {
+                                    this._proxy.error(new Error("convertInputBodyToString"));
+                                } catch {
+                                    lineCalled(CallLineEnum.n000020);
+                                }
+
+                                return super.send(body);
+                            });
+                    };
+
+                    // delay the request before it is sent
+                    if (proxy.delay) {
+                        sleep(proxy.delay, win).then(send);
+                    } else {
+                        send();
+                    }
                 })
                 .catch(() => {
                     lineCalled(CallLineEnum.n000021);

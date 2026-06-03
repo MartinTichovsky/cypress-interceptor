@@ -497,11 +497,11 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
         });
 
         it("Should fail when reading text from a broken strem", async () => {
-            const request = await fetch(urlBrokenStream);
-
+            let request: Response;
             let error: unknown;
 
             try {
+                request = await fetch(urlBrokenStream);
                 await request.text();
             } catch (e) {
                 error = e;
@@ -699,9 +699,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(requestProxyFunctionObject.error).not.to.be.called;
 
-        const request = await fetch(urlBrokenStream);
+        let request: Response;
 
         try {
+            request = await fetch(urlBrokenStream);
             await request.text();
         } catch (e) {
             error = e;
@@ -778,9 +779,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         expect(requestProxyFunctionObject.error).not.to.be.called;
 
-        const request = await fetch(urlBrokenStream);
+        let request: Response;
 
         try {
+            request = await fetch(urlBrokenStream);
             await request.text();
         } catch (e) {
             error = e;
@@ -807,9 +809,10 @@ describe("createRequestProxy - fetch - without Interceptor", () => {
 
         let error: unknown;
 
-        const request = await fetch(urlBrokenStream);
+        let request: Response;
 
         try {
+            request = await fetch(urlBrokenStream);
             await request.text();
         } catch (e) {
             error = e;
@@ -1750,7 +1753,7 @@ describe("createRequestProxy - xhr - without the Interceptor", () => {
 
             const request = new XMLHttpRequest();
 
-            let readError: unknown;
+            const readError: unknown = undefined;
 
             request.open("GET", urlBrokenStream);
 

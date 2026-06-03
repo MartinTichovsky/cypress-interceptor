@@ -5,6 +5,7 @@ import { StringMatcher } from "cypress/types/net-stubbing";
 import { convertInputBodyToString } from "./convert/convert";
 import {
     CallStack,
+    IDelayRequestOptions,
     IMockResponse,
     IMockResponseOptions,
     InterceptorOptions,
@@ -22,6 +23,25 @@ import { waitTill } from "./src/wait";
 declare global {
     namespace Cypress {
         interface Chainable {
+            /**
+             * Delay requests matching the provided route matcher by waiting before the request is sent.
+             * By default, it delays the first matching request, and then the delay is removed. Set
+             * `times` in the options to change how many times the matching requests should be delayed.
+             *
+             * Unlike `throttleInterceptorRequest`, which delays the response once the request is done,
+             * this command delays the request before it is sent. The route matcher therefore only works
+             * with request data (not response data).
+             *
+             * @param routeMatcher A route matcher
+             * @param delay The delay in ms
+             * @param options The delay options
+             * @returns The ID of the created delay. This is needed if you want to remove the delay manually.
+             */
+            delayInterceptorRequest(
+                routeMatcher: IRouteMatcher,
+                delay: number,
+                options?: IDelayRequestOptions
+            ): Chainable<number>;
             /**
              * Destroy the interceptor by restoring the original fetch and
              * XMLHttpRequest implementations. This command removes all proxy
@@ -127,6 +147,10 @@ declare global {
              * the first matching request, and then the throttle is removed. Set times in the options to change
              * how many times the matching requests should be throttled.
              *
+             * The delay is applied AFTER the request finishes - the request hits the back-end first, and then
+             * the response is held for the given delay before it is returned to the code that called it. To
+             * delay a request BEFORE it is sent, use `delayInterceptorRequest` instead.
+             *
              * @param routeMatcher A route matcher
              * @param delay The delay in ms
              * @param options The throttle options (which can include mocking the response).
@@ -223,6 +247,13 @@ const wait = async (timeout: number) => new Promise((executor) => setTimeout(exe
 
 export class Interceptor {
     private _callStack: CallStack[] = [];
+    private _delay: {
+        delay: number;
+        id: number;
+        options?: IDelayRequestOptions;
+        routeMatcher: IRouteMatcher;
+    }[] = [];
+    private _delayId = 0;
     private _mock: {
         id: number;
         mock: IMockResponse;
@@ -301,9 +332,11 @@ export class Interceptor {
 
             const throttle = this.getThrottle(item);
             const mock = this.getMock(item) ?? throttle.mockResponse;
+            const requestDelay = this.getDelay(item);
             const durationStart = performance.now();
 
             item.delay = throttle.delay;
+            item.requestDelay = requestDelay;
             item.timeStart = new Date();
             item._headerProcessDuration = performance.now() - _headerProcessStart;
 
@@ -362,6 +395,7 @@ export class Interceptor {
             };
 
             return {
+                delay: requestDelay,
                 done: (response, resolve, isMock) => {
                     // to avoid multiple calls when using different response catch methods (in XMLHttpRequest)
                     void (async () => {
@@ -512,6 +546,28 @@ export class Interceptor {
         return mockItem?.mock;
     }
 
+    private getDelay(item: CallStack) {
+        const delayItem = [...this._delay]
+            .reverse()
+            .find((entry) => this.filterItemsByMatcher(entry.routeMatcher)(item));
+
+        if (
+            delayItem &&
+            (delayItem.options?.times === undefined || delayItem.options.times === 1)
+        ) {
+            this._delay.splice(this._delay.indexOf(delayItem), 1);
+        } else if (
+            delayItem &&
+            delayItem.options &&
+            delayItem.options.times !== undefined &&
+            delayItem.options.times > 1
+        ) {
+            delayItem.options.times--;
+        }
+
+        return delayItem?.delay;
+    }
+
     /**
      * Get the last call that matches the provided route matcher.
      *
@@ -590,6 +646,32 @@ export class Interceptor {
     }
 
     /**
+     * Delay requests matching the provided route matcher by waiting before the request is sent.
+     * By default, it delays the first matching request, and then the delay is removed. Set `times`
+     * in the options to change how many times the matching requests should be delayed.
+     *
+     * Unlike `throttleRequest`, which delays the response once the request is done, this method
+     * delays the request before it is sent. The route matcher therefore only works with request
+     * data (not response data).
+     *
+     * @param routeMatcher A route matcher
+     * @param delay The delay in ms
+     * @param options The delay options
+     * @returns The ID of the created delay. This is needed if you want to remove the delay manually.
+     */
+    public delayRequest(
+        routeMatcher: IRouteMatcher,
+        delay: number,
+        options?: IDelayRequestOptions
+    ) {
+        const delayEntry = { delay, id: ++this._delayId, options, routeMatcher };
+
+        this._delay.push(delayEntry);
+
+        return delayEntry.id;
+    }
+
+    /**
      * Mock the response of requests matching the provided route matcher. By default, it mocks the
      * first matching request, and then the mock is removed. Set `times` in the options to change
      * how many times the matching requests should be mocked.
@@ -618,6 +700,21 @@ export class Interceptor {
      */
     public onRequestError(func: OnRequestError) {
         this._onRequestError = func;
+    }
+
+    /**
+     * Remove the delay entry by ID
+     *
+     * @param id A unique id received from `delayRequest` or `cy.delayInterceptorRequest`
+     */
+    public removeDelay(id: number) {
+        if (this._delay.find((entry) => entry.id === id)) {
+            this._delay = this._delay.filter((entry) => entry.id !== id);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -681,6 +778,10 @@ export class Interceptor {
      * Throttle requests matching the provided route matcher by setting a delay. By default, it throttles
      * the first matching request, and then the throttle is removed. Set times in the options to change
      * how many times the matching requests should be throttled.
+     *
+     * The delay is applied AFTER the request finishes - the request hits the back-end first, and then
+     * the response is held for the given delay before it is returned to the code that called it. To
+     * delay a request BEFORE it is sent, use `delayRequest` instead.
      *
      * @param routeMatcher A route matcher
      * @param delay The delay in ms

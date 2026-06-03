@@ -92,11 +92,9 @@ const getProcessedBody = (
 
     // If option is a function, call it
     if (typeof includeBodyOption === "function") {
-        let shouldIncludeFull = false;
-
         const url = new URL(urlString, "http://dummy");
 
-        shouldIncludeFull = includeBodyOption(url);
+        const shouldIncludeFull = includeBodyOption(url);
 
         if (shouldIncludeFull) {
             return body;

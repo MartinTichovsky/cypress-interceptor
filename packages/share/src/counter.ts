@@ -14,7 +14,7 @@ export const getCounter = (iTestName: string) =>
     });
 
 export const resetCounter = (iTestName: string) =>
-    cy.request({
+    cy.request<{ timestamp: number }>({
         headers: {
             [I_TEST_ID_HEADER]: iTestName
         },

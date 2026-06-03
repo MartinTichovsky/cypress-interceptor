@@ -57,6 +57,7 @@ app.use((req, res, next) => {
         requestServerLog[testId].push({
             pathname,
             query: req.query as RequestServerLog["query"],
+            timestamp: Date.now(),
             url: `${url.origin}${url.pathname}`
         });
 
@@ -81,7 +82,7 @@ app.post(COUNTER_SERVER_URL.ResetCounter, (req, res) => {
         requestServerLog[testId] = [];
     }
 
-    res.sendStatus(200);
+    res.json({ timestamp: Date.now() });
 });
 
 app.ws(`/${SERVER_URL.WebSocketClose}`, (ws) => {
