@@ -359,16 +359,69 @@ describe("Utils", () => {
     });
 
     it("getFilePath", () => {
-        expect(getFilePath(undefined, "", "type")).to.eq(
+        expect(getFilePath({ outputDir: "", type: "type" })).to.eq(
             "coverage.cy.ts [Utils] getFilePath.type.json"
         );
-        expect(getFilePath(undefined, "output", "type")).to.eq(
+        expect(getFilePath({ outputDir: "output", type: "type" })).to.eq(
             "output/coverage.cy.ts [Utils] getFilePath.type.json"
         );
-        expect(getFilePath(undefined, "output/", "type")).to.eq(
+        expect(getFilePath({ outputDir: "output/", type: "type" })).to.eq(
             "output/coverage.cy.ts [Utils] getFilePath.type.json"
         );
-        expect(getFilePath("file name", "", "type")).to.eq("file name.type.json");
+        expect(getFilePath({ fileName: "file name", outputDir: "", type: "type" })).to.eq(
+            "file name.type.json"
+        );
+    });
+
+    describe("maxLength", () => {
+        it("number cuts the whole generated name", () => {
+            const fullName =
+                "coverage.cy.ts [Utils] [maxLength] number cuts the whole generated name";
+
+            expect(getNormalizedFileNameFromCurrentTest()).to.eq(fullName);
+            expect(getNormalizedFileNameFromCurrentTest(20)).to.eq(fullName.slice(0, 20));
+
+            expect(getFilePath({ outputDir: "", type: "type", maxLength: 20 })).to.eq(
+                `${fullName.slice(0, 20)}.type.json`
+            );
+            expect(getFilePath({ outputDir: "output", type: "type", maxLength: 20 })).to.eq(
+                `output/${fullName.slice(0, 20)}.type.json`
+            );
+        });
+
+        it("object cuts the describe section and the test name", () => {
+            const describeSection = "[Utils] [maxLength]";
+            const testName = "object cuts the describe section and the test name";
+
+            expect(getNormalizedFileNameFromCurrentTest()).to.eq(
+                `coverage.cy.ts ${describeSection} ${testName}`
+            );
+
+            // both describe and testName
+            expect(getNormalizedFileNameFromCurrentTest({ describe: 5, testName: 6 })).to.eq(
+                `coverage.cy.ts ${describeSection.slice(0, 5)} ${testName.slice(0, 6)}`
+            );
+
+            // only describe
+            expect(getNormalizedFileNameFromCurrentTest({ describe: 5 })).to.eq(
+                `coverage.cy.ts ${describeSection.slice(0, 5)} ${testName}`
+            );
+
+            // only testName
+            expect(getNormalizedFileNameFromCurrentTest({ testName: 6 })).to.eq(
+                `coverage.cy.ts ${describeSection} ${testName.slice(0, 6)}`
+            );
+
+            expect(
+                getFilePath({
+                    outputDir: "output",
+                    type: "type",
+                    maxLength: { describe: 5, testName: 6 }
+                })
+            ).to.eq(
+                `output/coverage.cy.ts ${describeSection.slice(0, 5)} ${testName.slice(0, 6)}.type.json`
+            );
+        });
     });
 
     it("normalizeFileName", () => {

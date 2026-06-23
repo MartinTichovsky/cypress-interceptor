@@ -1,18 +1,19 @@
 import { convertInputBodyToString } from "cypress-interceptor/convert/convert";
 import { CallStack } from "cypress-interceptor/Interceptor.types";
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { FileNameMaxLength } from "cypress-interceptor/src/utils.cypress.types";
 import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
 import { OUTPUT_DIR } from "../src/constants";
 import { testCaseIt } from "../src/utils";
 
-function createOutputFileName(outputDir: string, fileName?: string) {
+function createOutputFileName(outputDir: string, fileName?: string, maxLength?: FileNameMaxLength) {
     const type = "stats";
 
     return fileName
         ? `${outputDir}/${fileName}.${type}.json`
-        : getFilePath(undefined, outputDir, type);
+        : getFilePath({ outputDir, type, maxLength });
 }
 
 const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
@@ -77,6 +78,65 @@ describe("Custom", () => {
                 expect(
                     stats.every((entry) => new URL(entry.url).pathname.endsWith(testPath_Fetch_1))
                 ).to.be.true;
+            });
+        });
+    });
+
+    describe("Stats to file - max length of the generated name", () => {
+        const maxLengthNumber = 30;
+        const maxLengthObject = { describe: 10, testName: 15 };
+
+        beforeEach(() => {
+            cy.visit(
+                getDynamicUrl([
+                    {
+                        delay: 100,
+                        method: "POST",
+                        path: testPath_Fetch_1,
+                        type: "fetch"
+                    }
+                ])
+            );
+
+            cy.waitUntilRequestIsDone();
+        });
+
+        it("Should cut the generated name when maxLength is a number", () => {
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLengthNumber);
+
+            // the cut name must be shorter than the full generated name
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.writeInterceptorStatsToLog(outputDir, { maxLength: maxLengthNumber }).then(() => {
+                cy.task("doesFileExist", outputFileName).should("be.true");
+
+                cy.readFile(outputFileName).then((stats: CallStack[]) => {
+                    expect(stats.length > 0).to.be.true;
+                    expect(
+                        stats.every((entry) =>
+                            new URL(entry.url).pathname.endsWith(testPath_Fetch_1)
+                        )
+                    ).to.be.true;
+                });
+            });
+        });
+
+        it("Should cut the describe and the test name when maxLength is an object", () => {
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLengthObject);
+
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.writeInterceptorStatsToLog(outputDir, { maxLength: maxLengthObject }).then(() => {
+                cy.task("doesFileExist", outputFileName).should("be.true");
+
+                cy.readFile(outputFileName).then((stats: CallStack[]) => {
+                    expect(stats.length > 0).to.be.true;
+                    expect(
+                        stats.every((entry) =>
+                            new URL(entry.url).pathname.endsWith(testPath_Fetch_1)
+                        )
+                    ).to.be.true;
+                });
             });
         });
     });

@@ -227,14 +227,24 @@ export class WatchTheConsole {
 
         try {
             return cy.writeFile(
-                getFilePath(options?.fileName, outputDir, "console"),
+                getFilePath({
+                    fileName: options?.fileName,
+                    maxLength: options?.maxLength,
+                    outputDir,
+                    type: "console"
+                }),
                 JSON.stringify(filteredLog, undefined, options?.prettyOutput ? 4 : undefined),
                 options
             );
         } catch {
             // try to remove circular references
             return cy.writeFile(
-                getFilePath(options?.fileName, outputDir, "console"),
+                getFilePath({
+                    fileName: options?.fileName,
+                    maxLength: options?.maxLength,
+                    outputDir,
+                    type: "console"
+                }),
                 JSON.stringify(
                     this.cloneConsoleArguments(filteredLog),
                     undefined,

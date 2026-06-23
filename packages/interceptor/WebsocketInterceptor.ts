@@ -396,7 +396,12 @@ export class WebsocketInterceptor {
         }
 
         return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "ws.stats"),
+            getFilePath({
+                fileName: options?.fileName,
+                maxLength: options?.maxLength,
+                outputDir,
+                type: "ws.stats"
+            }),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 undefined,

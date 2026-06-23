@@ -1,6 +1,7 @@
 import { getFs, getPath } from "./src/envUtils";
 import { generateReport } from "./src/generateReport";
 import { getFileNameFromCurrentTest, getFilePath } from "./src/utils.cypress";
+import { FileNameMaxLength } from "./src/utils.cypress.types";
 
 export interface ReportHtmlOptions {
     /**
@@ -16,6 +17,11 @@ export interface ReportHtmlOptions {
     highDuration?: number | ((url: URL) => number);
 
     /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     */
+    maxLength?: FileNameMaxLength;
+
+    /**
      * The directory to save the report to.
      */
     outputDir: string;
@@ -27,14 +33,16 @@ export interface ReportHtmlOptions {
  * @param options The options for the report.
  */
 export const createNetworkReport = (options: ReportHtmlOptions) => {
-    const { fileName, highDuration, outputDir } = options;
+    const { fileName, highDuration, outputDir, maxLength } = options;
 
     cy.interceptor().then((interceptor) => {
-        const outputFile = getFilePath(fileName, outputDir, undefined, "html");
+        const outputFile = getFilePath({ fileName, maxLength, outputDir, extension: "html" });
         const stats = interceptor.getStats();
 
         generateReport(stats, outputFile, {
-            title: getFileNameFromCurrentTest(),
+            title: getFileNameFromCurrentTest(
+                typeof maxLength === "object" ? maxLength : undefined
+            ),
             highDuration
         });
     });

@@ -976,7 +976,12 @@ export class Interceptor {
         }
 
         return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "stats"),
+            getFilePath({
+                fileName: options?.fileName,
+                maxLength: options?.maxLength,
+                outputDir,
+                type: "stats"
+            }),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 undefined,

@@ -188,7 +188,12 @@ export class CallLine {
         }
 
         return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "callLine"),
+            getFilePath({
+                fileName: options?.fileName,
+                maxLength: options?.maxLength,
+                outputDir,
+                type: "callLine"
+            }),
             JSON.stringify(stack, undefined, options?.prettyOutput ? 4 : undefined),
             options
         );

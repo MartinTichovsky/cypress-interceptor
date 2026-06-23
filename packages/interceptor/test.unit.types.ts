@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { FileNameMaxLength } from "./src/utils.cypress.types";
+
 export interface CallLineStack {
     /**
      * The arguments to store
@@ -22,6 +24,11 @@ export interface CallLineToFileOptions {
      * Filter the entries to save
      */
     filter?: (callLine: CallLineStack) => boolean;
+
+    /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     */
+    maxLength?: FileNameMaxLength;
 
     /**
      * When set to `true`, the output JSON will be formatted with tabs
