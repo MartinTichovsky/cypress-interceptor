@@ -2,6 +2,8 @@
 
 import { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
+import { FileNameMaxLength } from "./src/utils.cypress.types";
+
 export interface CallStack {
     _headerProcessDuration?: number;
     _responseProcessDuration?: number;
@@ -326,6 +328,10 @@ export interface WriteStatsOptions {
      * @returns Any object you want to log
      */
     mapper?: (callStack: CallStack) => unknown;
+    /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     */
+    maxLength?: FileNameMaxLength;
     /**
      * When set to `true`, the output JSON will be formatted with tabs
      */

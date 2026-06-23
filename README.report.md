@@ -198,8 +198,28 @@ The configuration object used by all report generation functions:
 interface ReportHtmlOptions {
     fileName?: string;        // Optional: Custom name for the report file (without extension)
     highDuration?: number | (url: URL) => number; // Optional: Threshold in ms or function per request
+    maxLength?: number | { describe?: number; testName?: number }; // Optional: Cut the generated file name (no effect when fileName is provided)
     outputDir: string;        // Required: Directory where the HTML report will be saved
 }
+```
+
+The `maxLength` option is useful on systems with file name/path length limits (for example Windows). It only affects the auto-generated name (when `fileName` is not provided):
+
+- Provide a `number` to cut the whole generated name to that length.
+- Provide an object `{ describe?: number; testName?: number }` to cut the describe (title) section and the test name separately.
+
+```typescript
+// Cut the whole generated file name to a maximum of 30 characters
+createNetworkReport({
+    maxLength: 30,
+    outputDir: './test-reports'
+});
+
+// Cut the describe section to 20 and the test name to 30 characters
+createNetworkReport({
+    maxLength: { describe: 20, testName: 30 },
+    outputDir: './test-reports'
+});
 ```
 
 ## Advanced Usage Examples

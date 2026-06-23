@@ -206,6 +206,8 @@ declare global {
              * @example cy.writeInterceptorStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
              * @example cy.writeInterceptorStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
              * @example cy.writeInterceptorStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+             * @example cy.writeInterceptorStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+             * @example cy.writeInterceptorStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
              *
              * @param outputDir The path for the output folder
              * @param options Options
@@ -955,6 +957,8 @@ export class Interceptor {
      * @example writeStatsToLog("./out", { fileName: "file_name" }) =>  the output file will be "./out/file_name.stats.json"
      * @example writeStatsToLog("./out", { routeMatcher: { method: "GET" } }) => write only "GET" requests to the output file
      * @example writeStatsToLog("./out", { mapper: (callStack) => ({ type: callStack.type, url: callStack.url }) }) => map the output that will be written to the output file
+     * @example writeStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+     * @example writeStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
      *
      * @param outputDir The path for the output folder
      * @param options Options
@@ -976,7 +980,12 @@ export class Interceptor {
         }
 
         return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "stats"),
+            getFilePath({
+                fileName: options?.fileName,
+                maxLength: options?.maxLength,
+                outputDir,
+                type: "stats"
+            }),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 undefined,

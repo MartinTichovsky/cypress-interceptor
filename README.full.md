@@ -295,6 +295,8 @@ waitUntilRequestIsDone(
  * @example cy.writeInterceptorStatsToLog("./out", { fileName:  "file_name" }) =>  the output file will be "./out/file_name.stats.json"
  * @example cy.writeInterceptorStatsToLog("./out", {  routeMatcher: { method: "GET" } }) => write only "GET" requests  to the output file
  * @example cy.writeInterceptorStatsToLog("./out", { mapper:  (callStack) => ({ type: callStack.type, url: callStack.url }) })  => map the output that will be written to the output file
+ * @example cy.writeInterceptorStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+ * @example cy.writeInterceptorStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
  *
  * @param outputDir The path for the output folder
  * @param options Options
@@ -1284,6 +1286,14 @@ interface WriteStatsOptions {
      */
     mapper?: (callStack: CallStack) => unknown;
     /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     *
+     * Provide a `number` to cut the whole generated name, or an object
+     * `{ describe?: number; testName?: number }` to cut the describe (title) section
+     * and the test name separately.
+     */
+    maxLength?: number | { describe?: number; testName?: number };
+    /**
      * When set to `true`, the output JSON will be formatted with tabs
      */
     prettyOutput?: boolean;
@@ -1386,6 +1396,8 @@ watchTheConsoleOptions: (
  * console errors and unhandled JavaScript errors to the output file
  * @example cy.writeConsoleLogToFile("./out", { filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:") }) =>
  * filter all console output to include only entries starting with "Custom log:"
+ * @example cy.writeConsoleLogToFile("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+ * @example cy.writeConsoleLogToFile("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
  *
  * @param outputDir The path for the output folder
  * @param options Options
@@ -1617,6 +1629,14 @@ interface WriteLogOptions {
      */
     filter?: (type: ConsoleLogType, ...args: unknown[]) => boolean;
     /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     *
+     * Provide a `number` to cut the whole generated name, or an object
+     * `{ describe?: number; testName?: number }` to cut the describe (title) section
+     * and the test name separately.
+     */
+    maxLength?: number | { describe?: number; testName?: number };
+    /**
      * When set to `true`, the output JSON will be formatted with tabs
      */
     prettyOutput?: boolean;
@@ -1680,6 +1700,8 @@ wsInterceptorStats(matcher?: IWSMatcher): Chainable<CallStackWebsocket[]>;
  * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
  * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
  * @example cy.wsInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+ * @example cy.wsInterceptorStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+ * @example cy.wsInterceptorStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
  *
  * @param outputDir A path for the output directory
  * @param options Options
@@ -2059,6 +2081,14 @@ interface WriteStatsOptions {
      */
     matcher?: IWSMatcher;
     /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     *
+     * Provide a `number` to cut the whole generated name, or an object
+     * `{ describe?: number; testName?: number }` to cut the describe (title) section
+     * and the test name separately.
+     */
+    maxLength?: number | { describe?: number; testName?: number };
+    /**
      * When set to `true`, the output JSON will be formatted with tabs
      */
     prettyOutput?: boolean;
@@ -2321,6 +2351,12 @@ cy.callLineToFile("_callLine", {
     filter: (entry) => entry.args[0] === "abc",
     prettyOutput: true
 });
+
+// Cut the generated file name to a maximum of 30 characters
+cy.callLineToFile("_callLine", { maxLength: 30 });
+
+// Cut the describe section to 20 and the test name to 30 characters
+cy.callLineToFile("_callLine", { maxLength: { describe: 20, testName: 30 } });
 ```
 
 ## The main functions intended to be used on the front-end
@@ -2361,6 +2397,15 @@ interface CallLineToFileOptions {
      * Filter the entries to save
      */
     filter?: (callLine: CallLineStack) => boolean;
+
+    /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     *
+     * Provide a `number` to cut the whole generated name, or an object
+     * `{ describe?: number; testName?: number }` to cut the describe (title) section
+     * and the test name separately.
+     */
+    maxLength?: number | { describe?: number; testName?: number };
 
     /**
      * When set to `true`, the output JSON will be formatted with tabs

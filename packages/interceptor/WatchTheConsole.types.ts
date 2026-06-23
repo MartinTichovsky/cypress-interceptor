@@ -1,5 +1,7 @@
 /// <reference types="cypress" preserve="true" />
 
+import { FileNameMaxLength } from "./src/utils.cypress.types";
+
 export interface ConsoleLog {
     /**
      * The console output or the unhandled JavaScript error message and stack trace
@@ -58,6 +60,10 @@ export interface WriteLogOptions {
      * @returns `false` if the item should be skipped
      */
     filter?: (type: ConsoleLogType, ...args: unknown[]) => boolean;
+    /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     */
+    maxLength?: FileNameMaxLength;
     /**
      * When set to `true`, the output JSON will be formatted with tabs
      */

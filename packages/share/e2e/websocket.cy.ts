@@ -1,6 +1,7 @@
 import "cypress-interceptor/websocket";
 
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { FileNameMaxLength } from "cypress-interceptor/src/utils.cypress.types";
 import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.types";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
@@ -8,12 +9,12 @@ import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 import { OUTPUT_DIR } from "../src/constants";
 import { createMatcher, fireRequest } from "../src/utils";
 
-function createOutputFileName(outputDir: string, fileName?: string) {
+function createOutputFileName(outputDir: string, fileName?: string, maxLength?: FileNameMaxLength) {
     const type = "ws.stats";
 
     return fileName
         ? `${outputDir}/${fileName}.${type}.json`
-        : getFilePath(undefined, outputDir, type);
+        : getFilePath({ outputDir, type, maxLength });
 }
 
 const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
@@ -428,6 +429,56 @@ describe("Websocket", () => {
         it("Should return null when log is empty", () => {
             cy.wsInterceptorStatsToLog(outputDir).then((result) => {
                 expect(result).to.be.null;
+            });
+        });
+
+        it("Max length of the generated name - number", () => {
+            const maxLength = 30;
+
+            cy.visit(getDynamicUrl(config));
+
+            cy.waitUntilWebsocketAction({
+                data: responseData12,
+                type: "onmessage",
+                url: new RegExp(`${path1}$`, "i")
+            });
+
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLength);
+
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.wsInterceptorStatsToLog(outputDir, { maxLength }).then(() => {
+                cy.task("doesFileExist", outputFileName).should("be.true");
+
+                cy.readFile(outputFileName).then((stats: CallStackWebsocket[]) => {
+                    expect(stats.length).to.eq(6);
+                    expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be.undefined;
+                });
+            });
+        });
+
+        it("Max length of the generated name - object", () => {
+            const maxLength = { describe: 10, testName: 15 };
+
+            cy.visit(getDynamicUrl(config));
+
+            cy.waitUntilWebsocketAction({
+                data: responseData12,
+                type: "onmessage",
+                url: new RegExp(`${path1}$`, "i")
+            });
+
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLength);
+
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.wsInterceptorStatsToLog(outputDir, { maxLength }).then(() => {
+                cy.task("doesFileExist", outputFileName).should("be.true");
+
+                cy.readFile(outputFileName).then((stats: CallStackWebsocket[]) => {
+                    expect(stats.length).to.eq(6);
+                    expect(stats.find((entry) => entry.url.endsWith(path1))).not.to.be.undefined;
+                });
             });
         });
 

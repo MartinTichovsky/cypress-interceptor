@@ -54,6 +54,8 @@ declare global {
              * @example cy.wsInterceptorStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
              * @example cy.wsInterceptorStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
              * @example cy.wsInterceptorStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+             * @example cy.wsInterceptorStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+             * @example cy.wsInterceptorStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
              *
              * @param outputDir A path for the output directory
              * @param options Options
@@ -375,6 +377,8 @@ export class WebsocketInterceptor {
      * @example writeStatsToLog("./out", { matcher: { protocols: "soap" } }) => write only "soap" requests to the output file
      * @example writeStatsToLog("./out", { matcher: { url: "my-url" } }) => write only requests to my-url to the output file
      * @example writeStatsToLog("./out", { mapper: (entry) => ({ url: entry.url }) }) => map the output that will be written to the output file
+     * @example writeStatsToLog("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+     * @example writeStatsToLog("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
      *
      * @param outputDir A path for the output directory
      * @param options Options
@@ -396,7 +400,12 @@ export class WebsocketInterceptor {
         }
 
         return cy.writeFile(
-            getFilePath(options?.fileName, outputDir, "ws.stats"),
+            getFilePath({
+                fileName: options?.fileName,
+                maxLength: options?.maxLength,
+                outputDir,
+                type: "ws.stats"
+            }),
             JSON.stringify(
                 options?.mapper ? callStack.map(options.mapper) : callStack,
                 undefined,

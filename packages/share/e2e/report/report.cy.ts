@@ -241,7 +241,7 @@ describe("Report", () => {
                 timeout: 60000
             });
 
-            fileName = getFilePath(undefined, outputDir, undefined, "html");
+            fileName = getFilePath({ outputDir, extension: "html" });
         });
     });
 
@@ -269,13 +269,59 @@ describe("Report", () => {
 
             cy.waitUntilRequestIsDone();
 
-            fileName = getFilePath(undefined, outputDir, undefined, "html");
+            fileName = getFilePath({ outputDir, extension: "html" });
+        });
+    });
+
+    describe("With max length of the generated name - number", () => {
+        const maxLength = 30;
+        let cutFileName = "";
+
+        after(() => {
+            createNetworkReport({ maxLength, outputDir });
+
+            cy.task("doesFileExist", cutFileName).should("be.true");
+        });
+
+        it("Should create a report with a cut name", () => {
+            cy.visit(getDynamicUrl(generateNetworkEntries(5)));
+
+            cy.waitUntilRequestIsDone();
+
+            cutFileName = getFilePath({ outputDir, extension: "html", maxLength });
+
+            expect(cutFileName.length).to.be.lessThan(
+                getFilePath({ outputDir, extension: "html" }).length
+            );
+        });
+    });
+
+    describe("With max length of the generated name - object", () => {
+        const maxLength = { describe: 10, testName: 15 };
+        let cutFileName = "";
+
+        after(() => {
+            createNetworkReport({ maxLength, outputDir });
+
+            cy.task("doesFileExist", cutFileName).should("be.true");
+        });
+
+        it("Should create a report with a cut describe and test name", () => {
+            cy.visit(getDynamicUrl(generateNetworkEntries(5)));
+
+            cy.waitUntilRequestIsDone();
+
+            cutFileName = getFilePath({ outputDir, extension: "html", maxLength });
+
+            expect(cutFileName.length).to.be.lessThan(
+                getFilePath({ outputDir, extension: "html" }).length
+            );
         });
     });
 
     describe("createNetworkReportFromFile", () => {
         it("Should create a report from a file", () => {
-            const outputFileName = getFilePath(undefined, outputDir, "stats");
+            const outputFileName = getFilePath({ outputDir, type: "stats" });
 
             cy.visit(
                 getDynamicUrl([

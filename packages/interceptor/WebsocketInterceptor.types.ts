@@ -1,5 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
+import { FileNameMaxLength } from "./src/utils.cypress.types";
 import { WebSocketAction } from "./src/websocketListener";
 
 export type CallStackWebsocket = WebSocketAction & {
@@ -97,6 +98,10 @@ export interface WriteStatsOptions {
      * A matcher
      */
     matcher?: IWSMatcher;
+    /**
+     * The maximal length of the generated file name. Has no effect when `fileName` is provided.
+     */
+    maxLength?: FileNameMaxLength;
     /**
      * When set to `true`, the output JSON will be formatted with tabs
      */

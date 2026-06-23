@@ -37,6 +37,8 @@ declare global {
              * console errors and unhandled JavaScript errors to the output file
              * @example cy.writeConsoleLogToFile("./out", { filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:") }) =>
              * filter all console output to include only entries starting with "Custom log:"
+             * @example cy.writeConsoleLogToFile("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+             * @example cy.writeConsoleLogToFile("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
              *
              * @param outputDir The path for the output folder
              * @param options Options
@@ -199,6 +201,8 @@ export class WatchTheConsole {
      * console errors and unhandled JavaScript errors to the output file
      * @example writeLogToFile("./out", { filter: (type, ...args) => typeof args[0] === "string" && args[0].startsWith("Custom log:") }) =>
      * filter all console output to include only entries starting with "Custom log:"
+     * @example writeLogToFile("./out", { maxLength: 30 }) => cut the generated file name to a maximum of 30 characters
+     * @example writeLogToFile("./out", { maxLength: { describe: 20, testName: 30 } }) => cut the describe section to 20 and the test name to 30 characters
      *
      * @param outputDir The path for the output folder
      * @param options Options
@@ -227,14 +231,24 @@ export class WatchTheConsole {
 
         try {
             return cy.writeFile(
-                getFilePath(options?.fileName, outputDir, "console"),
+                getFilePath({
+                    fileName: options?.fileName,
+                    maxLength: options?.maxLength,
+                    outputDir,
+                    type: "console"
+                }),
                 JSON.stringify(filteredLog, undefined, options?.prettyOutput ? 4 : undefined),
                 options
             );
         } catch {
             // try to remove circular references
             return cy.writeFile(
-                getFilePath(options?.fileName, outputDir, "console"),
+                getFilePath({
+                    fileName: options?.fileName,
+                    maxLength: options?.maxLength,
+                    outputDir,
+                    type: "console"
+                }),
                 JSON.stringify(
                     this.cloneConsoleArguments(filteredLog),
                     undefined,

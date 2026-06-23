@@ -1,6 +1,7 @@
 import "cypress-interceptor/console";
 
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { FileNameMaxLength } from "cypress-interceptor/src/utils.cypress.types";
 import { ConsoleLog, ConsoleLogType } from "cypress-interceptor/WatchTheConsole.types";
 import { generateUrl } from "cypress-interceptor-server/src/utils";
 
@@ -33,8 +34,12 @@ const createConsoleLog = (logQueue: LogQueue) => {
     });
 };
 
-function createOutputFileName(outputDir: string, fileName: string | undefined = undefined) {
-    return getFilePath(fileName, outputDir, "console");
+function createOutputFileName(
+    outputDir: string,
+    fileName: string | undefined = undefined,
+    maxLength?: FileNameMaxLength
+) {
+    return getFilePath({ fileName, outputDir, type: "console", maxLength });
 }
 
 Cypress.on("uncaught:exception", () => false);
@@ -160,6 +165,50 @@ describe("Custom log", () => {
             expect(new Date(log[3].dateTime).toString()).not.to.equal(invalidDate);
             expect(log[3].currentTime).to.be.a("string").and.not.to.be.empty;
             expect(log[3].args).to.deep.equal(logQueue[2][1]);
+        });
+    });
+
+    describe("Max length of the generated name", () => {
+        const maxLengthNumber = 30;
+        const maxLengthObject = { describe: 10, testName: 15 };
+
+        const logQueue: LogQueue = [
+            [ConsoleLogType.ConsoleLog, ["ConsoleLog"]],
+            [ConsoleLogType.ConsoleInfo, ["ConsoleInfo"]]
+        ];
+
+        beforeEach(() => {
+            cy.visit(staticUrl);
+
+            createConsoleLog(logQueue);
+        });
+
+        it("Should cut the generated name when maxLength is a number", () => {
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLengthNumber);
+
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.writeConsoleLogToFile(outputDir, { maxLength: maxLengthNumber });
+
+            cy.task("doesFileExist", outputFileName).should("be.true");
+
+            cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+                expect(log.length).to.equal(logQueue.length + 1);
+            });
+        });
+
+        it("Should cut the describe and the test name when maxLength is an object", () => {
+            const outputFileName = createOutputFileName(outputDir, undefined, maxLengthObject);
+
+            expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+            cy.writeConsoleLogToFile(outputDir, { maxLength: maxLengthObject });
+
+            cy.task("doesFileExist", outputFileName).should("be.true");
+
+            cy.readFile(outputFileName).then((log: ConsoleLog[]) => {
+                expect(log.length).to.equal(logQueue.length + 1);
+            });
         });
     });
 });

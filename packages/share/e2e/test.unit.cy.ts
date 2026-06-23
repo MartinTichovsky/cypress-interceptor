@@ -1,6 +1,7 @@
 import "cypress-interceptor/test.unit.commands";
 
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { FileNameMaxLength } from "cypress-interceptor/src/utils.cypress.types";
 import { lineCalled, lineCalledWithClone } from "cypress-interceptor/test.unit";
 import {
     disableCallLine,
@@ -17,12 +18,12 @@ type WindowWithTestUnit = Cypress.AUTWindow & {
     testUnit: { lineCalled: (...args: unknown[]) => void };
 };
 
-function createOutputFileName(outputDir: string, fileName?: string) {
+function createOutputFileName(outputDir: string, fileName?: string, maxLength?: FileNameMaxLength) {
     const type = "callLine";
 
     return fileName
         ? `${outputDir}/${fileName}.${type}.json`
-        : getFilePath(undefined, outputDir, type);
+        : getFilePath({ outputDir, type, maxLength });
 }
 
 const outputDir = `${OUTPUT_DIR}/${Cypress.spec.name}`;
@@ -456,6 +457,48 @@ describe("test.unit", () => {
             cy.task("doesFileExist", outputFileName).should("be.false");
         });
     });
+
+    it("cy.callLineToFile with the max length as a number", () => {
+        const maxLength = 30;
+        const outputFileName = createOutputFileName(outputDir, undefined, maxLength);
+
+        expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+        const callLine1 = "123";
+        const callLine2 = "456";
+
+        wrap(() => lineCalled(callLine1));
+        wrap(() => lineCalled(callLine2));
+
+        cy.callLineToFile(outputDir, { maxLength }).then(() => {
+            cy.task("doesFileExist", outputFileName).should("be.true");
+
+            cy.readFile<CallLineStack[]>(outputFileName).then((file) => {
+                expect(file.map((entry) => entry.args)).to.deep.equal([[callLine1], [callLine2]]);
+            });
+        });
+    });
+
+    it("cy.callLineToFile with the max length as an object", () => {
+        const maxLength = { describe: 10, testName: 15 };
+        const outputFileName = createOutputFileName(outputDir, undefined, maxLength);
+
+        expect(outputFileName.length).to.be.lessThan(createOutputFileName(outputDir).length);
+
+        const callLine1 = "123";
+        const callLine2 = "456";
+
+        wrap(() => lineCalled(callLine1));
+        wrap(() => lineCalled(callLine2));
+
+        cy.callLineToFile(outputDir, { maxLength }).then(() => {
+            cy.task("doesFileExist", outputFileName).should("be.true");
+
+            cy.readFile<CallLineStack[]>(outputFileName).then((file) => {
+                expect(file.map((entry) => entry.args)).to.deep.equal([[callLine1], [callLine2]]);
+            });
+        });
+    });
 });
 
 describe("callLine", () => {
@@ -487,7 +530,7 @@ describe("callLine", () => {
 
         cy.callLineNext().should("be.undefined");
 
-        const outputFileName1 = getFilePath(fileName1, outputDir, "callLine");
+        const outputFileName1 = createOutputFileName(outputDir, fileName1);
 
         cy.task("doesFileExist", outputFileName1).should("be.false");
 
@@ -510,7 +553,7 @@ describe("callLine", () => {
 
         cy.callLineNext().should("be.undefined");
 
-        const outputFileName2 = getFilePath(fileName2, outputDir, "callLine");
+        const outputFileName2 = createOutputFileName(outputDir, fileName2);
 
         cy.task("doesFileExist", outputFileName2).should("be.false");
 
@@ -566,7 +609,7 @@ describe("callLine", () => {
                     expect(callLine.array.length).to.eq(0);
                 });
 
-                const outputFileName3 = getFilePath(fileName3, outputDir, "callLine");
+                const outputFileName3 = createOutputFileName(outputDir, fileName3);
 
                 cy.task("doesFileExist", outputFileName3).should("be.false");
 
@@ -604,7 +647,7 @@ describe("callLine", () => {
 
                 cy.callLineNext().should("be.undefined");
 
-                const outputFileName3 = getFilePath(fileName3, outputDir, "callLine");
+                const outputFileName3 = createOutputFileName(outputDir, fileName3);
 
                 cy.task("doesFileExist", outputFileName3).should("be.false");
 
