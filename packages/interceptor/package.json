@@ -1,46 +1,46 @@
 {
-  "name": "cypress-interceptor",
-  "version": "5.4.0",
-  "description": "A helper for better Cypress testing; mocking, throttling and waiting for requests with advanced statistics and more.",
-  "devDependencies": {
-    "cypress": "15.16.0"
-  },
-  "author": "Martin Tichovsky",
-  "files": [
-    "convert/*.d.ts",
-    "convert/*.js",
-    "src/*.d.ts",
-    "src/*.js",
-    "*.d.ts",
-    "*.js"
-  ],
-  "keywords": [
-    "cypress",
-    "intercept",
-    "testing",
-    "requests",
-    "report",
-    "mocking",
-    "throttling",
-    "waiting",
-    "statistics",
-    "performance",
-    "testing",
-    "cypress",
-    "cypress-plugin"
-  ],
-  "license": "MIT",
-  "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MartinTichovsky/cypress-interceptor.git"
-  },
-  "scripts": {
-    "build": "npm run clean && tsc --project tsconfig.build.json",
-    "build:watch": "npm run build -- --watch",
-    "clean": "rimraf tsconfig.build.tsbuildinfo --glob \"**/*.js\" \"**/*.d.ts\" tsconfig.*tsbuildinfo",
-    "lint": "eslint .",
-    "tsc": "tsc --noEmit"
-  },
-  "types": "Interceptor.d.ts"
+    "name": "cypress-interceptor",
+    "version": "5.4.0",
+    "description": "A helper for better Cypress testing; mocking, throttling and waiting for requests with advanced statistics and more.",
+    "devDependencies": {
+        "cypress": "15.16.0"
+    },
+    "author": "Martin Tichovsky",
+    "files": [
+        "convert/*.d.ts",
+        "convert/*.js",
+        "src/*.d.ts",
+        "src/*.js",
+        "*.d.ts",
+        "*.js"
+    ],
+    "keywords": [
+        "cypress",
+        "intercept",
+        "testing",
+        "requests",
+        "report",
+        "mocking",
+        "throttling",
+        "waiting",
+        "statistics",
+        "performance",
+        "testing",
+        "cypress",
+        "cypress-plugin"
+    ],
+    "license": "MIT",
+    "main": "index.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MartinTichovsky/cypress-interceptor.git"
+    },
+    "scripts": {
+        "build": "npm run clean && tsc --project tsconfig.build.json",
+        "build:watch": "npm run build -- --watch",
+        "clean": "rimraf tsconfig.build.tsbuildinfo --glob \"**/*.js\" \"**/*.d.ts\" tsconfig.*tsbuildinfo",
+        "lint": "eslint .",
+        "tsc": "tsc --noEmit"
+    },
+    "types": "Interceptor.d.ts"
 }
