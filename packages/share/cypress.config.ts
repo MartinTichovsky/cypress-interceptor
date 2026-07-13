@@ -5,6 +5,7 @@ import {
     createNetworkReportFromFolder,
     ReportHtmlOptions
 } from "cypress-interceptor/report";
+import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { createWebpackConfig } from "cypress-interceptor-share/webpack.config";
 import * as fs from "fs";
 import path from "path";
@@ -13,11 +14,15 @@ const fixturesFolder = path.resolve(__dirname, "../server/fixtures");
 const mockFolderPath = path.resolve(__dirname, "../share/mock");
 
 export const createConfig = (codeCoverage = false): Cypress.ConfigOptions => ({
+    allowCypressEnv: false,
     chromeWebSecurity: false,
     defaultCommandTimeout: 10000,
     e2e: {
-        baseUrl: "http://localhost:3000/",
+        baseUrl: `http://${HOST}/`,
         env: {
+            INTERCEPTOR_REQUEST_TIMEOUT: 20000
+        },
+        expose: {
             INTERCEPTOR_REQUEST_TIMEOUT: 20000
         },
         experimentalRunAllSpecs: true,

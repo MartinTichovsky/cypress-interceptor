@@ -1,4 +1,5 @@
 import { IRequestInit } from "cypress-interceptor/Interceptor.types";
+import { cypressExpose } from "cypress-interceptor/src/envUtils";
 import { crossDomainFetch, HOST } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
@@ -1025,7 +1026,7 @@ describe("Wait For Requests", () => {
         beforeEach(() => {
             expectedDuration = undefined;
             cy.startTiming();
-            envTimeout = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            envTimeout = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
         });
 
         afterEach(() => {
@@ -1034,7 +1035,7 @@ describe("Wait For Requests", () => {
                     expect(duration).to.be.gte(expectedDuration);
                 }
             });
-            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
+            cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
         });
 
         testCaseIt("Max wait", (resourceType, bodyFormat, responseCatchType) => {
@@ -1064,7 +1065,7 @@ describe("Wait For Requests", () => {
         });
 
         it("Default functionality", () => {
-            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            expectedDuration = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
 
             cy.visit(getDynamicUrl([]));
 
@@ -1095,7 +1096,7 @@ describe("Wait For Requests", () => {
         it("Default timeout", () => {
             expectedDuration = 10000;
 
-            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
+            cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
 
             cy.visit(getDynamicUrl([]));
 
@@ -1109,7 +1110,7 @@ describe("Wait For Requests", () => {
         });
 
         it("Env timeout", () => {
-            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            expectedDuration = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
 
             cy.visit(getDynamicUrl([]));
 
@@ -1123,7 +1124,7 @@ describe("Wait For Requests", () => {
         });
 
         it("Action chainable", () => {
-            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            expectedDuration = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
 
             cy.visit(getDynamicUrl([]));
 
@@ -1137,7 +1138,7 @@ describe("Wait For Requests", () => {
         });
 
         it("Action void", () => {
-            expectedDuration = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            expectedDuration = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
 
             cy.visit(getDynamicUrl([]));
 

@@ -1,7 +1,13 @@
 export const crossDomainFetch = "https://www.gstatic.com/charts/loader.js";
 export const I_TEST_ID_HEADER = "X-Test-Id";
-export const HOST = "localhost:3000";
-export const WS_HOST = "ws://localhost:3000";
+
+// Single source of truth for the server ports. Change these to change the ports everywhere.
+export const PORT = 3000;
+export const SECOND_PORT = 3001;
+
+export const HOST = `localhost:${PORT}`;
+export const SECOND_HOST = `localhost:${SECOND_PORT}`;
+export const WS_HOST = `ws://localhost:${PORT}`;
 
 export enum SERVER_URL {
     AutoResponseFormData = "auto-response-form-data",

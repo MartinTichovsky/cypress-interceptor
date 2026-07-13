@@ -3,9 +3,16 @@
         "allowSyntheticDefaultImports": true,
         "composite": true,
         "esModuleInterop": true,
+        "ignoreDeprecations": "6.0",
+        "module": "CommonJS",
+        "moduleResolution": "node",
         "strict": true,
         "target": "ES2021",
         "paths": {
+            "@cypress/code-coverage/support": [
+                "./node_modules/@cypress/code-coverage/dist/lib/support"
+            ],
+            "@cypress/code-coverage/task": ["./node_modules/@cypress/code-coverage/dist/lib/task"],
             "cypress-interceptor": ["./packages/interceptor"],
             "cypress-interceptor-server": ["./packages/server"],
             "cypress-interceptor-share": ["./packages/share"]

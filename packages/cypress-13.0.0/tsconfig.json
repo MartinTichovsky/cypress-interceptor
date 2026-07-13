@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+        "composite": false,
+        "rootDir": "../..",
         "types": ["cypress"]
     },
     "exclude": ["node_modules"],

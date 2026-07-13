@@ -310,7 +310,29 @@ writeInterceptorStatsToLog(
 
 # Cypress environment variables
 
-You can provide Cypress environment variables to set certain Interceptor options globally:
+You can set certain Interceptor options globally through your Cypress configuration.
+
+## Cypress >= 15
+
+Since Cypress `15.10.0`, `Cypress.env()` is deprecated in favor of `Cypress.expose()` for public configuration values. Use the `expose` property in your Cypress config:
+
+```ts
+e2e: {
+    expose: {
+        INTERCEPTOR_REQUEST_TIMEOUT: number; // default 10000
+    }
+}
+```
+
+You can also change the value at runtime during a test:
+
+```ts
+Cypress.expose("INTERCEPTOR_REQUEST_TIMEOUT", 20000);
+```
+
+## Cypress < 15 (legacy)
+
+On Cypress versions older than `15.10.0` (where `Cypress.expose()` is not available), use the `env` property in your Cypress config:
 
 ```ts
 e2e: {
@@ -319,6 +341,14 @@ e2e: {
     }
 }
 ```
+
+You can also change the value at runtime during a test:
+
+```ts
+Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", 20000);
+```
+
+> The Interceptor reads the value in a version-safe way: it uses `Cypress.expose()` when available and falls back to `Cypress.env()` automatically.
 
 __`INTERCEPTOR_REQUEST_TIMEOUT`__ - the value (in ms) that defines how long the Interceptor will wait for pending requests when calling `cy.waitUntilRequestIsDone()`
 
@@ -866,13 +896,13 @@ _References:_
 
 The method will wait until all requests matching the provided route matcher are finished or until the maximum waiting time (`timeout` in options) is reached.
 
-The `timeout` option is set to 10 seconds by default. This option can be set globally by Cypress environment variable [`INTERCEPTOR_REQUEST_TIMEOUT`](#cypress-environment-variables).
+The `timeout` option is set to 10 seconds by default. This option can be set globally by the Cypress configuration value [`INTERCEPTOR_REQUEST_TIMEOUT`](#cypress-environment-variables).
 
 The `timeout` priority resolution.
 
 ```ts
 const DEFAULT_TIMEOUT = 10000;
-const timeout = option?.timeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
+const timeout = option?.timeout ?? Cypress.expose("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
 ```
 
 By default, there must be at least one match. Otherwise, it waits until a request matches the provided route matcher or until the maximum waiting time is reached. This behavior can be changed by setting `enforceCheck` to `false` in the options.

@@ -1,5 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
+import { cypressExpose } from "./src/envUtils";
 import { deepCopy, isNonNullableObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
 import { waitTill } from "./src/wait";
@@ -357,7 +358,7 @@ export class WebsocketInterceptor {
         errorMessage?: string
     ): Cypress.Chainable<this> {
         const totalTimeout =
-            options.timeout ?? Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
+            options.timeout ?? cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT") ?? DEFAULT_TIMEOUT;
 
         const timeout = totalTimeout - (performance.now() - startTime);
 

@@ -7,6 +7,7 @@ import {
     ReportTestIdPrefix
 } from "cypress-interceptor/src/generateReport.template";
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
+import { HOST } from "cypress-interceptor-server/src/resources/constants";
 import { DynamicRequest } from "cypress-interceptor-server/src/types";
 import { getDynamicUrl } from "cypress-interceptor-server/src/utils";
 
@@ -397,7 +398,7 @@ describe("Report", () => {
                         },
                         resourceType: "fetch",
                         timeStart: new Date().toISOString(),
-                        url: "http://localhost:3000/api/test1"
+                        url: `http://${HOST}/api/test1`
                     }
                 ]),
                 writeFileSync: () => {
@@ -422,8 +423,8 @@ describe("Report", () => {
 
     describe("generateReport - without node environment", () => {
         it("Should filter the entries by url", () => {
-            const apiTest1 = new URL("http://localhost:3000/api/test1");
-            const apiTest2 = new URL("http://localhost:3000/api/test2");
+            const apiTest1 = new URL(`http://${HOST}/api/test1`);
+            const apiTest2 = new URL(`http://${HOST}/api/test2`);
 
             const outputFileName = "report.html";
             const outputFilePath = `${outputDir}/${outputFileName}`;
@@ -524,7 +525,7 @@ describe("Report", () => {
                             timeEnd: new Date().toISOString()
                         },
                         timeStart: new Date().toISOString(),
-                        url: "http://localhost:3000/api/test1"
+                        url: `http://${HOST}/api/test1`
                     }
                 ])
             });
@@ -570,7 +571,7 @@ describe("Report", () => {
                             timeEnd: new Date().toISOString()
                         },
                         timeStart: new Date().toISOString(),
-                        url: "http://localhost:3000/api/test1"
+                        url: `http://${HOST}/api/test1`
                     }
                 ])
             });
@@ -608,7 +609,7 @@ describe("Report", () => {
                         },
                         resourceType: "fetch",
                         timeStart: new Date().toISOString(),
-                        url: "http://localhost:3000/api/test1"
+                        url: `http://${HOST}/api/test1`
                     }
                 ])
             });
@@ -633,9 +634,9 @@ describe("Report", () => {
         });
 
         it("Should filter the entries by url and highlight the slow ones", () => {
-            const apiTest1 = new URL("http://localhost:3000/api/test-1");
-            const apiTest2 = new URL("http://localhost:3000/api/test-2");
-            const apiTest3 = new URL("http://localhost:3000/api/test-3");
+            const apiTest1 = new URL(`http://${HOST}/api/test-1`);
+            const apiTest2 = new URL(`http://${HOST}/api/test-2`);
+            const apiTest3 = new URL(`http://${HOST}/api/test-3`);
 
             const outputFileName = "report-with-highlight.html";
             const outputFilePath = `${outputDir}/${outputFileName}`;
@@ -769,12 +770,12 @@ describe("Report", () => {
         });
 
         it("Should filter the bodies", () => {
-            const apiTest1 = new URL("http://localhost:3000/api/test-a");
-            const apiTest2 = new URL("http://localhost:3000/api/test-b");
-            const apiTest3 = new URL("http://localhost:3000/api/test-c");
-            const apiTest4 = new URL("http://localhost:3000/api/test-d");
-            const apiTest5 = new URL("http://localhost:3000/api/test-e");
-            const apiTest6 = new URL("http://localhost:3000/api/test-f");
+            const apiTest1 = new URL(`http://${HOST}/api/test-a`);
+            const apiTest2 = new URL(`http://${HOST}/api/test-b`);
+            const apiTest3 = new URL(`http://${HOST}/api/test-c`);
+            const apiTest4 = new URL(`http://${HOST}/api/test-d`);
+            const apiTest5 = new URL(`http://${HOST}/api/test-e`);
+            const apiTest6 = new URL(`http://${HOST}/api/test-f`);
 
             const outputFileName1 = "report-with-limited-body-1.html";
             const outputFilePath1 = `${outputDir}/${outputFileName1}`;
@@ -1292,9 +1293,9 @@ describe("Report", () => {
         });
 
         it("Setting the timeout should work", () => {
-            const apiTest1 = new URL("http://localhost:3000/api/test-z1");
-            const apiTest2 = new URL("http://localhost:3000/api/test-z2");
-            const apiTest3 = new URL("http://localhost:3000/api/test-z3");
+            const apiTest1 = new URL(`http://${HOST}/api/test-z1`);
+            const apiTest2 = new URL(`http://${HOST}/api/test-z2`);
+            const apiTest3 = new URL(`http://${HOST}/api/test-z3`);
 
             const outputFileName = "report-with-timeout.html";
             const outputFilePath = `${outputDir}/${outputFileName}`;

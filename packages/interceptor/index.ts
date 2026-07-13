@@ -14,6 +14,7 @@ import {
 import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "./src/createFetchProxy";
 import { createRequestProxy } from "./src/createRequestProxy";
 import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "./src/createXMLHttpRequestProxy";
+import { cypressExpose } from "./src/envUtils";
 import { RequestProxy } from "./src/RequestProxy";
 
 (() => {
@@ -39,8 +40,8 @@ import { RequestProxy } from "./src/RequestProxy";
             cy.wrap(interceptor.delayRequest(routeMatcher, delay, options))
     );
     Cypress.Commands.add("destroyInterceptor", () => {
-        Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, true);
-        Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, true);
+        cypressExpose(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, true);
+        cypressExpose(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, true);
 
         const globalWin = window as WindowTypeOfRequestProxy;
 
@@ -156,8 +157,8 @@ import { RequestProxy } from "./src/RequestProxy";
             cy.wrap(interceptor.mockResponse(routeMatcher, mock, options))
     );
     Cypress.Commands.add("recreateInterceptor", () => {
-        Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, false);
-        Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, false);
+        cypressExpose(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED, false);
+        cypressExpose(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED, false);
 
         interceptor = new Interceptor(requestProxy, startTime);
 

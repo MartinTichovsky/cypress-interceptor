@@ -6,6 +6,7 @@ import { objectToURLSearchParams } from "cypress-interceptor/convert/formData";
 import { CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED } from "cypress-interceptor/src/createFetchProxy";
 import { CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED } from "cypress-interceptor/src/createWebsocketProxy";
 import { CYPRESS_ENV_KEY_XHR_PROXY_DISABLED } from "cypress-interceptor/src/createXMLHttpRequestProxy";
+import { cypressExpose } from "cypress-interceptor/src/envUtils";
 import { HOST, SERVER_URL } from "cypress-interceptor-server/src/resources/constants";
 
 import { createXMLHttpRequestTest, wait, wrap, XMLHttpRequestLoad } from "../src/utils";
@@ -27,13 +28,13 @@ const createTests = (disableInterceptor: boolean, withvisit?: "after" | "before"
                 cy.destroyWsInterceptor();
 
                 wrap(() => {
-                    expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(true);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(true);
                     expect("originFetch" in window).to.eq(false);
 
-                    expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(true);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(true);
                     expect("originXMLHttpRequest" in window).to.eq(false);
 
-                    expect(Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(true);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(true);
                     expect("originWebSocket" in window).to.eq(false);
                 });
             } else {
@@ -41,13 +42,13 @@ const createTests = (disableInterceptor: boolean, withvisit?: "after" | "before"
                 cy.recreateWsInterceptor();
 
                 wrap(() => {
-                    expect(Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(false);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)).to.eq(false);
                     expect("originFetch" in window).to.eq(true);
 
-                    expect(Cypress.env(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(false);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_XHR_PROXY_DISABLED)).to.eq(false);
                     expect("originXMLHttpRequest" in window).to.eq(true);
 
-                    expect(Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(false);
+                    expect(cypressExpose(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)).to.eq(false);
                     expect("originWebSocket" in window).to.eq(true);
                 });
             }

@@ -1,6 +1,6 @@
 /// <reference types="cypress" preserve="true" />
 
-import { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
+import type { RouteMatcherOptions, StringMatcher } from "cypress/types/net-stubbing";
 
 import { FileNameMaxLength } from "./src/utils.cypress.types";
 
