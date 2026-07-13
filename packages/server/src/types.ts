@@ -126,7 +126,7 @@ export type DynamicRequest = {
            */
           error?: boolean;
           /**
-           * A relative path to ws://localhost:3000/{path}
+           * A relative path to `${WS_HOST}/{path}` (see WS_HOST in resources/constants)
            */
           path: string;
           /**

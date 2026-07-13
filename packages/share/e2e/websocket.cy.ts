@@ -1,5 +1,6 @@
 import "cypress-interceptor/websocket";
 
+import { cypressExpose } from "cypress-interceptor/src/envUtils";
 import { getFilePath } from "cypress-interceptor/src/utils.cypress";
 import { FileNameMaxLength } from "cypress-interceptor/src/utils.cypress.types";
 import { CallStackWebsocket } from "cypress-interceptor/WebsocketInterceptor.types";
@@ -261,11 +262,11 @@ describe("Websocket", () => {
         let envTimeout: unknown;
 
         beforeEach(() => {
-            envTimeout = Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+            envTimeout = cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
         });
 
         afterEach(() => {
-            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
+            cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT", envTimeout);
         });
 
         it("Max wait", () => {
@@ -315,7 +316,7 @@ describe("Websocket", () => {
         });
 
         it("Default timeout", () => {
-            Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
+            cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT", undefined);
 
             cy.visit(getDynamicUrl([]));
 

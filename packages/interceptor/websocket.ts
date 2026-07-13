@@ -4,6 +4,7 @@ import {
     createWebsocketProxy,
     CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED
 } from "./src/createWebsocketProxy";
+import { cypressExpose } from "./src/envUtils";
 import { WebsocketListener } from "./src/websocketListener";
 import { WebsocketInterceptor } from "./WebsocketInterceptor";
 import {
@@ -25,7 +26,7 @@ export * from "./WebsocketInterceptor";
     Cypress.on("window:before:load", createWebsocketProxy(websocketListener));
 
     Cypress.Commands.add("destroyWsInterceptor", () => {
-        Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, true);
+        cypressExpose(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, true);
 
         cy.window().then((win: WindowTypeOfWebsocketProxy) => {
             const globalWin = window as WindowTypeOfWebsocketProxy;
@@ -43,7 +44,7 @@ export * from "./WebsocketInterceptor";
     });
     Cypress.Commands.add("recreateWsInterceptor", () => {
         cy.window().then((win: WindowTypeOfWebsocketProxy) => {
-            Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, false);
+            cypressExpose(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED, false);
 
             // to be able use it without cy.visit
             createWebsocketProxy(websocketListener)(window as WindowTypeOfWebsocketProxy);

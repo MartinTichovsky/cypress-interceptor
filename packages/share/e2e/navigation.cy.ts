@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:3001";
+import { SECOND_HOST } from "cypress-interceptor-server/src/resources/constants";
+
+const BASE_URL = `http://${SECOND_HOST}`;
 
 interface NavigationRef {
     url: URL;

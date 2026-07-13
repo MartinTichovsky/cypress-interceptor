@@ -1,6 +1,6 @@
 /// <reference preserve="true" types="cypress" />
 
-import { StringMatcher } from "cypress/types/net-stubbing";
+import type { StringMatcher } from "cypress/types/net-stubbing";
 
 import { convertInputBodyToString } from "./convert/convert";
 import {
@@ -15,6 +15,7 @@ import {
     WaitUntilRequestOptions,
     WriteStatsOptions
 } from "./Interceptor.types";
+import { cypressExpose } from "./src/envUtils";
 import { RequestProxy } from "./src/RequestProxy";
 import { deepCopy, removeUndefinedFromObject, testUrlMatch } from "./src/utils";
 import { getFilePath } from "./src/utils.cypress";
@@ -378,8 +379,9 @@ export class Interceptor {
                         body,
                         headers: Object.fromEntries(
                             new Headers(
-                                response instanceof this.win.XMLHttpRequest ||
-                                    response instanceof XMLHttpRequest
+                                response instanceof XMLHttpRequest ||
+                                    (typeof this.win?.XMLHttpRequest === "function" &&
+                                        response instanceof this.win.XMLHttpRequest)
                                     ? parseResponseHeaders(response.getAllResponseHeaders())
                                     : (response.headers as HeadersInit)
                             ).entries()
@@ -434,7 +436,7 @@ export class Interceptor {
     }
 
     get requestTimeoutByEnv() {
-        return Cypress.env("INTERCEPTOR_REQUEST_TIMEOUT");
+        return cypressExpose("INTERCEPTOR_REQUEST_TIMEOUT");
     }
 
     /**
@@ -444,17 +446,25 @@ export class Interceptor {
         return deepCopy(this._callStack);
     }
 
+    /**
+     * Safely check whether a value is a `RegExp`, taking into account the AUT window's `RegExp`
+     * constructor. `this.win` may reference a detached/navigated window whose properties resolve to
+     * `undefined`, so guard against that before using it as the right-hand side of `instanceof`.
+     */
+    private isRegExp(value: unknown): value is RegExp {
+        return (
+            value instanceof RegExp ||
+            (typeof this.win?.RegExp === "function" && value instanceof this.win.RegExp)
+        );
+    }
+
     private filterItemsByMatcher(routeMatcher?: IRouteMatcher) {
         return (item: CallStack) => {
             if (!routeMatcher) {
                 return true;
             }
 
-            if (
-                routeMatcher instanceof this.win.RegExp ||
-                routeMatcher instanceof RegExp ||
-                typeof routeMatcher === "string"
-            ) {
+            if (this.isRegExp(routeMatcher) || typeof routeMatcher === "string") {
                 return testUrlMatch(routeMatcher, item.url.origin + item.url.pathname);
             }
 
@@ -896,8 +906,7 @@ export class Interceptor {
     ): Cypress.Chainable<this> {
         if (
             typeof stringMatcherOrOptions === "string" ||
-            stringMatcherOrOptions instanceof this.win.RegExp ||
-            stringMatcherOrOptions instanceof RegExp ||
+            this.isRegExp(stringMatcherOrOptions) ||
             typeof stringMatcherOrOptions !== "object"
         ) {
             stringMatcherOrOptions = { url: stringMatcherOrOptions };

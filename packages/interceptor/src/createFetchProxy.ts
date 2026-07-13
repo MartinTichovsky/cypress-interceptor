@@ -1,6 +1,7 @@
 import { convertInputBodyToString } from "../convert/convert";
 import { WindowTypeOfRequestProxy } from "../Interceptor.types";
 import { lineCalled } from "../test.unit";
+import { cypressExpose } from "./envUtils";
 import { emptyProxy, RequestProxy } from "./RequestProxy";
 import { CallLineEnum } from "./test.enum";
 import { sleep } from "./utils";
@@ -8,7 +9,7 @@ import { sleep } from "./utils";
 export const CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED = "__fetchProxyDisabled";
 
 export const createFetchProxy = (win: WindowTypeOfRequestProxy, requestProxy: RequestProxy) => {
-    if (Cypress.env(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)) {
+    if (cypressExpose(CYPRESS_ENV_KEY_FETCH_PROXY_DISABLED)) {
         return;
     }
 

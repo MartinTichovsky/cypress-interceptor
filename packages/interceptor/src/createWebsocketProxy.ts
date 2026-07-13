@@ -1,4 +1,5 @@
 import { WindowTypeOfWebsocketProxy } from "../WebsocketInterceptor.types";
+import { cypressExpose } from "./envUtils";
 import { WebsocketListener } from "./websocketListener";
 
 export const CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED = "__websocketProxyDisabled";
@@ -18,7 +19,7 @@ const getQueryObjectFromString = (url: string) => {
 
 export const createWebsocketProxy = (websocketListener: WebsocketListener) => {
     const listener = (win: WindowTypeOfWebsocketProxy) => {
-        if (Cypress.env(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)) {
+        if (cypressExpose(CYPRESS_ENV_KEY_WEBSOCKET_PROXY_DISABLED)) {
             return;
         }
 
